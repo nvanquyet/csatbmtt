@@ -1,13 +1,13 @@
-﻿using DesServer.AppSettings;
-using DesServer.Networking;
+﻿using DesServer.Networking;
+using Shared.AppSettings;
 
 namespace DesServer
 {
-    class Program
+    static class Program
     {
         static void Main(string[] args)
         {
-            var networkManager = new NetworkManager(Config.ServerIp, Config.TcpPort, Config.UdpPort);
+            var networkManager = new NetworkManager(Config.ServerIp, Config.ServerTcpPort, Config.ServerUdpPort);
             networkManager.Start();
 
             Console.WriteLine("Server is running. Press any key to exit...");

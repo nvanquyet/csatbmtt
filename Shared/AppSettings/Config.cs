@@ -1,4 +1,4 @@
-﻿namespace DesServer.AppSettings;
+﻿namespace Shared.AppSettings;
 
 public static class Config
 {
@@ -7,8 +7,8 @@ public static class Config
     
     public const string DatabaseConnectionString = "mongodb+srv://dbVawnWuyet:Quyet8102003@cluster0.nouhj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
-    public const int TcpPort = 8000;
-    public const int UdpPort = 9000;
+    public const int ServerTcpPort = 8000;
+    public const int ServerUdpPort = 9000;
     
-    public const string DefaultUserPassword = "123456";
+    public const string DefaultPassword = "123456";
 }

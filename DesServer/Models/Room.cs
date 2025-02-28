@@ -1,8 +1,9 @@
 ﻿using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using DesServer.AppSettings;
 using DesServer.Services;
+using Shared.AppSettings;
+using MessageService = Shared.Models.MessageService;
 
 namespace DesServer.Models;
 
@@ -43,7 +44,7 @@ public class Room(string? id, string password)
     private static string HashPassword(string? password)
     {
         if (string.IsNullOrEmpty(password))
-            return Config.DefaultUserPassword;
+            return Config.DefaultPassword;
 
         using SHA256 sha256Hash = SHA256.Create();
         byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(password));

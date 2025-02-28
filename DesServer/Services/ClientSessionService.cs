@@ -1,6 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Text;
 using DesServer.Models;
+using Shared.Models;
 
 namespace DesServer.Services
 {

@@ -1,4 +1,4 @@
-﻿namespace DesServer.Models;
+﻿namespace Shared.Models;
 
 public static class ActionTypes
 {

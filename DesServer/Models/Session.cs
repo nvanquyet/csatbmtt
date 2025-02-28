@@ -1,4 +1,6 @@
-﻿namespace DesServer.Models
+﻿using Shared.Models;
+
+namespace DesServer.Models
 {
     public class Session(User user)
     {

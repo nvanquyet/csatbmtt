@@ -9,44 +9,43 @@ namespace DesServer.Services
     {
         private readonly Dictionary<string, Session?> _sessions = new();
         
-        public void RegisterUser(TcpClient client, string username, string password)
+        public AuthResult RegisterUser(string? username, string? password)
         {
-            if (_sessions.ContainsKey(username))
+            if (username != null && _sessions.ContainsKey(username))
             {
-                MessageService.SendTcpMessage(client, "Username already exists.");
-                return;
+                return new AuthResult(false, "Username already exists.");
             }
 
             // Create Session and User
             var session = new Session(new User(username, password));
-            _sessions[username] = session;
+            if (username != null) _sessions[username] = session;
 
-            MessageService.SendTcpMessage(client, "User registered successfully!");
+            return new AuthResult(true, "User registered successfully!");
         }
 
-        public void LoginUser(TcpClient client, string username, string password)
+        public AuthResult LoginUser(string? username, string? password)
         {
-            if (_sessions.TryGetValue(username, out var session))
+            if (username != null && _sessions.TryGetValue(username, out var session))
             {
                 if ((bool)session?.User.VerifyPassword(password))
                 {
-                    MessageService.SendTcpMessage(client, $"Login successful! Session ID: {session.SessionId}");
+                    return new AuthResult(true, $"Login successful! Session ID: {session.SessionId}");
                 }
                 else
                 {
-                    MessageService.SendTcpMessage(client, "Invalid password.");
+                    return new AuthResult(false, "Invalid password.");
                 }
             }
             else
             {
-                MessageService.SendTcpMessage(client, "Username not found.");
+                return new AuthResult(false, "Username not found.");
             }
         }
 
         // End Session when user delete accounts
-        public void EndSession(string username)
+        public void EndSession(string? username)
         {
-            if (_sessions.ContainsKey(username))
+            if (username != null && _sessions.ContainsKey(username))
             {
                 _sessions[username]?.EndSession();
                 _sessions.Remove(username);

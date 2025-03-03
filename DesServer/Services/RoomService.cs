@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using DesServer.Models;
+using Shared.Services;
 
 namespace DesServer.Services;
 
@@ -13,43 +14,43 @@ public class RoomService
         return room;
     }
     
-    public void CreateRoom(string roomId, TcpClient hostClient, string password = "")
+    public void CreateRoom(string roomId, TcpClient? hostClient, string password = "")
     {
         if (!_rooms.ContainsKey(roomId))
         {
             _rooms[roomId] = new Room(id: roomId, password: password);
             _rooms[roomId].AddClient(hostClient);
-            MessageService.SendTcpMessage(hostClient, "Room created successfully!");
+            MsgService.SendTcpMessage(hostClient, "Room created successfully!");
         }
         else
         {
-            MessageService.SendTcpMessage(hostClient, "Room ID already exists.");
+            MsgService.SendTcpMessage(hostClient, "Room ID already exists.");
         }
     }
 
-    public void JoinRoom(string roomId, TcpClient client)
+    public void JoinRoom(string roomId, TcpClient? client)
     {
         if (_rooms.TryGetValue(roomId, out var room))
         {
             room.AddClient(client);
-            MessageService.SendTcpMessage(client, "Joined room successfully!");
+            MsgService.SendTcpMessage(client, "Joined room successfully!");
         }
         else
         {
-            MessageService.SendTcpMessage(client, "Room does not exist.");
+            MsgService.SendTcpMessage(client, "Room does not exist.");
         }
     }
 
-    public void LeaveRoom(string roomId, TcpClient client)
+    public void LeaveRoom(string roomId, TcpClient? client)
     {
         if (_rooms.TryGetValue(roomId, out var room))
         {
             room.RemoveClient(client, () => RemoveRoom(roomId));
-            MessageService.SendTcpMessage(client, "Left room successfully!");
+            MsgService.SendTcpMessage(client, "Left room successfully!");
         }
         else
         {
-            MessageService.SendTcpMessage(client, "Room does not exist.");
+            MsgService.SendTcpMessage(client, "Room does not exist.");
         }
     }
 

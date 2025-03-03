@@ -5,6 +5,7 @@ using DesServer.Models;
 using Newtonsoft.Json.Linq;
 using Shared.Models;
 using Shared.Network;
+using Shared.Services;
 using ActionTypes = Shared.Models.ActionTypes;
 using ProtocolType = DesServer.Models.ProtocolType;
 
@@ -22,29 +23,36 @@ namespace DesServer.Services
             while (true)
             {
                 var client = _tcpListener.AcceptTcpClient();
-                HandleClient(client);
+                Task.Run(() => HandleClient(client));
             }
         }
 
-        private void HandleClient(TcpClient client)
+        private void HandleClient(TcpClient? client)
         {
-            var stream = client.GetStream();
+            var stream = client?.GetStream();
             byte[] buffer = new byte[1024];
-            int bytesRead = stream.Read(buffer, 0, buffer.Length);
-            string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+            if (stream != null)
+            {
+                while (client?.Connected == true) // Tiếp tục nhận dữ liệu khi client vẫn còn kết nối
+                {
+                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
 
-            var request = new ProtocolRequest(message, ProtocolType.Tcp);
+                    // Nếu không có dữ liệu (client đóng kết nối), thoát khỏi vòng lặp
+                    if (bytesRead == 0) continue;
 
-            // Handle message (you can create a handler for TCP requests here)
-            Console.WriteLine($"Received TCP Message: {request.Message}");
+                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    var request = new ProtocolRequest(message, ProtocolType.Tcp);
 
-            HandleClientComm(client, request.Message);
+                    // Xử lý tin nhắn
+                    Console.WriteLine($"Received TCP Message: {request.Message}");
+                    HandleClientComm(client, request.Message); // Gọi xử lý thông điệp
 
-            client.Close();
+                }
+            }
         }
 
 
-        private void HandleClientComm(TcpClient client, string jsonMessage)
+        private void HandleClientComm(TcpClient? client, string jsonMessage)
         {
             try
             {
@@ -76,32 +84,62 @@ namespace DesServer.Services
             }
         }
 
-        private void HandleAuthentication(TcpClient client, Message message)
+        private void HandleAuthentication(TcpClient? client, Message message)
         {
             // Kiểm tra code và data
-            if (message.Code == StatusCode.LoginAttempt && message.Data != null)
+            if (message is { Code: StatusCode.Success, Data: not null })
             {
                 if (message.Data.TryGetValue("Username", out var username) &&
                     message.Data.TryGetValue("Password", out var password))
                 {
-                    var loginResult = _clientSessionService.LoginUser(
-                        client,
+                    var result = _clientSessionService.LoginUser(
                         username.ToString(),
                         password.ToString()
                     );
 
-                    // Gửi kết quả đăng nhập theo chuẩn message
                     var response = new Message
-                    {
-                        Type = MessageType.Authentication,
-                        Code = loginResult.Success ? StatusCode.Success : StatusCode.LoginFailed,
-                        Content = loginResult.Success ? "Authenticated" : "Login FAILED!",
-                        Data = loginResult.Success
-                            ? new Dictionary<string, object> { { "SessionID", loginResult.SessionId } }
-                            : null
-                    };
+                    (
+                        type: MessageType.Authentication,
+                        code: result.Success ? StatusCode.Success : StatusCode.LoginFailed,
+                        content: result.Success ? "Authenticated" : "Login FAILED!",
+                        data: result.Success
+                            ? new Dictionary<string, object> { { "SessionID", result.Message } }
+                            : new Dictionary<string, object> { { "Failed", result.Message } }
+                    ).ToJson();
 
-                    MessageService.SendTcpMessage(client, response);
+                    MsgService.SendTcpMessage(client, response);
+                }
+                else
+                {
+                    SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest);
+                }
+            }
+
+        }
+
+        private void HandleRegistration(TcpClient? client, Message message)
+        {
+            if (message is { Code: StatusCode.Success, Data: not null })
+            {
+                if (message.Data.TryGetValue("Username", out var username) &&
+                    message.Data.TryGetValue("Password", out var password))
+                {
+                    var result = _clientSessionService.RegisterUser(
+                        username.ToString(),
+                        password.ToString()
+                    );
+
+                    var response = new Message
+                    (
+                        type: MessageType.Authentication,
+                        code: result.Success ? StatusCode.Success : StatusCode.LoginFailed,
+                        content: result.Success ? "Authenticated" : "Register FAILED!",
+                        data: result.Success
+                            ? new Dictionary<string, object> { { "SessionID", result.Message } }
+                            : new Dictionary<string, object> { { "Failed", result.Message } }
+                    ).ToJson();
+
+                    MsgService.SendTcpMessage(client, response);
                 }
                 else
                 {
@@ -110,26 +148,17 @@ namespace DesServer.Services
             }
         }
 
-        private void HandleRegistration(TcpClient client, Message message)
-        {
-            // Logic tương tự cho đăng ký
-            if (message.Data != null && /* validation logic */)
-            {
-                // ... xử lý đăng ký
-            }
-        }
-
-        private void SendErrorMessage(TcpClient client, string error, StatusCode code)
+        private void SendErrorMessage(TcpClient? client, string error, StatusCode code)
         {
             var errorMessage = new Message
-            {
-                Type = MessageType.General,
-                Code = code,
-                Content = error,
-                Data = new Dictionary<string, object> { { "Timestamp", DateTime.UtcNow } }
-            };
+            (
+                type: MessageType.General,
+                code: code,
+                content: error,
+                data: new Dictionary<string, object> { { "Timestamp", DateTime.UtcNow } }
+            ).ToJson();
 
-            MessageService.SendTcpMessage(client, errorMessage);
+            MsgService.SendTcpMessage(client, errorMessage);
         }
     }
 }

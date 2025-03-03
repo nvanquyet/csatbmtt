@@ -33,7 +33,7 @@ public enum StatusCode
     ServerError = 3002    
 }
 
-public class Message(MessageType type, StatusCode code, string content, Dictionary<string, object> data)
+public class Message(MessageType type, StatusCode code, string content, Dictionary<string, object>? data)
 {
     [JsonProperty("type")]
     public MessageType Type { get; set; } = type;
@@ -45,7 +45,7 @@ public class Message(MessageType type, StatusCode code, string content, Dictiona
     public string Content { get; set; } = content;
 
     [JsonProperty("data")]
-    public Dictionary<string, object> Data { get; set; } = data;
+    public Dictionary<string, object>? Data { get; set; } = data;
 
     public string ToJson() => JsonConvert.SerializeObject(this);
     public static Message? FromJson(string json) => JsonConvert.DeserializeObject<Message>(json);

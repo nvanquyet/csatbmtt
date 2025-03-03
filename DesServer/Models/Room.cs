@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using DesServer.Services;
 using Shared.AppSettings;
-using MessageService = Shared.Models.MessageService;
+using Shared.Services;
 
 namespace DesServer.Models;
 
@@ -12,24 +12,24 @@ public class Room(string? id, string password)
     public string? Id { get; set; } = id;
     private string? Password { get; set; } = HashPassword(password);
     
-    private readonly List<TcpClient> _allClient = new List<TcpClient>();
-    public List<TcpClient> AllClient => _allClient;
+    private readonly List<TcpClient?> _allClient = new List<TcpClient?>();
+    public List<TcpClient?> AllClient => _allClient;
 
     public void BroadcastMessage(string message, TcpClient senderClient)
     {
         foreach (var client in _allClient.Where(client => !client.Equals(senderClient)))
         {
-            MessageService.SendTcpMessage(targetClient: client, message: message);
+            MsgService.SendTcpMessage(target: client, message: message);
         }
     }
     
-    public void AddClient(TcpClient client)
+    public void AddClient(TcpClient? client)
     {
         if (_allClient.Contains(client)) return;
         _allClient.Add(client);
     }
 
-    public bool RemoveClient(TcpClient client, Action? callback = null)
+    public bool RemoveClient(TcpClient? client, Action? callback = null)
     {
         if (_allClient.Contains(client))
         {

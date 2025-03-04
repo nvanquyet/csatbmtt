@@ -12,8 +12,8 @@ static class Program
     private static TcpClient? _tcpClient;
     private static UdpClient? _udpClient;
     private static NetworkStream? _tcpStream;
-
-    static async Task Main()
+    
+    public static async Task Main(string[] args)
     {
         _tcpClient = new TcpClient();
         _udpClient = new UdpClient();
@@ -25,77 +25,193 @@ static class Program
         
         // Bắt đầu lắng nghe các thông điệp từ TCP server
         _ = Task.Run(ListenForTcpMessages);
-        
+        ShowMenu1();
         while (true)
         {
-            Console.WriteLine("\nMENU:");
-            Console.WriteLine("1. Register");
-            Console.WriteLine("2. Login");
-            Console.WriteLine("3. Create Room");
-            Console.WriteLine("4. Join Room");
-            Console.WriteLine("5. Send TCP Message");
-            Console.WriteLine("6. Send UDP Message");
-            Console.WriteLine("7. Exit");
-            Console.Write("Choose an option: ");
-
-            string? choice = Console.ReadLine();
-            switch (choice)
-            {
-                case "1":
-                    Console.Write("Enter username: ");
-                    string? regUser = Console.ReadLine();
-                    Console.Write("Enter password: ");
-                    string? regPass = Console.ReadLine();
-                    if (regUser != null && regPass != null) {
-                        var message = new Message(type: MessageType.Registration, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
-                        {
-                            { "Username", regUser },
-                            { "Password", regPass }
-                        });
-
-                        MsgService.SendTcpMessage(_tcpClient, message.ToJson());
-                    }
-                    break;
-                case "2":
-                    Console.Write("Enter username: ");
-                    string? logUser = Console.ReadLine();
-                    Console.Write("Enter password: ");
-                    string? logPass = Console.ReadLine();
-                    if (logUser != null && logPass != null) {
-                        var message = new Message(type: MessageType.Authentication, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
-                        {
-                            { "Username", logUser },
-                            { "Password", logPass }
-                        });
-                        MsgService.SendTcpMessage(_tcpClient, message.ToJson());
-                    }
-                    break;
-                case "3":
-                    Console.Write("Enter Room ID: ");
-                    string? roomId = Console.ReadLine();
-                    break;
-                case "4":
-                    Console.Write("Enter Room ID: ");
-                    string? joinRoomId = Console.ReadLine();
-                    break;
-                case "5":
-                    Console.Write("Enter message: ");
-                    string? tcpMessage = Console.ReadLine();
-                    break;
-                case "6":
-                    Console.Write("Enter message: ");
-                    string? udpMessage = Console.ReadLine();
-                    //SendUdpMessage(udpMessage);
-                    break;
-                case "7":
-                    Console.WriteLine("Exiting...");
-                    return;
-                default:
-                    Console.WriteLine("Invalid option, try again.");
-                    break;
-            }
+            
         }
     }
+
+    
+    private static void ShowMenu1()
+    {
+        Console.Clear();
+        Console.WriteLine("=== Menu 1 ===");
+        Console.WriteLine("1. Đăng nhập");
+        Console.WriteLine("2. Đăng ký");
+        Console.WriteLine("3. Thoát");
+        Console.Write("Chọn một tùy chọn (1-3): ");
+        
+        string? choice = Console.ReadLine();
+        
+        switch (choice)
+        {
+            case "1":
+                Login();
+                break;
+            case "2":
+                Register();
+                break;
+            case "3":
+                Environment.Exit(0);
+                return;
+            default:
+                Console.WriteLine("Lựa chọn không hợp lệ.");
+                break;
+        }
+    }
+
+    private static void Register()
+    {
+        Console.Clear();
+        Console.WriteLine("=== Đăng ký ===");
+        
+        Console.Write("Nhập tên người dùng: ");
+        string? username = Console.ReadLine();
+
+        if (!CheckValidUsername(username))
+        {
+            Console.WriteLine("Tên người dùng đã tồn tại.");
+            ShowMenu1();
+            return;
+        }
+
+        Console.Write("Nhập mật khẩu: ");
+        string? password = Console.ReadLine();
+        Console.Write("Xác nhận mật khẩu: ");
+        string? confirmPassword = Console.ReadLine();
+
+        if (password != confirmPassword)
+        {
+            Console.WriteLine("Mật khẩu không khớp.");
+            ShowMenu1();
+        }else if (username != null && password != null) {
+            var message = new Message(type: MessageType.Registration, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
+            {
+                { "Username", username },
+                { "Password", password }
+            });
+            MsgService.SendTcpMessage(_tcpClient, message.ToJson());
+        }
+        else
+        {
+            ShowMenu1();
+        }
+    }
+
+    private static bool CheckValidUsername(string? username) => true;
+    
+    private static void Login()
+    {
+        Console.Clear();
+        Console.WriteLine("=== Đăng nhập ===");
+        
+        Console.Write("Nhập tên người dùng: ");
+        string? username = Console.ReadLine();
+        
+        Console.Write("Nhập mật khẩu: ");
+        string? password = Console.ReadLine();
+
+        if (username != null && password != null) {
+            var message = new Message(type: MessageType.Authentication, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
+            {
+                { "Username", username },
+                { "Password", password }
+            });
+
+            MsgService.SendTcpMessage(_tcpClient, message.ToJson());
+        }
+        else
+        {
+            ShowMenu1();
+        }
+    }
+
+    private static void ShowMenu2()
+    {
+        Console.Clear();
+        Console.WriteLine("=== Menu 2 ===");
+        Console.WriteLine("1. Chat với người dùng khác");
+        Console.WriteLine("2. Đăng xuất");
+        Console.Write("Chọn một tùy chọn (1-2): ");
+        
+        string? choice = Console.ReadLine();
+        
+        switch (choice)
+        {
+            case "1":
+                ChatWith();
+                break;
+            case "2":
+                Console.WriteLine("Đã đăng xuất.");
+                ShowMenu1();
+                break;
+            default:
+                Console.WriteLine("Lựa chọn không hợp lệ.");
+                ShowMenu2();
+                break;
+        }
+    }
+
+    private static List<String> GetAllUserValid()
+    {
+        return new List<String>(){ "Hoang" , "Anh"};
+    }
+
+    private static void ChatWith()
+    {
+        Console.Clear();
+        Console.WriteLine("=== Chọn người để chat ===");
+        int index = 0;
+        foreach (var user in GetAllUserValid())
+        {
+            Console.WriteLine($"{index}: {user}");
+            index++;
+        }
+
+        Console.Write($"{index} Nhập tên người bạn muốn chat: ");
+        string? targetUser = Console.ReadLine();
+        
+        //Connect with other
+    }
+
+    // Menu 3: 
+    private static void ShowMenu3(string? targetUser)
+    {
+        Console.Clear();
+        Console.WriteLine("=== Menu 3: Chat với " + targetUser + " ===");
+        Console.WriteLine("1. Gửi tin nhắn");
+        Console.WriteLine("2. Quay lại");
+        Console.Write("Chọn một tùy chọn (1-2): ");
+        
+        string? choice = Console.ReadLine();
+        
+        switch (choice)
+        {
+            case "1":
+                SendMessage(targetUser);
+                break;
+            case "2":
+                ShowMenu2();
+                break;
+            default:
+                Console.WriteLine("Lựa chọn không hợp lệ.");
+                ShowMenu3(targetUser);
+                break;
+        }
+    }
+
+    // Gửi tin nhắn
+    private static void SendMessage(string? targetUser)
+    {
+        Console.Clear();
+        Console.WriteLine("=== Gửi tin nhắn cho " + targetUser + " ===");
+        Console.Write("Nhập tin nhắn của bạn: ");
+        string? message = Console.ReadLine();
+
+        Console.WriteLine($"Tin nhắn đã gửi cho {targetUser}: {message}");
+    }
+    
 
     private static void SendUdpMessage(string message)
     {
@@ -118,6 +234,29 @@ static class Program
                 {
                     string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     Console.WriteLine("[TCP] Received: " + message);
+                    //Handle message
+                    var msg = Message.FromJson(message);
+                    if (msg?.Code == StatusCode.Success)
+                    {
+                        switch (msg.Type)
+                        {
+                            case MessageType.Authentication:
+                                //Cache username and password to local and save token
+                                ShowMenu2();
+                                break;
+                            case MessageType.Registration:
+                                Console.WriteLine("Register Success");
+                                ShowMenu1();
+                                break;
+                            default:
+                                ShowMenu1();
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        ShowMenu1();
+                    }
                 }
             }
             catch (Exception ex)

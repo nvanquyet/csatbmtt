@@ -1,12 +1,13 @@
-﻿using System.Net.Sockets;
+﻿using System.Diagnostics;
+using System.Net.Sockets;
 using System.Text;
+using Shared.Models;
 
 namespace Shared.Services;
 
 public static class MsgService
 {
     #region Send
-
     // Send TCP
     public static void SendTcpMessage(TcpClient? target, string message)
     {
@@ -46,7 +47,18 @@ public static class MsgService
         }
     }
 
+    public static void SendErrorMessage(TcpClient? client, string error, StatusCode code)
+    {
+        var errorMessage = new Message
+        (
+            type: MessageType.General,
+            code: code,
+            content: error,
+            data: new Dictionary<string, object> { { "Timestamp", DateTime.UtcNow } }
+        ).ToJson();
 
+        SendTcpMessage(client, errorMessage);
+    }
 
     // Send UDP
     public static async void SendUdpMessage(string targetIp, int targetPort, string message)
@@ -68,7 +80,6 @@ public static class MsgService
 
     #region Receive
 
-    //
     // // Receive TCP
     // public static void ReceiveTcpMessage(TcpClient client)
     // {

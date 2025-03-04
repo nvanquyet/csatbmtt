@@ -1,4 +1,6 @@
-﻿namespace Shared.Models;
+﻿using System.Net.Sockets;
+
+namespace Shared.Models;
 
 public class AuthData(string username, string password)
 {
@@ -6,9 +8,9 @@ public class AuthData(string username, string password)
     public string Password { get; set; } = password;
 }
 
-
-
-public class JoinRoomData(int roomId)
+public class CommunicationData(TcpClient targetClient, string message, DateTime timeSend)
 {
-    public int RoomId { get; set; } = roomId;
+    public TcpClient TargetClient { get; set; } = targetClient;
+    public string Message { get; set; } = message;
+    public DateTime TimeSend { get; set; } = timeSend;
 }

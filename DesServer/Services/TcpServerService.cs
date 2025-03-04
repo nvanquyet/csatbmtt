@@ -4,9 +4,7 @@ using System.Text;
 using DesServer.Models;
 using Newtonsoft.Json.Linq;
 using Shared.Models;
-using Shared.Network;
 using Shared.Services;
-using ActionTypes = Shared.Models.ActionTypes;
 using ProtocolType = DesServer.Models.ProtocolType;
 
 namespace DesServer.Services
@@ -51,7 +49,6 @@ namespace DesServer.Services
             }
         }
 
-
         private void HandleClientComm(TcpClient? client, string jsonMessage)
         {
             try
@@ -59,7 +56,7 @@ namespace DesServer.Services
                 var message = Message.FromJson(jsonMessage);
                 if (message == null || message.Type == MessageType.General)
                 {
-                    SendErrorMessage(client, "Invalid message format", StatusCode.Error);
+                    MsgService.SendErrorMessage(client, "Invalid message format", StatusCode.Error);
                     return;
                 }
 
@@ -74,13 +71,13 @@ namespace DesServer.Services
                         break;
 
                     default:
-                        SendErrorMessage(client, "Unsupported action type", StatusCode.Error);
+                        MsgService.SendErrorMessage(client, "Unsupported action type", StatusCode.Error);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                SendErrorMessage(client, $"Server error: {ex.Message}", StatusCode.Error);
+                MsgService.SendErrorMessage(client, $"Server error: {ex.Message}", StatusCode.Error);
             }
         }
 
@@ -100,7 +97,7 @@ namespace DesServer.Services
                     var response = new Message
                     (
                         type: MessageType.Authentication,
-                        code: result.Success ? StatusCode.Success : StatusCode.LoginFailed,
+                        code: result.Success ? StatusCode.Success : StatusCode.Failed,
                         content: result.Success ? "Authenticated" : "Login FAILED!",
                         data: result.Success
                             ? new Dictionary<string, object> { { "SessionID", result.Message } }
@@ -111,7 +108,7 @@ namespace DesServer.Services
                 }
                 else
                 {
-                    SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest);
+                    MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest);
                 }
             }
 
@@ -132,7 +129,7 @@ namespace DesServer.Services
                     var response = new Message
                     (
                         type: MessageType.Authentication,
-                        code: result.Success ? StatusCode.Success : StatusCode.LoginFailed,
+                        code: result.Success ? StatusCode.Success : StatusCode.Failed,
                         content: result.Success ? "Authenticated" : "Register FAILED!",
                         data: result.Success
                             ? new Dictionary<string, object> { { "SessionID", result.Message } }
@@ -143,22 +140,9 @@ namespace DesServer.Services
                 }
                 else
                 {
-                    SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest);
+                    MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest);
                 }
             }
-        }
-
-        private void SendErrorMessage(TcpClient? client, string error, StatusCode code)
-        {
-            var errorMessage = new Message
-            (
-                type: MessageType.General,
-                code: code,
-                content: error,
-                data: new Dictionary<string, object> { { "Timestamp", DateTime.UtcNow } }
-            ).ToJson();
-
-            MsgService.SendTcpMessage(client, errorMessage);
         }
     }
 }

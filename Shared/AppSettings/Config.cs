@@ -2,7 +2,7 @@
 
 public static class Config
 {
-    public const string ServerIp = "127.0.0.1";
+    public const string ServerIp = "20.5.131.240";
     public const int ServerPort = 8080;
     
     public const string DatabaseConnectionString = "mongodb+srv://dbVawnWuyet:Quyet8102003@cluster0.nouhj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";

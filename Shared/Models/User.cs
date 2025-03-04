@@ -1,7 +1,4 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using Shared.AppSettings;
-using Shared.Services;
+﻿using Shared.Services;
 
 namespace Shared.Models
 {
@@ -9,7 +6,6 @@ namespace Shared.Models
     {
         public string? UserName { get; set; } = userName;
         private string? Password { get; set; } = SecurityHelper.HashPassword(password);
-        
         public bool VerifyPassword(string? password) => SecurityHelper.VerifyPassword(Password, password);
     }
 }

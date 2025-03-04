@@ -1,37 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{DB97CCFD-AF0F-4123-9F30-910ED70302FD}|DesClient\\DesClient.csproj|w:\\fourth_years\\csat_bmtt\\doancuoiky\\desclient\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{DB97CCFD-AF0F-4123-9F30-910ED70302FD}|DesClient\\DesClient.csproj|solutionrelative:desclient\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": [
-        {
-          "DockedWidth": 200,
-          "SelectedChildIndex": 0,
-          "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Program.cs",
-              "DocumentMoniker": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\DesClient\\Program.cs",
-              "RelativeDocumentMoniker": "DesClient\\Program.cs",
-              "ToolTip": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\DesClient\\Program.cs",
-              "RelativeToolTip": "DesClient\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-03T09:30:57.013Z",
-              "EditorCaption": ""
-            }
-          ]
-        }
-      ]
+      "DocumentGroups": []
     }
   ]
 }

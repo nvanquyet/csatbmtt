@@ -16,6 +16,7 @@ namespace DesServer.Services
 
         public void Start()
         {
+            Console.WriteLine("Starting TcpServerService");
             _tcpListener.Start();
             Console.WriteLine("TCP Server is running...");
             while (true)

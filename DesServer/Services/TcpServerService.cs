@@ -11,7 +11,7 @@ namespace DesServer.Services
 {
     public class TcpServerService(string ipAddress, int port)
     {
-        private readonly TcpListener _tcpListener = new(IPAddress.Parse(ipAddress), port);
+        private readonly TcpListener _tcpListener = new(IPAddress.Any, port);
         private readonly ClientSessionService _clientSessionService = new();
 
         public void Start()

@@ -16,14 +16,21 @@ namespace DesServer.Services
 
         public void Start()
         {
-            Console.WriteLine("Starting TcpServerService");
-            _tcpListener.Start();
-            Console.WriteLine("TCP Server is running...");
-            while (true)
+            try
             {
-                var client = _tcpListener.AcceptTcpClient();
-                Task.Run(() => HandleClient(client));
+                _tcpListener.Start();  
+                Console.WriteLine("TCP Server is running...");
+                while (true)
+                {
+                    var client = _tcpListener.AcceptTcpClient();
+                    Task.Run(() => HandleClient(client));
+                }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error starting TCP listener: {ex.Message}");
+            }
+            
         }
 
         private void HandleClient(TcpClient? client)

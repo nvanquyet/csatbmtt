@@ -8,7 +8,7 @@ namespace DesServer.Services
 {
     public class UdpServerService(string ipAddress, int port)
     {
-        private readonly UdpClient _udpListener = new(new IPEndPoint(IPAddress.Parse(ipAddress), port));
+        private readonly UdpClient _udpListener = new(new IPEndPoint(IPAddress.Parse("0.0.0.0"), port));
 
         public void Start()
         {

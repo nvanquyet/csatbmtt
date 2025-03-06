@@ -3,16 +3,10 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-public class TcpClientHandler
+public class TcpClientHandler(string ip, int port)
 {
-    private readonly string serverIp;
-    private readonly int serverPort;
-
-    public TcpClientHandler(string ip, int port)
-    {
-        serverIp = ip;
-        serverPort = port;
-    }
+    private readonly string serverIp = ip;
+    private readonly int serverPort = port;
 
     public async Task ConnectAndSend(string message)
     {

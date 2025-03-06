@@ -49,12 +49,11 @@ public static class MsgService
 
     public static void SendErrorMessage(TcpClient? client, string error, StatusCode code)
     {
-        var errorMessage = new Message
+        var errorMessage = new MessageNetwork<ErrorData>
         (
             type: CommandType.None,
             code: code,
-            content: error,
-            data: new Dictionary<string, object> { { "Timestamp", DateTime.UtcNow } }
+            data: new ErrorData($"Timestamp: {DateTime.UtcNow}")
         ).ToJson();
 
         SendTcpMessage(client, errorMessage);

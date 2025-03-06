@@ -36,4 +36,10 @@ public class DbController : Singleton<DbController>
         if (user == null) return false;
         return true;
     }
+
+    public List<User> GetAllUsers()
+    {
+        var users = _databaseService.GetCollection<User>("Users");
+        return users.Find(u => u != null).ToList();
+    }
 }

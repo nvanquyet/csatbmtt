@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using DesServer.Database;
 using Shared.Models;
 using Shared.Services;
 
@@ -53,7 +54,7 @@ namespace DesServer.Services
         {
             try
             {
-                var message = Message.FromJson(jsonMessage);
+                var message = MessageNetwork<dynamic>.FromJson(jsonMessage);
                 if (message == null)
                 {
                     MsgService.SendErrorMessage(client, "Invalid message format", StatusCode.Error);
@@ -69,7 +70,9 @@ namespace DesServer.Services
                     case CommandType.Registration:
                         HandleRegistration(client, message);
                         break;
-
+                    case CommandType.GetAllUsers:
+                        //HandleGetAllUser(client);
+                        break;
                     default:
                         MsgService.SendErrorMessage(client, "Unsupported action type", StatusCode.Error);
                         break;
@@ -81,26 +84,20 @@ namespace DesServer.Services
             }
         }
 
-        private void HandleAuthentication(TcpClient? client, Message message)
+        private void HandleAuthentication(TcpClient? client, MessageNetwork<dynamic> messageNetwork)
         {
-            if (message is { Code: StatusCode.Success, Data: not null })
+            if (messageNetwork is { Code: StatusCode.Success })
             {
-                if (message.Data.TryGetValue("Username", out var username) &&
-                    message.Data.TryGetValue("Password", out var password))
+                if (messageNetwork.TryParseData<AuthData>(out AuthData? authData) && authData != null)
                 {
                     var result = ClientSessionService.Instance.LoginUser(
-                        username.ToString(),
-                        password.ToString()
+                        authData.Username,
+                        authData.Password
                     );
-
-                    var response = new Message
-                    (
+                    var response = new MessageNetwork<object>(
                         type: CommandType.Authentication,
-                        code: result.Success ? StatusCode.Success : StatusCode.Failed,
-                        content: result.Success ? "Success" : "Failed!",
-                        data: result.Success
-                            ? new Dictionary<string, object> { { "Success", result.Message } }
-                            : new Dictionary<string, object> { { "Failed", result.Message } }
+                        code: result.Item1 ? StatusCode.Success : StatusCode.Failed,
+                        data: result.Item1 ? (object)authData : (object)result.Item2
                     ).ToJson();
 
                     MsgService.SendTcpMessage(client, response);
@@ -109,32 +106,29 @@ namespace DesServer.Services
                 {
                     MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest);
                 }
+            }
+            else
+            {
+                MsgService.SendErrorMessage(client, "Invalid authentication", StatusCode.InvalidRequest);
             }
 
         }
 
-        private void HandleRegistration(TcpClient? client, Message message)
+        private void HandleRegistration(TcpClient? client, MessageNetwork<dynamic> messageNetwork)
         {
-            if (message is { Code: StatusCode.Success, Data: not null })
+            if (messageNetwork is { Code: StatusCode.Success, Data: not null })
             {
-                if (message.Data.TryGetValue("Username", out var username) &&
-                    message.Data.TryGetValue("Password", out var password))
+                if (messageNetwork.TryParseData<AuthData>(out AuthData? authData) && authData != null)
                 {
                     var result = ClientSessionService.Instance.RegisterUser(
-                        username.ToString(),
-                        password.ToString()
+                        authData.Username,
+                        authData.Password
                     );
-
-                    var response = new Message
-                    (
-                        type: CommandType.Authentication,
-                        code: result.Success ? StatusCode.Success : StatusCode.Failed,
-                        content: result.Success ? "Success" : "Failed",
-                        data: result.Success
-                            ? new Dictionary<string, object> { { "Success", result.Message } }
-                            : new Dictionary<string, object> { { "Failed", result.Message } }
+                    var response = new MessageNetwork<object>(
+                        type: CommandType.Registration,
+                        code: result.Item1 ? StatusCode.Success : StatusCode.Failed,
+                        data: result.Item1 ? (object)authData : (object)result.Item2
                     ).ToJson();
-
                     MsgService.SendTcpMessage(client, response);
                 }
                 else
@@ -142,6 +136,18 @@ namespace DesServer.Services
                     MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest);
                 }
             }
+            else
+            {
+                MsgService.SendErrorMessage(client, "Invalid registration", StatusCode.InvalidRequest);
+            }
+        }
+
+        private void HandleGetAllUsers(TcpClient? client)
+        {
+            if(client == null) return;
+            var allUsers = DbController.Instance.GetAllUsers();
+            var msg = new MessageNetwork<List<User>>(type: CommandType.GetAllUsers, code: StatusCode.Success, data: allUsers);
+            MsgService.SendTcpMessage(client, msg.ToJson());
         }
     }
 }

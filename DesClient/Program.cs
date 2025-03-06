@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
 using Shared.AppSettings;
 using Shared.Models;
@@ -86,11 +85,7 @@ static class Program
             Console.WriteLine("Mật khẩu không khớp.");
             ShowMenu1();
         }else if (username != null && password != null) {
-            var message = new Message(type: CommandType.Registration, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
-            {
-                { "Username", username },
-                { "Password", password }
-            });
+            var message = new MessageNetwork<AuthData>(type: CommandType.Registration, StatusCode.Success, new AuthData(username: username, password: password));
             MsgService.SendTcpMessage(_tcpClient, message.ToJson());
         }
         else
@@ -113,12 +108,7 @@ static class Program
         string? password = Console.ReadLine();
 
         if (username != null && password != null) {
-            var message = new Message(type: CommandType.Authentication, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
-            {
-                { "Username", username },
-                { "Password", password }
-            });
-
+            var message = new MessageNetwork<AuthData>(type: CommandType.Authentication, StatusCode.Success, new AuthData(username: username, password: password));
             MsgService.SendTcpMessage(_tcpClient, message.ToJson());
         }
         else
@@ -140,7 +130,7 @@ static class Program
         switch (choice)
         {
             case "1":
-                ChatWith();
+                //ChatWith();
                 break;
             case "2":
                 Console.WriteLine("Đã đăng xuất.");
@@ -153,17 +143,17 @@ static class Program
         }
     }
 
-    private static List<String> GetAllUserValid()
-    {
-        return new List<String>(){ "Hoang" , "Anh"};
-    }
-
-    private static void ChatWith()
+    private static void ChatWith(List<User>? users)
     {
         Console.Clear();
+        if (users == null)
+        {
+            ShowMenu2();
+            return;
+        }
         Console.WriteLine("=== Chọn người để chat ===");
         int index = 0;
-        foreach (var user in GetAllUserValid())
+        foreach (var user in users)
         {
             Console.WriteLine($"{index}: {user}");
             index++;
@@ -172,7 +162,7 @@ static class Program
         Console.Write($"{index} Nhập tên người bạn muốn chat: ");
         string? targetUser = Console.ReadLine();
         
-        //Connect with other
+        //Connect
     }
 
     // Menu 3: 
@@ -235,7 +225,7 @@ static class Program
                     string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     Console.WriteLine("[TCP] Received: " + message);
                     //Handle message
-                    var msg = Message.FromJson(message);
+                    var msg = MessageNetwork<dynamic>.FromJson(message);
                     if (msg?.Code == StatusCode.Success)
                     {
                         switch (msg.Type)
@@ -247,6 +237,9 @@ static class Program
                             case CommandType.Registration:
                                 Console.WriteLine("Register Success");
                                 ShowMenu1();
+                                break;
+                            case CommandType.GetAllUsers:
+                                if (msg.TryParseData<List<User>>(out var allUsers)) ChatWith(allUsers);
                                 break;
                             default:
                                 ShowMenu1();

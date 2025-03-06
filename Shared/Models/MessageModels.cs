@@ -8,6 +8,11 @@ public class AuthData(string username, string password)
     public string Password { get; set; } = password;
 }
 
+public class ErrorData(string message)
+{
+    public string Message { get; set; } = message;
+}
+
 public class CommunicationData(TcpClient targetClient, string message, DateTime timeSend)
 {
     public TcpClient TargetClient { get; set; } = targetClient;

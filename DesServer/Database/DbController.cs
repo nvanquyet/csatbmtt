@@ -24,7 +24,7 @@ public class DbController : Singleton<DbController>
     {
         var users = _databaseService.GetCollection<User>("Users");
         var user = users.Find(u => u.UserName == username).FirstOrDefault();
-        Console.WriteLine($"Log Pass {user?.Password}");
+        Console.WriteLine($"Log Pass {user?.Password} {password} { user?.Password == password}");
         if (user != null && user.VerifyPassword(password)) return true;
         return false;
     }

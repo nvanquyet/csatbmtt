@@ -23,8 +23,8 @@ public class DbController : Singleton<DbController>
     public bool Login(string username, string password)
     {
         var users = _databaseService.GetCollection<User>("Users");
-        var user = users.Find(u => u.UserName == username && u.VerifyPassword(password)).FirstOrDefault();
-        if (user != null) return true;
+        var user = users.Find(u => u.UserName == username).FirstOrDefault();
+        if (user != null && user.VerifyPassword(password)) return true;
         return false;
     }
 

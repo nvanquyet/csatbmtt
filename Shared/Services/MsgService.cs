@@ -53,7 +53,7 @@ public static class MsgService
         (
             type: CommandType.None,
             code: code,
-            data: new ErrorData($"Timestamp: {DateTime.UtcNow}")
+            data: new ErrorData($"Error: {error}")
         ).ToJson();
 
         SendTcpMessage(client, errorMessage);

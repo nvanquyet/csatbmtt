@@ -2,6 +2,7 @@
 using MongoDB.Driver;
 using Shared.AppSettings;
 using Shared.Models;
+using Shared.Services;
 
 namespace DesServer.Database;
 
@@ -15,7 +16,7 @@ public class DbController : Singleton<DbController>
         var existingUser = users.Find(user => user.UserName == username).FirstOrDefault();
         if (existingUser != null) return false;
         
-        var newUser = new User(userName: username, password: password);
+        var newUser = new User(userName: username, password: SecurityHelper.HashPassword(password));
         users.InsertOne(newUser);
         return true;
     }
@@ -24,8 +25,7 @@ public class DbController : Singleton<DbController>
     {
         var users = _databaseService.GetCollection<User>("Users");
         var user = users.Find(u => u.UserName == username).FirstOrDefault();
-        Console.WriteLine($"Log Pass {user?.Password} {password} { user?.Password == password}");
-        if (user != null && user.VerifyPassword(password)) return true;
+        if (user != null && user.Password == SecurityHelper.HashPassword(password)) return true;
         return false;
     }
 

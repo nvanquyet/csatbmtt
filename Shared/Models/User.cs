@@ -16,7 +16,6 @@ namespace Shared.Models
         [BsonId]
         public ObjectId Id { get; set; }
         public string? UserName { get; set; } = userName;
-        public string? Password { get; set; } = SecurityHelper.HashPassword(password);
-        public bool VerifyPassword(string? password) => SecurityHelper.VerifyPassword(Password, password);
+        public string? Password { get; set; } = password;
     }
 }

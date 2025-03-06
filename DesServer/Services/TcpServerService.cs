@@ -208,8 +208,6 @@ namespace DesServer.Services
         {
             if (messageNetwork is { Code: StatusCode.Success, Data: not null })
             {
-                var d = (AuthData)messageNetwork.Data;
-                Console.WriteLine($"Data: {d} {d != null}");
                 if (messageNetwork.TryParseData<AuthData>(out AuthData? authData) && authData != null)
                 {
                     var result = ClientSessionService.Instance.RegisterUser(

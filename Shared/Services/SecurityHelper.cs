@@ -16,6 +16,4 @@ public static class SecurityHelper
 
         return BitConverter.ToString(bytes).Replace("-", string.Empty);
     }
-
-    public static bool VerifyPassword(string? correctPassword, string? passwordCheck) => correctPassword == HashPassword(passwordCheck);
 }

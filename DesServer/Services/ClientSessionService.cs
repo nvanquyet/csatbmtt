@@ -15,7 +15,7 @@ namespace DesServer.Services
                 return new AuthResult(false, "Username already exists.");
             }
 
-            DbController.Instance.RegisterUser(username, SecurityHelper.HashPassword(password));
+            DbController.Instance.RegisterUser(username, password);
             return new AuthResult(true, "User registered successfully!");
         }
 

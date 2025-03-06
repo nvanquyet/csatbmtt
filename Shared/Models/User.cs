@@ -1,4 +1,6 @@
 ﻿using System.Net.Sockets;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using Shared.Services;
 
 namespace Shared.Models
@@ -11,8 +13,10 @@ namespace Shared.Models
     
     public class User(string? userName, string? password)
     {
+        [BsonId]
+        public ObjectId Id { get; set; }
         public string? UserName { get; set; } = userName;
-        private string? Password { get; set; } = SecurityHelper.HashPassword(password);
+        public string? Password { get; set; } = SecurityHelper.HashPassword(password);
         public bool VerifyPassword(string? password) => SecurityHelper.VerifyPassword(Password, password);
     }
 }

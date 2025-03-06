@@ -1,41 +1,17 @@
-﻿using System;
-using System.Net;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
+using Shared.AppSettings;
 
-public class UdpClientHandler
+namespace DesClient.Services;
+
+public class UdpService
 {
-    private readonly string serverIp;
-    private readonly int serverPort;
+    private readonly UdpClient _udpClient = new();
 
-    public UdpClientHandler(string ip, int port)
+    public void SendUdpMessage(string message)
     {
-        serverIp = ip;
-        serverPort = port;
-    }
-
-    public async Task SendAndReceive(string message)
-    {
-        try
-        {
-            using (UdpClient client = new UdpClient())
-            {
-                byte[] data = Encoding.UTF8.GetBytes(message);
-                IPEndPoint serverEndpoint = new IPEndPoint(IPAddress.Parse(serverIp), serverPort);
-
-                await client.SendAsync(data, data.Length, serverEndpoint);
-                Console.WriteLine($"[UDP] Đã gửi: {message}");
-
-                // Nhận phản hồi từ server
-                UdpReceiveResult receivedResult = await client.ReceiveAsync();
-                string response = Encoding.UTF8.GetString(receivedResult.Buffer);
-                Console.WriteLine($"[UDP] Server trả lời: {response}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[UDP] Lỗi: {ex.Message}");
-        }
+        byte[] data = Encoding.UTF8.GetBytes(message);
+        _udpClient.Send(data, data.Length, Config.ServerIp, Config.ServerUdpPort);
+        Console.WriteLine("Sent UDP: " + message);
     }
 }

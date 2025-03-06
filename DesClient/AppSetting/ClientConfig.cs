@@ -1,6 +1,6 @@
-﻿namespace DesClient;
+﻿namespace DesClient.AppSetting;
 
-public class ClientConfig
+public static class ClientConfig
 {
     
 }

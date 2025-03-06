@@ -1,36 +1,98 @@
-﻿using System;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
+using DesClient.Menu;
+using Shared.AppSettings;
+using Shared.Models;
 
-public class TcpClientHandler(string ip, int port)
+namespace DesClient.Services;
+
+public class TcpService
 {
-    private readonly string serverIp = ip;
-    private readonly int serverPort = port;
-
-    public async Task ConnectAndSend(string message)
+    private TcpClient? _tcpClient;
+    private NetworkStream? _tcpStream;
+    
+    public TcpClient? GetTcpClient() => _tcpClient;
+    
+    public async Task ConnectAsync()
     {
-        try
+        _tcpClient = new TcpClient();
+        await _tcpClient.ConnectAsync(Config.ServerIp, Config.ServerTcpPort);
+        _tcpStream = _tcpClient.GetStream();
+    }
+
+    public void SendTcpMessage(string message)
+    {
+        if (_tcpStream == null) return;
+        byte[] data = Encoding.UTF8.GetBytes(message);
+        _tcpStream.Write(data, 0, data.Length);
+    }
+
+    public void ListenForTcpMessages()
+    {
+        byte[] buffer = new byte[1024];
+
+        while (true)
         {
-            using (TcpClient client = new TcpClient())
+            try
             {
-                await client.ConnectAsync(serverIp, serverPort);
-                NetworkStream stream = client.GetStream();
-
-                byte[] data = Encoding.UTF8.GetBytes(message);
-                await stream.WriteAsync(data, 0, data.Length);
-                Console.WriteLine($"[TCP] Đã gửi: {message}");
-
-                // Nhận phản hồi từ server
-                byte[] buffer = new byte[1024];
-                int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-                string response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                Console.WriteLine($"[TCP] Server trả lời: {response}");
+                int bytesRead = _tcpStream?.Read(buffer, 0, buffer.Length) ?? 0;
+                if (bytesRead > 0)
+                {
+                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    Console.WriteLine("[TCP] Received: " + message);
+                    HandleMessage(message);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading TCP message: " + ex.Message);
             }
         }
-        catch (Exception ex)
+    }
+
+    private void HandleMessage(string message)
+    {
+        var msg = MessageNetwork<dynamic>.FromJson(message);
+        if (msg?.Code == StatusCode.Success)
         {
-            Console.WriteLine($"[TCP] Lỗi: {ex.Message}");
+            switch (msg.Type)
+            {
+                case CommandType.Authentication:
+                    if (msg.TryParseData<User>(out User? user))
+                    {
+                        AuthService.SaveUserInfo(user);
+                        MainMenu.ShowMenu2(this);
+                    }
+                    break;
+                case CommandType.Registration:
+                    Console.WriteLine("Register Success");
+                    MainMenu.ShowMenu(this);
+                    break;
+                case CommandType.GetAllUsers:
+                    if (msg.TryParseData<List<User>>(out var allUsers))
+                        if (allUsers != null)
+                            ChatMenu.ChatWith(allUsers, this);
+                    break;
+                case CommandType.ReceiveMessage:
+                    if (msg.TryParseData<ChatMessage>(out ChatMessage? cM))
+                    {
+                        ChatMenu.LoadMessage(cM);
+                    }
+                    break;
+                case CommandType.LoadMessage:
+                    if (msg.TryParseData<List<ChatMessage>>(out List<ChatMessage>? allMessages))
+                    {
+                        ChatMenu.LoadAllMessage(allMessages);
+                    }
+                    break;
+                default:
+                    Console.WriteLine("Unknown Command");
+                    break;
+            }
+        }
+        else
+        {
+            MainMenu.ShowMenu(this);
         }
     }
 }

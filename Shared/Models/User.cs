@@ -14,7 +14,7 @@ namespace Shared.Models
     public class User(string? userName, string? password)
     {
         [BsonId]
-        public ObjectId Id { get; set; }
+        public string? Id { get; set; }
         public string? UserName { get; set; } = userName;
         public string? Password { get; set; } = password;
     }

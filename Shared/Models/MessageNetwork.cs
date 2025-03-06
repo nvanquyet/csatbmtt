@@ -8,6 +8,9 @@ public enum CommandType
     Authentication,
     Registration,
     GetAllUsers,
+    SendMessage,
+    ReceiveMessage,
+    LoadMessage,
 }
 
 public enum StatusCode
@@ -18,7 +21,7 @@ public enum StatusCode
     InvalidRequest = 1005 
 }
 
-public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where T : class
+public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where T : class?
 {
     [JsonProperty("type")]
     public CommandType Type { get; set; } = type;

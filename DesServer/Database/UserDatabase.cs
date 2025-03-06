@@ -1,45 +1,43 @@
-﻿using DesServer.Services;
+﻿using DesServer.AppSetting;
 using MongoDB.Driver;
-using Shared.AppSettings;
 using Shared.Models;
 using Shared.Services;
 
 namespace DesServer.Database;
 
-public class DbController : Singleton<DbController>
+public class UserDatabase : ADatabase
 {
-    private readonly DatabaseService _databaseService = new(Config.DatabaseConnectionString, Config.DatabaseString);
-
-    public bool RegisterUser(string username, string password)
+    private static readonly IMongoCollection<User> Users = DatabaseService.GetCollection<User>(ServerConfig.UserCollection);
+    public static bool RegisterUser(string username, string password)
     {
-        var users = _databaseService.GetCollection<User>("Users");
-        var existingUser = users.Find(user => user.UserName == username).FirstOrDefault();
+        var existingUser = Users.Find(user => user.UserName == username).FirstOrDefault();
         if (existingUser != null) return false;
         
         var newUser = new User(userName: username, password: SecurityHelper.HashPassword(password));
-        users.InsertOne(newUser);
+        Users.InsertOne(newUser);
         return true;
     }
 
-    public bool Login(string username, string password)
+    public static User? Login(string username, string password)
     {
-        var users = _databaseService.GetCollection<User>("Users");
-        var user = users.Find(u => u.UserName == username).FirstOrDefault();
-        if (user != null && user.Password == SecurityHelper.HashPassword(password)) return true;
-        return false;
+        var user = Users.Find(u => u.UserName == username).FirstOrDefault();
+        if (user != null && user.Password == SecurityHelper.HashPassword(password)) return user;
+        return null;
     }
 
-    public bool UsernameValidation(string username)
+    public static bool UsernameValidation(string username)
     {
-        var users = _databaseService.GetCollection<User>("Users");
-        var user = users.Find(u => u.UserName == username).FirstOrDefault();
+        var user = Users.Find(u => u.UserName == username).FirstOrDefault();
         if (user == null) return false;
         return true;
     }
 
-    public List<User> GetAllUsers()
+    public static List<User> GetAllUsers()
     {
-        var users = _databaseService.GetCollection<User>("Users");
-        return users.Find(u => u != null).ToList();
+        return Users.Find(u => u != null).ToList();
     }
+
+    public static string? GetUserNameById(string? id) => Users.Find(u => u.Id == id).FirstOrDefault().UserName;
+        
+    
 }

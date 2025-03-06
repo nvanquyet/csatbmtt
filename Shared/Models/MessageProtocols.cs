@@ -2,11 +2,11 @@
 
 namespace Shared.Models;
 
-public enum MessageType
+public enum CommandType
 {
+    None,
     Authentication,
     Registration,
-    General
 }
 
 public enum StatusCode
@@ -17,10 +17,10 @@ public enum StatusCode
     InvalidRequest = 1005 
 }
 
-public class Message(MessageType type, StatusCode code, string content, Dictionary<string, object>? data)
+public class Message(CommandType type, StatusCode code, string content, Dictionary<string, object>? data)
 {
     [JsonProperty("type")]
-    public MessageType Type { get; set; } = type;
+    public CommandType Type { get; set; } = type;
 
     [JsonProperty("code")]
     public StatusCode Code { get; set; } = code;

@@ -86,7 +86,7 @@ static class Program
             Console.WriteLine("Mật khẩu không khớp.");
             ShowMenu1();
         }else if (username != null && password != null) {
-            var message = new Message(type: MessageType.Registration, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
+            var message = new Message(type: CommandType.Registration, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
             {
                 { "Username", username },
                 { "Password", password }
@@ -113,7 +113,7 @@ static class Program
         string? password = Console.ReadLine();
 
         if (username != null && password != null) {
-            var message = new Message(type: MessageType.Authentication, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
+            var message = new Message(type: CommandType.Authentication, StatusCode.Success, "Authentication", data: new Dictionary<string, object>
             {
                 { "Username", username },
                 { "Password", password }
@@ -240,11 +240,11 @@ static class Program
                     {
                         switch (msg.Type)
                         {
-                            case MessageType.Authentication:
+                            case CommandType.Authentication:
                                 //Cache username and password to local and save token
                                 ShowMenu2();
                                 break;
-                            case MessageType.Registration:
+                            case CommandType.Registration:
                                 Console.WriteLine("Register Success");
                                 ShowMenu1();
                                 break;

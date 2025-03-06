@@ -1,19 +1,14 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using DesServer.Models;
-using Newtonsoft.Json.Linq;
 using Shared.Models;
 using Shared.Services;
-using ProtocolType = DesServer.Models.ProtocolType;
 
 namespace DesServer.Services
 {
     public class TcpServerService(string ipAddress, int port)
     {
         private readonly TcpListener _tcpListener = new(IPAddress.Any, port);
-        private readonly ClientSessionService _clientSessionService = new();
-
         public void Start()
         {
             try
@@ -39,19 +34,16 @@ namespace DesServer.Services
             byte[] buffer = new byte[1024];
             if (stream != null)
             {
-                while (client?.Connected == true) // Tiếp tục nhận dữ liệu khi client vẫn còn kết nối
+                while (client?.Connected == true) 
                 {
                     int bytesRead = stream.Read(buffer, 0, buffer.Length);
 
-                    // Nếu không có dữ liệu (client đóng kết nối), thoát khỏi vòng lặp
                     if (bytesRead == 0) continue;
 
                     string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    var request = new ProtocolRequest(message, ProtocolType.Tcp);
-
-                    // Xử lý tin nhắn
-                    Console.WriteLine($"Received TCP Message: {request.Message}");
-                    HandleClientComm(client, request.Message); // Gọi xử lý thông điệp
+                    
+                    Console.WriteLine($"Received TCP Message: {message}");
+                    HandleClientComm(client, message);
 
                 }
             }
@@ -62,7 +54,7 @@ namespace DesServer.Services
             try
             {
                 var message = Message.FromJson(jsonMessage);
-                if (message == null || message.Type == MessageType.General)
+                if (message == null)
                 {
                     MsgService.SendErrorMessage(client, "Invalid message format", StatusCode.Error);
                     return;
@@ -70,11 +62,11 @@ namespace DesServer.Services
 
                 switch (message.Type)
                 {
-                    case MessageType.Authentication:
+                    case CommandType.Authentication:
                         HandleAuthentication(client, message);
                         break;
 
-                    case MessageType.Registration:
+                    case CommandType.Registration:
                         HandleRegistration(client, message);
                         break;
 
@@ -91,24 +83,23 @@ namespace DesServer.Services
 
         private void HandleAuthentication(TcpClient? client, Message message)
         {
-            // Kiểm tra code và data
             if (message is { Code: StatusCode.Success, Data: not null })
             {
                 if (message.Data.TryGetValue("Username", out var username) &&
                     message.Data.TryGetValue("Password", out var password))
                 {
-                    var result = _clientSessionService.LoginUser(
+                    var result = ClientSessionService.Instance.LoginUser(
                         username.ToString(),
                         password.ToString()
                     );
 
                     var response = new Message
                     (
-                        type: MessageType.Authentication,
+                        type: CommandType.Authentication,
                         code: result.Success ? StatusCode.Success : StatusCode.Failed,
-                        content: result.Success ? "Authenticated" : "Login FAILED!",
+                        content: result.Success ? "Success" : "Failed!",
                         data: result.Success
-                            ? new Dictionary<string, object> { { "SessionID", result.Message } }
+                            ? new Dictionary<string, object> { { "Success", result.Message } }
                             : new Dictionary<string, object> { { "Failed", result.Message } }
                     ).ToJson();
 
@@ -129,18 +120,18 @@ namespace DesServer.Services
                 if (message.Data.TryGetValue("Username", out var username) &&
                     message.Data.TryGetValue("Password", out var password))
                 {
-                    var result = _clientSessionService.RegisterUser(
+                    var result = ClientSessionService.Instance.RegisterUser(
                         username.ToString(),
                         password.ToString()
                     );
 
                     var response = new Message
                     (
-                        type: MessageType.Authentication,
+                        type: CommandType.Authentication,
                         code: result.Success ? StatusCode.Success : StatusCode.Failed,
-                        content: result.Success ? "Authenticated" : "Register FAILED!",
+                        content: result.Success ? "Success" : "Failed",
                         data: result.Success
-                            ? new Dictionary<string, object> { { "SessionID", result.Message } }
+                            ? new Dictionary<string, object> { { "Success", result.Message } }
                             : new Dictionary<string, object> { { "Failed", result.Message } }
                     ).ToJson();
 

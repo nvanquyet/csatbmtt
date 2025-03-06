@@ -28,7 +28,7 @@ public static class MsgService
             }
 
             byte[] data = Encoding.UTF8.GetBytes(message);
-            // Gửi dữ liệu và đợi kết quả
+            
             stream.Write(data, 0, data.Length);
             stream.Flush();
             Console.WriteLine($"Message sent to TCP: {message}");
@@ -51,7 +51,7 @@ public static class MsgService
     {
         var errorMessage = new Message
         (
-            type: MessageType.General,
+            type: CommandType.None,
             code: code,
             content: error,
             data: new Dictionary<string, object> { { "Timestamp", DateTime.UtcNow } }

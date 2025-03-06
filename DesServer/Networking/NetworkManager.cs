@@ -12,7 +12,7 @@ namespace DesServer.Networking
             // Start both TCP and UDP services
             Console.WriteLine("Starting...");
             Task.Run(() => _tcpServerService.Start());
-            //Task.Run(() => _udpServerService.Start());
+            Task.Run(() => _udpServerService.Start());
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Text.Json;
 using DesClient.Models;
+using MongoDB.Bson;
 using Shared.Models;
 using Shared.Services;
 
@@ -29,8 +30,11 @@ public static class AuthService
         if (username != null && password != null)
         {
             var message = new MessageNetwork<AuthData>(
-                CommandType.Registration, StatusCode.Success, new AuthData(username, password)
+                type: CommandType.Registration, 
+                code: StatusCode.Success,
+                data: new AuthData(username, password)
             );
+            
             tcpService.SendTcpMessage(message.ToJson());
         }
     }
@@ -48,7 +52,9 @@ public static class AuthService
         if (username != null && password != null)
         {
             var message = new MessageNetwork<AuthData>(
-                CommandType.Authentication, StatusCode.Success, new AuthData(username, password)
+                type: CommandType.Authentication, 
+                code: StatusCode.Success,
+                data: new AuthData(username, password)
             );
             tcpService.SendTcpMessage(message.ToJson());
         }

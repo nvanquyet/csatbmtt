@@ -44,7 +44,7 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where 
             newData = data;
             return true;
         }
-
+        Console.WriteLine($"Failed to parse data. Expected type: {typeof(TV)}, but got: {Data?.GetType()}");
         return false;
     }
 

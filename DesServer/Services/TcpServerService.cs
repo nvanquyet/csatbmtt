@@ -208,7 +208,7 @@ namespace DesServer.Services
         {
             if (messageNetwork is { Code: StatusCode.Success, Data: not null })
             {
-                Console.WriteLine($"Auth {messageNetwork.Data} Type: {messageNetwork.Data.Type}");
+                Console.WriteLine($"Auth {messageNetwork.Data} Type: {messageNetwork.Data.GetType()}");
                 if (messageNetwork.TryParseData<AuthData>(out var authData) && authData != null)
                 {
                     var result = ClientSessionService.Instance.RegisterUser(

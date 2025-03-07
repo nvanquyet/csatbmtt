@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using System.Text.Json;
+using DesClient.Menu;
 using DesClient.Models;
 using MongoDB.Bson;
 using Shared.Models;
@@ -24,6 +25,7 @@ public static class AuthService
         if (password != confirmPassword)
         {
             Console.WriteLine("Mật khẩu không khớp.");
+            MainMenu.ShowMenu(tcpService);
             return;
         }
 

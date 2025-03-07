@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using MongoDB.Bson;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Shared.Models;
@@ -45,8 +46,13 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where 
         {
             try
             {
-                // Phân tích cú pháp JObject thành AuthData
                 newData = jObject.ToObject<TV>();
+
+                if (newData is User user && !string.IsNullOrEmpty(user.StringId))
+                {
+                    user.Id = ObjectId.Parse(user.StringId);
+                }
+
                 return true;
             }
             catch (Exception ex)

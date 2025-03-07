@@ -97,16 +97,12 @@ namespace DesServer.Services
         {
             if (message is { Code: StatusCode.Success } && client != null)
             {
-                if (message.TryParseData<ChatMessage>(out ChatMessage? chatMessage) && chatMessage is
-                    {
-                        ReceiverId: not null,
-                        SenderId: not null,
-                    })
+                if (message.TryParseData<ChatMessage>(out ChatMessage? chatMessage) && chatMessage != null)
                 {
                     var targetClient = ConnectionDatabase.GetConnectionByUserId(chatMessage.ReceiverId);
                     
-                    chatMessage.SenderId = UserDatabase.GetUserNameById(chatMessage.SenderId);
-                    chatMessage.ReceiverId = UserDatabase.GetUserNameById(chatMessage.ReceiverId);
+                    chatMessage.SenderName = UserDatabase.GetUserNameById(chatMessage.SenderId);
+                    chatMessage.ReceiverName = UserDatabase.GetUserNameById(chatMessage.ReceiverId);
                     
                     //Save to database
                     MessageDatabase.SaveMessage(chatMessage);

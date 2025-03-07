@@ -88,18 +88,15 @@ public static class AuthService
             User? user = JsonSerializer.Deserialize<User>(jsonData);
             if (user == null) return false;
 
-            if (user.Id != null)
+            if (user.Password != null)
             {
-                if (user.Password != null)
-                {
-                    var message = new MessageNetwork<AuthData>(
-                        type: CommandType.Authentication,
-                        code: StatusCode.Success,
-                        data: new AuthData(user.Id, user.Password)
-                    );
+                var message = new MessageNetwork<AuthData>(
+                    type: CommandType.Authentication,
+                    code: StatusCode.Success,
+                    data: new AuthData(user.UserName, user.Password)
+                );
 
-                    MsgService.SendTcpMessage(tcpClient, message.ToJson());
-                }
+                MsgService.SendTcpMessage(tcpClient, message.ToJson());
             }
 
             SessionManager.SetUser(user);

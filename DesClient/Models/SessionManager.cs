@@ -1,4 +1,5 @@
-﻿using Shared.Models;
+﻿using MongoDB.Bson;
+using Shared.Models;
 
 namespace DesClient.Models;
 
@@ -10,7 +11,7 @@ public static class SessionManager
 
     public static void Clear() => _currentUser = null;
     
-    public static string? GetUserId() => _currentUser?.Id;
+    public static ObjectId? GetUserId() => _currentUser?.Id;
     public static string? GetUserName() => _currentUser?.UserName;
     
 }

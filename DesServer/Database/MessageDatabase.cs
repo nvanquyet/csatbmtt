@@ -1,4 +1,5 @@
 ﻿using DesServer.AppSetting;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Models;
 
@@ -13,7 +14,7 @@ public class MessageDatabase : ADatabase
         ChatMessagesCollection.InsertOne(message);
     }
     
-    public static List<ChatMessage> LoadMessages(string? senderId, string? receiverId)
+    public static List<ChatMessage> LoadMessages(ObjectId? senderId, ObjectId? receiverId)
     {
         var filter = Builders<ChatMessage>.Filter.Or(
             Builders<ChatMessage>.Filter.And(

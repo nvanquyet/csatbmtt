@@ -1,4 +1,5 @@
 ﻿using DesServer.AppSetting;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Models;
 using Shared.Services;
@@ -32,12 +33,9 @@ public class UserDatabase : ADatabase
         return true;
     }
 
-    public static List<User> GetAllUsers()
-    {
-        return Users.Find(u => u != null).ToList();
-    }
-
-    public static string? GetUserNameById(string? id) => Users.Find(u => u.Id == id).FirstOrDefault().UserName;
+    public static List<User> GetAllUsers() =>  Users.Find(u => u != null).ToList();
+    
+    public static string? GetUserNameById(ObjectId? id) => Users.Find(u => u.Id == id).FirstOrDefault().UserName;
         
     
 }

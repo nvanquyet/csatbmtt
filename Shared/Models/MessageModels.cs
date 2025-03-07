@@ -2,10 +2,10 @@
 
 namespace Shared.Models;
 
-public class AuthData(string username, string password)
+public class AuthData(string? username, string? password)
 {
-    public string Username { get; set; } = username;
-    public string Password { get; set; } = password;
+    public string? Username { get; set; } = username;
+    public string? Password { get; set; } = password;
 }
 
 public class ErrorData(string message)

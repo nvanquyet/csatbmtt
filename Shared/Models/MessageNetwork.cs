@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Shared.Models;
 
@@ -39,13 +40,31 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where 
     {
         newData = null;
     
-        if (Data is TV data)
+        // Kiểm tra nếu Data là JObject và cần phân tích cú pháp thành đối tượng AuthData
+        if (Data is JObject jObject)
+        {
+            try
+            {
+                // Phân tích cú pháp JObject thành AuthData
+                newData = jObject.ToObject<TV>();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deserializing JObject: {ex.Message}");
+                return false;
+            }
+        }
+        
+        if(Data is TV data)
         {
             newData = data;
             return true;
         }
+
         Console.WriteLine($"Failed to parse data. Expected type: {typeof(TV)}, but got: {Data?.GetType()}");
         return false;
     }
+
 
 }

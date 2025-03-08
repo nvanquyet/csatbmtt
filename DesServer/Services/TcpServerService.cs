@@ -96,7 +96,7 @@ namespace DesServer.Services
         {
             if (message is { Code: StatusCode.Success } && client != null)
             {
-                if (message.TryParseData<ChatMessage>(out ChatMessage? chatMessage) && chatMessage is
+                if (message.TryParseData(out ChatMessage? chatMessage) && chatMessage is
                     {
                         ReceiverId: not null
                     })
@@ -133,7 +133,7 @@ namespace DesServer.Services
         {
             if (message is { Code: StatusCode.Success } && client != null)
             {
-                if (message.TryParseData<ChatHistoryRequest>(out ChatHistoryRequest? history) && history != null)
+                if (message.TryParseData(out ChatHistoryRequest? history) && history != null)
                 {
                     var allChatMessage = MessageDatabase.LoadMessages(history.SenderId, history.ReceiverId);
 
@@ -160,7 +160,7 @@ namespace DesServer.Services
         {
             if (messageNetwork is { Code: StatusCode.Success })
             {
-                if (messageNetwork.TryParseData<AuthData>(out var authData) && authData != null)
+                if (messageNetwork.TryParseData(out AuthData? authData) && authData != null)
                 {
                     var result = ClientSessionService.Instance.LoginUser(
                         authData.Username,
@@ -207,8 +207,7 @@ namespace DesServer.Services
         {
             if (messageNetwork is { Code: StatusCode.Success, Data: not null })
             {
-                Console.WriteLine($"Auth {messageNetwork.Data} Type: {messageNetwork.Data.GetType()}");
-                if (messageNetwork.TryParseData<AuthData>(out var authData) && authData != null)
+                if (messageNetwork.TryParseData(out AuthData? authData) && authData != null)
                 {
                     var result = ClientSessionService.Instance.RegisterUser(
                         authData.Username,

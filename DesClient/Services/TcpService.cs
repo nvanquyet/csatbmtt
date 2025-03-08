@@ -58,7 +58,7 @@ public class TcpService
             switch (msg.Type)
             {
                 case CommandType.Authentication:
-                    if (msg.TryParseData<User>(out User? user))
+                    if (msg.TryParseData(out User? user))
                     {
                         AuthService.SaveUserInfo(user);
                         MainMenu.ShowMenu2(this);
@@ -69,18 +69,18 @@ public class TcpService
                     MainMenu.ShowMenu(this);
                     break;
                 case CommandType.GetAllUsers:
-                    if (msg.TryParseData<List<User>>(out var allUsers))
+                    if (msg.TryParseData(out List<User>? allUsers))
                         if (allUsers != null)
                             ChatMenu.ChatWith(allUsers, this);
                     break;
                 case CommandType.ReceiveMessage:
-                    if (msg.TryParseData<ChatMessage>(out ChatMessage? cM))
+                    if (msg.TryParseData(out ChatMessage? cM))
                     {
                         ChatMenu.LoadMessage(cM);
                     }
                     break;
                 case CommandType.LoadMessage:
-                    if (msg.TryParseData<List<ChatMessage>>(out List<ChatMessage>? allMessages))
+                    if (msg.TryParseData(out List<ChatMessage>? allMessages))
                     {
                         ChatMenu.LoadAllMessage(allMessages);
                     }

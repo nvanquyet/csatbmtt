@@ -35,7 +35,7 @@ public class UserDatabase : ADatabase
 
     public static List<User> GetAllUsers() =>  Users.Find(u => u != null).ToList();
     
-    public static string? GetUserNameById(ObjectId? id) => Users.Find(u => u.Id == id).FirstOrDefault().UserName;
+    public static string? GetUserNameById(string? id) => Users.Find(u => u.Id == id).FirstOrDefault().UserName;
         
     
 }

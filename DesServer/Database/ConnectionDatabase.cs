@@ -29,6 +29,6 @@ public class ConnectionDatabase : ADatabase
         }
     }
 
-    public static UserConnection? GetConnectionByUserId(ObjectId? userId) => UserConnection.Find(c => c.UserId == userId).FirstOrDefault();
+    public static UserConnection? GetConnectionByUserId(string? userId) => UserConnection.Find(c => c.UserId == userId).FirstOrDefault();
     
 }

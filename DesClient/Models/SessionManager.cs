@@ -11,7 +11,7 @@ public static class SessionManager
 
     public static void Clear() => _currentUser = null;
     
-    public static ObjectId? GetUserId() => _currentUser?.Id;
+    public static string? GetUserId() => _currentUser?.Id;
     public static string? GetUserName() => _currentUser?.UserName;
     
 }

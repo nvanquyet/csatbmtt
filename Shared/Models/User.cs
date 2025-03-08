@@ -14,15 +14,9 @@ namespace Shared.Models
     public class User(string? userName, string? password)
     {
         [BsonId]
-        public ObjectId Id { get; set; }
+        [BsonRepresentation(BsonType.ObjectId)] 
+        public string? Id { get; set; }
         public string? UserName { get; init; } = userName;
         public string? Password { get; init; } = password;
-        
-        [BsonIgnore]
-        public string StringId
-        {
-            get => Id.ToString();  // Trả về giá trị ObjectId dưới dạng chuỗi
-            set => Id = ObjectId.Parse(value);  // Chuyển chuỗi thành ObjectId khi gán
-        }
     }
 }

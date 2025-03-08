@@ -2,8 +2,8 @@
 
 namespace Shared.Models;
 
-public class ChatHistoryRequest(ObjectId? senderId, ObjectId? receiverId)
+public class ChatHistoryRequest(string? senderId, string? receiverId)
 {
-    public ObjectId? SenderId { get; set; } = senderId;
-    public ObjectId? ReceiverId { get; set; } = receiverId;
+    public string? SenderId { get; set; } = senderId;
+    public string? ReceiverId { get; set; } = receiverId;
 }

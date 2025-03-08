@@ -47,12 +47,6 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where 
             try
             {
                 newData = jObject.ToObject<TV>();
-
-                if (newData is User user && !string.IsNullOrEmpty(user.StringId))
-                {
-                    user.Id = ObjectId.Parse(user.StringId);
-                }
-
                 return true;
             }
             catch (Exception ex)

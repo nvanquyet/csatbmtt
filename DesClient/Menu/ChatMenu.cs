@@ -42,7 +42,7 @@ public static class ChatMenu
 
                 var chatMessage = new ChatMessage
                 (
-                    senderId: SessionManager.GetUserId(), // ID của người gửi
+                    senderId: SessionManager.GetUserId(),
                     receiverId: targetUser.Id, 
                     content: message,
                     timestamp: DateTime.UtcNow

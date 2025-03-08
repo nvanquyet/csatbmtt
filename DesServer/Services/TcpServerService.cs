@@ -101,7 +101,6 @@ namespace DesServer.Services
                         ReceiverId: not null
                     })
                 {
-                    var targetClient = ConnectionController.Instance.GetUserConnection(chatMessage.ReceiverId);
 
                     chatMessage.SenderName = UserDatabase.GetUserNameById(chatMessage.SenderId);
                     chatMessage.ReceiverName = UserDatabase.GetUserNameById(chatMessage.ReceiverId);
@@ -116,7 +115,7 @@ namespace DesServer.Services
                     ).ToJson();
 
                     //MsgService.SendTcpMessage(client, response);
-                    MsgService.SendTcpMessage(targetClient?.TcpClient, response);
+                    MsgService.SendTcpMessage(ConnectionController.Instance.GetUserConnection(chatMessage.ReceiverId)?.TcpClient, response);
                 }
                 else
                 {

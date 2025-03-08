@@ -6,25 +6,33 @@ namespace DesServer.Controllers;
 
 public class ConnectionController : Singleton<ConnectionController>
 {
-    private readonly Dictionary<string, UserConnection> _connectedClients = new();
+    private readonly Dictionary<string, UserConnection?> _connectedClients = new();
 
     /// <summary>
     /// Add Client
     /// </summary>
-    public void AddClient(string userId, UserConnection client)
+    public void AddClient(string userId, UserConnection? client)
     {
         if (!_connectedClients.TryAdd(userId, client))
         {
-            _connectedClients[userId].TcpClient.Close();
+            _connectedClients[userId]?.TcpClient.Close();
             _connectedClients[userId] = client;
         }
     }
+
     /// <summary>
     /// Get UserConnection
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    public UserConnection GetUserConnection(string userId) => _connectedClients[userId];
+    public UserConnection? GetUserConnection(string userId)
+    {
+        if (_connectedClients.TryGetValue(userId, out var connection))
+        {
+           return connection;
+        }
+        return null;
+    } 
     
     /// <summary>
     /// Remove Client
@@ -33,7 +41,7 @@ public class ConnectionController : Singleton<ConnectionController>
     {
         if (_connectedClients.ContainsKey(userId))
         {
-            _connectedClients[userId].TcpClient.Close();
+            _connectedClients[userId]?.TcpClient.Close();
             _connectedClients.Remove(userId);
         }
     }
@@ -43,6 +51,6 @@ public class ConnectionController : Singleton<ConnectionController>
     /// </summary>
     public bool IsClientConnected(string userId)
     {
-        return _connectedClients.ContainsKey(userId) && _connectedClients[userId].TcpClient.Connected;
+        return _connectedClients.ContainsKey(userId) && _connectedClients[userId]!.TcpClient.Connected;
     }
 }

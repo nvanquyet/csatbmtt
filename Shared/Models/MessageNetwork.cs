@@ -40,29 +40,32 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where 
     public bool TryParseData<TV>(out TV? newData) where TV : class
     {
         newData = null;
-    
-        // Kiểm tra nếu Data là JObject và cần phân tích cú pháp thành đối tượng AuthData
-        if (Data is JObject jObject)
+        try
         {
-            try
+            if(Data is TV data)
             {
-                newData = jObject.ToObject<TV>();
+                newData = data;
                 return true;
             }
-            catch (Exception ex)
+            
+            if (Data is JObject jObject)
             {
-                Console.WriteLine($"Error deserializing JObject: {ex.Message}");
-                return false;
+                newData = jObject.ToObject<TV>();
+                return newData != null;
             }
-        }
         
-        if(Data is TV data)
-        {
-            newData = data;
-            return true;
-        }
+            if (Data is Newtonsoft.Json.Linq.JToken token)
+            {
+                newData = token.ToObject<TV>();
+                return newData != null;
+            }
 
-        Console.WriteLine($"Failed to parse data. Expected type: {typeof(TV)}, but got: {Data?.GetType()}");
+        } catch (Exception ex)
+        {
+            Console.WriteLine($"Error deserializing JObject: {ex.Message}");
+            Console.WriteLine($"Failed to parse data. Expected type: {typeof(TV)}, but got: {Data?.GetType()}");
+            return false;
+        }
         return false;
     }
 

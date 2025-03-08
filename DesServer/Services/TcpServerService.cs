@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using DesServer.Controllers;
 using DesServer.Database;
 using DesServer.Models;
 using Shared.Models;
@@ -11,13 +12,13 @@ namespace DesServer.Services
     public class TcpServerService(string ipAddress, int port)
     {
         private readonly TcpListener _tcpListener = new(IPAddress.Any, port);
-        
-        
+
+
         public void Start()
         {
             try
             {
-                _tcpListener.Start();  
+                _tcpListener.Start();
                 Console.WriteLine("TCP Server is running...");
                 while (true)
                 {
@@ -29,7 +30,6 @@ namespace DesServer.Services
             {
                 Console.WriteLine($"Error starting TCP listener: {ex.Message}");
             }
-            
         }
 
         private void HandleClient(TcpClient? client)
@@ -38,17 +38,16 @@ namespace DesServer.Services
             byte[] buffer = new byte[1024];
             if (stream != null)
             {
-                while (client?.Connected == true) 
+                while (client?.Connected == true)
                 {
                     int bytesRead = stream.Read(buffer, 0, buffer.Length);
 
                     if (bytesRead == 0) continue;
 
                     string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    
+
                     Console.WriteLine($"Received TCP Message: {message}");
                     HandleClientComm(client, message);
-
                 }
             }
         }
@@ -97,22 +96,25 @@ namespace DesServer.Services
         {
             if (message is { Code: StatusCode.Success } && client != null)
             {
-                if (message.TryParseData<ChatMessage>(out ChatMessage? chatMessage) && chatMessage != null)
+                if (message.TryParseData<ChatMessage>(out ChatMessage? chatMessage) && chatMessage is
+                    {
+                        ReceiverId: not null
+                    })
                 {
-                    var targetClient = ConnectionDatabase.GetConnectionByUserId(chatMessage.ReceiverId);
-                    
+                    var targetClient = ConnectionController.Instance.GetUserConnection(chatMessage.ReceiverId);
+
                     chatMessage.SenderName = UserDatabase.GetUserNameById(chatMessage.SenderId);
                     chatMessage.ReceiverName = UserDatabase.GetUserNameById(chatMessage.ReceiverId);
-                    
+
                     //Save to database
                     MessageDatabase.SaveMessage(chatMessage);
-                    
+
                     var response = new MessageNetwork<object>(
                         type: CommandType.ReceiveMessage,
                         code: StatusCode.Success,
                         data: chatMessage
                     ).ToJson();
-                    
+
                     //MsgService.SendTcpMessage(client, response);
                     MsgService.SendTcpMessage(targetClient?.TcpClient, response);
                 }
@@ -134,13 +136,13 @@ namespace DesServer.Services
                 if (message.TryParseData<ChatHistoryRequest>(out ChatHistoryRequest? history) && history != null)
                 {
                     var allChatMessage = MessageDatabase.LoadMessages(history.SenderId, history.ReceiverId);
-                    
+
                     var response = new MessageNetwork<object>(
                         type: CommandType.ReceiveMessage,
                         code: StatusCode.Success,
                         data: allChatMessage
                     ).ToJson();
-                    
+
                     MsgService.SendTcpMessage(client, response);
                 }
                 else
@@ -181,8 +183,9 @@ namespace DesServer.Services
                             {
                                 string ipAddress = remoteEndPoint.Address.ToString();
                                 int port = remoteEndPoint.Port;
-                                var connection = new UserConnection(userId: user.Id, tcpClient: client, ipAddress: ipAddress, port: port, lastConnection: DateTime.Now);
-                                ConnectionDatabase.UpdateConnection(connection);
+                                ConnectionController.Instance.AddClient(userId: user.Id,
+                                    client: new UserConnection(userId: user.Id, tcpClient: client, ipAddress: ipAddress,
+                                        port: port, lastConnection: DateTime.Now));
                             }
                         }
                     }
@@ -231,9 +234,10 @@ namespace DesServer.Services
 
         private void HandleGetAllUsers(TcpClient? client)
         {
-            if(client == null) return;
+            if (client == null) return;
             var allUsers = UserDatabase.GetAllUsers();
-            var msg = new MessageNetwork<List<User>>(type: CommandType.GetAllUsers, code: StatusCode.Success, data: allUsers);
+            var msg = new MessageNetwork<List<User>>(type: CommandType.GetAllUsers, code: StatusCode.Success,
+                data: allUsers);
             MsgService.SendTcpMessage(client, msg.ToJson());
         }
     }

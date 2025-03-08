@@ -42,12 +42,6 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where 
         newData = null;
         try
         {
-            if(Data is TV data)
-            {
-                newData = data;
-                return true;
-            }
-            
             if (Data is JObject jObject)
             {
                 newData = jObject.ToObject<TV>();
@@ -59,7 +53,13 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where 
                 newData = token.ToObject<TV>();
                 return newData != null;
             }
-
+            
+            if(Data is TV data)
+            {
+                newData = data;
+                return true;
+            }
+            
         } catch (Exception ex)
         {
             Console.WriteLine($"Error deserializing JObject: {ex.Message}");

@@ -140,7 +140,7 @@ namespace DesServer.Services
                     var allChatMessage = await MessageDatabase.LoadChatMessages(history.SenderId, history.ReceiverId);
 
                     var response = new MessageNetwork<object>(
-                        type: CommandType.ReceiveMessage,
+                        type: CommandType.LoadMessage,
                         code: StatusCode.Success,
                         data: allChatMessage
                     ).ToJson();

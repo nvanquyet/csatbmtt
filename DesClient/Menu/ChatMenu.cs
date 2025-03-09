@@ -41,7 +41,8 @@ public static class ChatMenu
                 .ToJson());
 
         Console.WriteLine("1. Gửi tin nhắn");
-        Console.WriteLine("2. Quay lại");
+        Console.WriteLine("2. Load Old Messages");
+        Console.WriteLine("3. Quay lại");
         Console.Write("Chọn: ");
 
         switch (Console.ReadLine())
@@ -71,6 +72,13 @@ public static class ChatMenu
                 ShowChatMenu(targetUser, tcpService, false);
                 break;
             case "2":
+                tcpService.SendTcpMessage(new MessageNetwork<ChatHistoryRequest>(CommandType.LoadMessage,
+                        StatusCode.Success,
+                        new ChatHistoryRequest(senderId: SessionManager.GetUserId(), receiverId: targetUser.Id))
+                    .ToJson());
+                ShowChatMenu(targetUser, tcpService, false);
+                break;
+            case "3":
                 MainMenu.ShowMenu2(tcpService);
                 break;
             default:

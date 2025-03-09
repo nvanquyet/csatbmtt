@@ -3,36 +3,23 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Shared.Models;
 
-public class ChatMessage(string? senderId, string? receiverId, string? content, DateTime timestamp)
+public class ChatConversation(string? senderId, string? receiverId, List<ChatMessage> messages)
 {
     [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)] 
+    [BsonRepresentation(BsonType.ObjectId)]
     public string? Id { get; set; }
+
     public string? SenderId { get; set; } = senderId;
-    public string? ReceiverId { get; set; } = receiverId;
-    public string? Content { get; set; } = content;
-    public DateTime Timestamp { get; set; } = timestamp;
-    public string? ReceiverName { get; set; }
-    public string? SenderName { get; set; }
+    public string? ReceiverId { get; set; } = receiverId;   
+
+    public List<ChatMessage> Messages { get; set; } = messages;
 }
 
-// public class HistoryMessage(List<ContentMessage> contentMessages, string? receiverId, string? senderId)
-// {
-//     [BsonId]
-//     [BsonRepresentation(BsonType.ObjectId)] 
-//     public string? Id { get; set; }
-//     public string? SenderId { get; set; } = senderId;
-//     public string? ReceiverId { get; set; } = receiverId;
-//     public List<ContentMessage> ContentMessages { get; set; } = contentMessages;
-// }
-//
-// public class ContentMessage(string? content, string? receiverName, DateTime timestamp, string? senderName)
-// {
-//     [BsonId]
-//     [BsonRepresentation(BsonType.ObjectId)] 
-//     public string? Id { get; set; }
-//     public string? Content { get; set; } = content;
-//     public DateTime Timestamp { get; set; } = timestamp;
-//     public string? ReceiverName { get; set; } = receiverName;
-//     public string? SenderName { get; set; } = senderName;
-// }
+public class ChatMessage(string? senderId, string? content, DateTime timestamp, string? senderName, string? receiverName)
+{
+    public string? SenderId { get; init; } = senderId;
+    public string? SenderName { get; init; } = senderName;
+    public string? ReceiverName { get; init; } = receiverName;
+    public string? Content { get; init; } = content;
+    public DateTime Timestamp { get; init; } = timestamp;
+}

@@ -1,8 +1,9 @@
-﻿using Shared.AppSettings;
+﻿using DesServer.AppSetting;
+using Shared.AppSettings;
 
 namespace DesServer.Logs;
 
-public class Logs
+public static class Logger
 {
     private static readonly string LogFilePath = $"server_log_{DateTime.Now:yyyyMMdd}.txt";
     private static readonly Lock Lock = new();
@@ -18,4 +19,9 @@ public class Logs
 
         if(Config.LogToConsole) Console.WriteLine(logEntry);
     }
+
+    public static void ConsoleLog(string message)
+    {
+        if(ServerConfig.ShowConsoleLog) Console.WriteLine(message);
+    } 
 }

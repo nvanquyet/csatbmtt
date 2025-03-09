@@ -1,4 +1,5 @@
-﻿using DesServer.Services;
+﻿using DesServer.Logs;
+using DesServer.Services;
 
 namespace DesServer.Networking
 {
@@ -10,7 +11,7 @@ namespace DesServer.Networking
         public void Start()
         {
             // Start both TCP and UDP services
-            Console.WriteLine("Starting...");
+            Logger.ConsoleLog("Starting...");
             Task.Run(() => _tcpServerService.Start());
             Task.Run(() => _udpServerService.Start());
         }

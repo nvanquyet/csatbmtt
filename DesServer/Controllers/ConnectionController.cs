@@ -1,5 +1,4 @@
-﻿using System.Net.Sockets;
-using DesServer.Models;
+﻿using DesServer.Models;
 using Shared.Models;
 
 namespace DesServer.Controllers;
@@ -25,8 +24,9 @@ public class ConnectionController : Singleton<ConnectionController>
     /// </summary>
     /// <param name="userId"></param>
     /// <returns></returns>
-    public UserConnection? GetUserConnection(string userId)
+    public UserConnection? GetUserConnection(string? userId)
     {
+        if(userId == null) return null;
         if (_connectedClients.TryGetValue(userId, out var connection))
         {
            return connection;

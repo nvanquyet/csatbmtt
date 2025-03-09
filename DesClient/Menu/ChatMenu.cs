@@ -21,15 +21,19 @@ public static class ChatMenu
         }
     }
 
-    private static void ShowChatMenu(User targetUser, TcpService tcpService, bool clearChat = true, bool loadHistory = true)
+    private static void ShowChatMenu(User targetUser, TcpService tcpService, bool clearChat = true,
+        bool loadHistory = true)
     {
-        if(clearChat) Console.Clear();
+        if (clearChat) Console.Clear();
         Console.WriteLine($"=== Chat với {targetUser.UserName} ===");
-        
+
         //Request load old message
-        if(loadHistory) tcpService.SendTcpMessage(new MessageNetwork<ChatHistoryRequest>(CommandType.LoadMessage, StatusCode.Success, new ChatHistoryRequest(senderId: SessionManager.GetUserId(), receiverId: targetUser.Id))
-            .ToJson());
-        
+        if (loadHistory)
+            tcpService.SendTcpMessage(new MessageNetwork<ChatHistoryRequest>(CommandType.LoadMessage,
+                    StatusCode.Success,
+                    new ChatHistoryRequest(senderId: SessionManager.GetUserId(), receiverId: targetUser.Id))
+                .ToJson());
+
         Console.WriteLine("1. Gửi tin nhắn");
         Console.WriteLine("2. Quay lại");
         Console.Write("Chọn: ");
@@ -40,18 +44,20 @@ public static class ChatMenu
                 Console.Write("Nhập tin nhắn: ");
                 string message = Console.ReadLine() ?? "";
 
-                var chatMessage = new ChatMessage
-                (
-                    senderId: SessionManager.GetUserId(),
-                    receiverId: targetUser.Id, 
-                    content: message,
-                    timestamp: DateTime.UtcNow
-                );
+                var chatConversation = new ChatConversation(senderId: SessionManager.GetUserId(),
+                    receiverId: targetUser.Id,
+                    [
+                        new ChatMessage(senderId: SessionManager.GetUserId(),
+                            content: message,
+                            senderName: SessionManager.GetUserName(),
+                            receiverName: targetUser.UserName,
+                            timestamp: DateTime.Now)
+                    ]);
 
-                var networkMessage = new MessageNetwork<ChatMessage>(
+                var networkMessage = new MessageNetwork<ChatConversation>(
                     CommandType.SendMessage,
                     StatusCode.Success,
-                    chatMessage
+                    chatConversation
                 );
 
                 tcpService.SendTcpMessage(networkMessage.ToJson());

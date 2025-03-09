@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using DesServer.AppSetting;
 using DesServer.Controllers;
 using DesServer.Database;
 using DesServer.Models;
@@ -59,7 +60,8 @@ namespace DesServer.Services
                 var message = MessageNetwork<dynamic>.FromJson(jsonMessage);
                 if (message == null)
                 {
-                    MsgService.SendErrorMessage(client, "Invalid message format", StatusCode.Error);
+                    MsgService.SendErrorMessage(client, "Invalid message format", StatusCode.Error,
+                        ServerConfig.ShowConsoleLog);
                     return;
                 }
 
@@ -76,65 +78,66 @@ namespace DesServer.Services
                         HandleGetAllUsers(client);
                         break;
                     case CommandType.LoadMessage:
-                        HandleLoadMessage(client, message);
+                        _ = HandleLoadMessage(client, message);
                         break;
                     case CommandType.SendMessage:
-                        HandleSendMessage(client, message);
+                        _ = HandleSendMessage(client, message);
                         break;
                     default:
-                        MsgService.SendErrorMessage(client, "Unsupported action type", StatusCode.Error);
+                        MsgService.SendErrorMessage(client, "Unsupported action type", StatusCode.Error,
+                            ServerConfig.ShowConsoleLog);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                MsgService.SendErrorMessage(client, $"Server error: {ex.Message}", StatusCode.Error);
+                MsgService.SendErrorMessage(client, $"Server error: {ex.Message}", StatusCode.Error,
+                    ServerConfig.ShowConsoleLog);
             }
         }
 
-        private void HandleSendMessage(TcpClient? client, MessageNetwork<dynamic> message)
+        private async Task HandleSendMessage(TcpClient? client, MessageNetwork<dynamic> message)
         {
             if (message is { Code: StatusCode.Success } && client != null)
             {
-                if (message.TryParseData(out ChatMessage? chatMessage) && chatMessage is
-                    {
-                        ReceiverId: not null
-                    })
+                if (message.TryParseData(out ChatConversation? chatConversation) && chatConversation != null)
                 {
-
-                    chatMessage.SenderName = UserDatabase.GetUserNameById(chatMessage.SenderId);
-                    chatMessage.ReceiverName = UserDatabase.GetUserNameById(chatMessage.ReceiverId);
-
                     //Save to database
-                    MessageDatabase.SaveMessage(chatMessage);
+                    await MessageDatabase.SaveChatMessage(chatConversation.SenderId, chatConversation.ReceiverId,
+                        chatConversation.Messages[0]);
 
                     var response = new MessageNetwork<object>(
                         type: CommandType.ReceiveMessage,
                         code: StatusCode.Success,
-                        data: chatMessage
+                        data: chatConversation
                     ).ToJson();
 
                     //MsgService.SendTcpMessage(client, response);
-                    MsgService.SendTcpMessage(ConnectionController.Instance.GetUserConnection(chatMessage.ReceiverId)?.TcpClient, response);
+                    MsgService.SendTcpMessage(
+                        ConnectionController.Instance.GetUserConnection(chatConversation.ReceiverId)?.TcpClient,
+                        response, ServerConfig.ShowConsoleLog);
                 }
                 else
                 {
-                    MsgService.SendErrorMessage(client, "Target not found", StatusCode.InvalidRequest);
+                    MsgService.SendErrorMessage(client, "Target not found", StatusCode.InvalidRequest,
+                        ServerConfig.ShowConsoleLog);
                 }
             }
             else
             {
-                MsgService.SendErrorMessage(client, "Server Error", StatusCode.InvalidRequest);
+                MsgService.SendErrorMessage(client, "Server Error", StatusCode.InvalidRequest,
+                    ServerConfig.ShowConsoleLog);
             }
         }
 
-        private void HandleLoadMessage(TcpClient? client, MessageNetwork<dynamic> message)
+        private async Task HandleLoadMessage(TcpClient? client, MessageNetwork<dynamic> message)
         {
             if (message is { Code: StatusCode.Success } && client != null)
             {
-                if (message.TryParseData(out ChatHistoryRequest? history) && history != null)
+                if (message.TryParseData(out ChatHistoryRequest? history) &&
+                    history is { SenderId: not null, ReceiverId: not null })
                 {
-                    var allChatMessage = MessageDatabase.LoadMessages(history.SenderId, history.ReceiverId);
+                    var allChatMessage = await MessageDatabase.LoadChatMessages(history.SenderId, history.ReceiverId);
 
                     var response = new MessageNetwork<object>(
                         type: CommandType.ReceiveMessage,
@@ -142,16 +145,18 @@ namespace DesServer.Services
                         data: allChatMessage
                     ).ToJson();
 
-                    MsgService.SendTcpMessage(client, response);
+                    MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
                 }
                 else
                 {
-                    MsgService.SendErrorMessage(client, "Target not found", StatusCode.InvalidRequest);
+                    MsgService.SendErrorMessage(client, "Target not found", StatusCode.InvalidRequest,
+                        ServerConfig.ShowConsoleLog);
                 }
             }
             else
             {
-                MsgService.SendErrorMessage(client, "Server Error", StatusCode.InvalidRequest);
+                MsgService.SendErrorMessage(client, "Server Error", StatusCode.InvalidRequest,
+                    ServerConfig.ShowConsoleLog);
             }
         }
 
@@ -189,16 +194,18 @@ namespace DesServer.Services
                         }
                     }
 
-                    MsgService.SendTcpMessage(client, response);
+                    MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
                 }
                 else
                 {
-                    MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest);
+                    MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest,
+                        ServerConfig.ShowConsoleLog);
                 }
             }
             else
             {
-                MsgService.SendErrorMessage(client, "Invalid authentication", StatusCode.InvalidRequest);
+                MsgService.SendErrorMessage(client, "Invalid authentication", StatusCode.InvalidRequest,
+                    ServerConfig.ShowConsoleLog);
             }
         }
 
@@ -217,16 +224,18 @@ namespace DesServer.Services
                         code: result.Item1 ? StatusCode.Success : StatusCode.Failed,
                         data: result.Item1 ? (object)authData : (object)result.Item2
                     ).ToJson();
-                    MsgService.SendTcpMessage(client, response);
+                    MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
                 }
                 else
                 {
-                    MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest);
+                    MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest,
+                        ServerConfig.ShowConsoleLog);
                 }
             }
             else
             {
-                MsgService.SendErrorMessage(client, "Invalid registration", StatusCode.InvalidRequest);
+                MsgService.SendErrorMessage(client, "Invalid registration", StatusCode.InvalidRequest,
+                    ServerConfig.ShowConsoleLog);
             }
         }
 
@@ -236,7 +245,7 @@ namespace DesServer.Services
             var allUsers = UserDatabase.GetAllUsers();
             var msg = new MessageNetwork<List<User>>(type: CommandType.GetAllUsers, code: StatusCode.Success,
                 data: allUsers);
-            MsgService.SendTcpMessage(client, msg.ToJson());
+            MsgService.SendTcpMessage(client, msg.ToJson(), ServerConfig.ShowConsoleLog);
         }
     }
 }

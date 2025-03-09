@@ -5,5 +5,5 @@ namespace DesServer.Database;
 
 public class ADatabase
 {
-    protected static readonly DatabaseService DatabaseService = new(ServerConfig.DatabaseConnectionString, ServerConfig.DatabaseString);
+    protected static DatabaseService DatabaseService { get; } = new(ServerConfig.DatabaseConnectionString, ServerConfig.DatabaseString);
 }

@@ -66,9 +66,10 @@ public static class ChatMenu
         }
     }
 
-    public static void LoadAllMessage(List<ChatMessage>? allMessages)
+    public static void LoadAllMessage(ChatMessage[]? allMessages)
     {
-        foreach (var chatMessage in allMessages ?? new List<ChatMessage>())
+        if (allMessages == null) return;
+        foreach (var chatMessage in allMessages)
         {
             LoadMessage(chatMessage);
         }

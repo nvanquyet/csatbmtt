@@ -1,6 +1,4 @@
-﻿using MongoDB.Bson;
-
-namespace Shared.Models;
+﻿namespace Shared.Models;
 
 public class ChatHistoryRequest(string? senderId, string? receiverId)
 {

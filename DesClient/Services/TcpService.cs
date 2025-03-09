@@ -80,7 +80,7 @@ public class TcpService
                     }
                     break;
                 case CommandType.LoadMessage:
-                    if (msg.TryParseData(out List<ChatMessage>? allMessages))
+                    if (msg.TryParseData(out ChatMessage[]? allMessages))
                     {
                         ChatMenu.LoadAllMessage(allMessages);
                     }

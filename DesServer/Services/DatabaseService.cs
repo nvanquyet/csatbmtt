@@ -2,19 +2,9 @@
 
 namespace DesServer.Services;
 
-public class DatabaseService
+public class DatabaseService(string connectionString, string dbName)
 {
-    private readonly IMongoDatabase _database;
-    
-    public DatabaseService(string connectionString, string dbName)
-    {
-        var client = new MongoClient(connectionString);
-        _database = client.GetDatabase(dbName);
-    }
+    private readonly IMongoDatabase _database = new MongoClient(connectionString).GetDatabase(dbName);
 
-    public IMongoCollection<T> GetCollection<T>(string collectionName)
-    {
-        var collection = _database.GetCollection<T>(collectionName);
-        return collection;
-    }
+    public IMongoCollection<T> GetCollection<T>(string collectionName) => _database.GetCollection<T>(collectionName);
 }

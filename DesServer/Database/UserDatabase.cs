@@ -1,12 +1,11 @@
 ﻿using DesServer.AppSetting;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using Shared.Models;
 using Shared.Services;
 
 namespace DesServer.Database;
 
-public class UserDatabase : ADatabase
+public abstract class UserDatabase : ADatabase
 {
     private static readonly IMongoCollection<User> Users = DatabaseService.GetCollection<User>(ServerConfig.UserCollection);
     public static bool RegisterUser(string username, string password)
@@ -36,6 +35,4 @@ public class UserDatabase : ADatabase
     public static List<User> GetAllUsers() =>  Users.Find(u => u != null).ToList();
     
     public static string? GetUserNameById(string? id) => Users.Find(u => u.Id == id).FirstOrDefault().UserName;
-        
-    
 }

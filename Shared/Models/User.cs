@@ -7,7 +7,7 @@ namespace Shared.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)] 
-        public string? Id { get; set; }
+        public string? Id { get; init; }
         public string? UserName { get; init; } = userName;
         public string? Password { get; init; } = password;
     }

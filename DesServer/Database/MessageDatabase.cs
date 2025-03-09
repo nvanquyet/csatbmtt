@@ -5,16 +5,13 @@ using Shared.Models;
 
 namespace DesServer.Database;
 
-public class MessageDatabase : ADatabase
+public abstract class MessageDatabase : ADatabase
 {
     private static readonly IMongoCollection<ChatMessage> ChatMessagesCollection = DatabaseService.GetCollection<ChatMessage>(ServerConfig.ChatMessagesCollection);
     
-    public static void SaveMessage(ChatMessage message)
-    {
-        ChatMessagesCollection.InsertOne(message);
-    }
+    public static void SaveMessage(ChatMessage message) =>  ChatMessagesCollection.InsertOne(message);
     
-    public static List<ChatMessage> LoadMessages(string? senderId, string? receiverId)
+    public static ChatMessage[] LoadMessages(string? senderId, string? receiverId)
     {
         var filter = Builders<ChatMessage>.Filter.Or(
             Builders<ChatMessage>.Filter.And(
@@ -27,6 +24,6 @@ public class MessageDatabase : ADatabase
             )
         );
 
-        return ChatMessagesCollection.Find(filter).SortBy(m => m.Timestamp).ToList();
+        return ChatMessagesCollection.Find(filter).SortBy(m => m.Timestamp).ToList().ToArray();
     }
 }

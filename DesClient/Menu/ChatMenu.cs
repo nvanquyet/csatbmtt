@@ -11,13 +11,19 @@ public static class ChatMenu
         Console.Clear();
         Console.WriteLine("=== Chọn người để chat ===");
 
-        for (int i = 0; i < users.Count; i++)
-            Console.WriteLine($"{i}: {users[i].UserName}");
+        // Lấy thông tin user hiện tại (giả sử có SessionManager)
+        var currentUserId = SessionManager.GetUserId();
+    
+        // Lọc danh sách loại bỏ user có id trùng với currentUserId
+        var filteredUsers = users.Where(u => u.Id != currentUserId).ToList();
+    
+        for (int i = 0; i < filteredUsers.Count; i++)
+            Console.WriteLine($"{i}: {filteredUsers[i].UserName}");
 
         Console.Write("Nhập số người muốn chat: ");
-        if (int.TryParse(Console.ReadLine(), out int index) && index >= 0 && index < users.Count)
+        if (int.TryParse(Console.ReadLine(), out int index) && index >= 0 && index < filteredUsers.Count)
         {
-            ShowChatMenu(users[index], tcpService);
+            ShowChatMenu(filteredUsers[index], tcpService);
         }
     }
 

@@ -76,7 +76,6 @@ public static class ChatMenu
                         StatusCode.Success,
                         new ChatHistoryRequest(senderId: SessionManager.GetUserId(), receiverId: targetUser.Id))
                     .ToJson());
-                ShowChatMenu(targetUser, tcpService, false);
                 break;
             case "3":
                 MainMenu.ShowMenu2(tcpService);
@@ -100,6 +99,6 @@ public static class ChatMenu
         if (newMessage == null) return;
         Console.WriteLine(newMessage.SenderId == SessionManager.GetUserId()
             ? $"\nMe: {newMessage.Content} ... ({DateTime.UtcNow:HH:mm:ss})"
-            : $"\n{newMessage.ReceiverName}: {newMessage.Content} ... ({DateTime.UtcNow:HH:mm:ss})");
+            : $"\n{newMessage.SenderId}: {newMessage.Content} ... ({DateTime.UtcNow:HH:mm:ss})");
     }
 }

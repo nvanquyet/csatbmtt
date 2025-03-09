@@ -13,7 +13,7 @@ namespace DesClient
             await TcpService.ConnectAsync();
             Console.WriteLine("Connected to TCP Server!");
 
-            _ = Task.Run(TcpService.ListenForTcpMessages);
+            _ = TcpService.ListenForTcpMessagesAsync();
             if (TcpService.GetTcpClient() != null && AuthService.TryAutoLogin(TcpService.GetTcpClient()))
             {
                 Console.WriteLine("Đang thử đăng nhập với tài khoản đã lưu...");

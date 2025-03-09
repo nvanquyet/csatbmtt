@@ -27,7 +27,7 @@ public class TcpService
         _tcpStream.Write(data, 0, data.Length);
     }
 
-    public void ListenForTcpMessages()
+    public async Task ListenForTcpMessagesAsync()
     {
         byte[] buffer = new byte[1024];
 
@@ -35,21 +35,26 @@ public class TcpService
         {
             try
             {
-                int bytesRead = _tcpStream?.Read(buffer, 0, buffer.Length) ?? 0;
+                int bytesRead = await _tcpStream?.ReadAsync(buffer, 0, buffer.Length)!;
                 if (bytesRead > 0)
                 {
                     string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     Console.WriteLine("[TCP] Received: " + message);
                     HandleMessage(message);
                 }
+                else
+                {
+                    Console.WriteLine("No data received; connection may be closed.");
+                    break;
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error reading TCP message: " + ex.Message);
+                break;
             }
         }
     }
-
     private void HandleMessage(string message)
     {
         var msg = MessageNetwork<dynamic>.FromJson(message);
@@ -83,6 +88,10 @@ public class TcpService
                     if (msg.TryParseData(out ChatMessage[]? allMessages))
                     {
                         ChatMenu.LoadAllMessage(allMessages);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Load All Messages Failed");
                     }
                     break;
                 default:

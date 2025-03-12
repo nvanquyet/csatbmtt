@@ -27,9 +27,11 @@ public class TcpService
         _tcpStream.Write(data, 0, data.Length);
     }
 
+    
     public async Task ListenForTcpMessagesAsync()
     {
         byte[] buffer = new byte[1024];
+        StringBuilder messageBuilder = new StringBuilder();
 
         while (true)
         {
@@ -38,9 +40,32 @@ public class TcpService
                 int bytesRead = await _tcpStream?.ReadAsync(buffer, 0, buffer.Length)!;
                 if (bytesRead > 0)
                 {
-                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    Console.WriteLine("[TCP] Received: " + message);
-                    _ = HandleMessage(message);
+                    messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+
+                    // Kiểm tra kiểu dữ liệu trong "data"
+                    string receivedMessage = messageBuilder.ToString();
+                
+                    // Kiểm tra nếu dữ liệu là đối tượng hoặc mảng
+                    if ( (receivedMessage.Contains("\"data\":\"") || receivedMessage.Contains("\"data\":{")) && receivedMessage.Contains("}"))
+                    {
+                        // Nếu "data" là đối tượng, kiểm tra dấu đóng của đối tượng JSON
+                        if (receivedMessage.Contains("}"))
+                        {
+                            // Xử lý thông điệp đầy đủ
+                            _ = HandleMessage(receivedMessage);
+                            messageBuilder.Clear();  // Xóa dữ liệu đã xử lý
+                        }
+                    }
+                    else if (receivedMessage.Contains("\"data\":[") && receivedMessage.Contains("]}"))
+                    {
+                        // Nếu "data" là mảng, kiểm tra dấu đóng của mảng JSON
+                        if (receivedMessage.Contains("}]"))
+                        {
+                            // Xử lý thông điệp đầy đủ
+                            _ = HandleMessage(receivedMessage);
+                            messageBuilder.Clear();  // Xóa dữ liệu đã xử lý
+                        }
+                    }
                 }
                 else
                 {
@@ -55,6 +80,7 @@ public class TcpService
             }
         }
     }
+    
     private Task HandleMessage(string message)
     {
         var msg = MessageNetwork<dynamic>.FromJson(message);

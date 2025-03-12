@@ -113,7 +113,7 @@ namespace DesServer.Services
                     ).ToJson();
 
                     //MsgService.SendTcpMessage(client, response);
-                    MsgService.SendTcpMessage(
+                    _ = MsgService.SendTcpMessage(
                         ConnectionController.Instance.GetUserConnection(chatConversation.ReceiverId)?.TcpClient,
                         response, ServerConfig.ShowConsoleLog);
                 }
@@ -145,7 +145,7 @@ namespace DesServer.Services
                         data: allChatMessage
                     ).ToJson();
 
-                    MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
+                    _ = MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
                 }
                 else
                 {
@@ -194,7 +194,7 @@ namespace DesServer.Services
                         }
                     }
 
-                    MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
+                    _ = MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
                 }
                 else
                 {
@@ -224,7 +224,7 @@ namespace DesServer.Services
                         code: result.Item1 ? StatusCode.Success : StatusCode.Failed,
                         data: result.Item1 ? (object)authData : (object)result.Item2
                     ).ToJson();
-                    MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
+                    _ = MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
                 }
                 else
                 {
@@ -245,7 +245,7 @@ namespace DesServer.Services
             var allUsers = UserDatabase.GetAllUsers();
             var msg = new MessageNetwork<List<User>>(type: CommandType.GetAllUsers, code: StatusCode.Success,
                 data: allUsers);
-            MsgService.SendTcpMessage(client, msg.ToJson(), ServerConfig.ShowConsoleLog);
+            _ = MsgService.SendTcpMessage(client, msg.ToJson(), ServerConfig.ShowConsoleLog);
         }
     }
 }

@@ -98,7 +98,7 @@ public static class AuthService
                     data: new AuthData(user.UserName, user.Password)
                 );
 
-                MsgService.SendTcpMessage(tcpClient, message.ToJson());
+                _ = MsgService.SendTcpMessage(tcpClient, message.ToJson());
             }
 
             SessionManager.SetUser(user);

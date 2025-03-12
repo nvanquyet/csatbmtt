@@ -8,7 +8,7 @@ namespace Shared.Services;
 public static class MsgService
 {
     // Send TCP
-    public static void SendTcpMessage(TcpClient? target, string message, bool showLog = true)
+    public static async Task SendTcpMessage(TcpClient? target, string message, bool showLog = true)
     {
         try
         {
@@ -28,7 +28,7 @@ public static class MsgService
 
             byte[] data = Encoding.UTF8.GetBytes(message);
             
-            stream.Write(data, 0, data.Length);
+            await stream.WriteAsync(data, 0, data.Length);
             stream.Flush();
             if(showLog) Console.WriteLine($"Message sent to TCP: {message}");
         }
@@ -55,7 +55,7 @@ public static class MsgService
             data: new ErrorData($"Error: {error}")
         ).ToJson();
 
-        SendTcpMessage(client, errorMessage, showLog);
+        _ = SendTcpMessage(client, errorMessage, showLog);
     }
 
     // Send UDP

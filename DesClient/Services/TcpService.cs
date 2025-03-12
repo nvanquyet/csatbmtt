@@ -40,7 +40,7 @@ public class TcpService
                 {
                     string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     Console.WriteLine("[TCP] Received: " + message);
-                    HandleMessage(message);
+                    _ = HandleMessage(message);
                 }
                 else
                 {
@@ -55,7 +55,7 @@ public class TcpService
             }
         }
     }
-    private void HandleMessage(string message)
+    private Task HandleMessage(string message)
     {
         var msg = MessageNetwork<dynamic>.FromJson(message);
         if (msg?.Code == StatusCode.Success)
@@ -103,5 +103,7 @@ public class TcpService
         {
             MainMenu.ShowMenu(this);
         }
+
+        return Task.CompletedTask;
     }
 }

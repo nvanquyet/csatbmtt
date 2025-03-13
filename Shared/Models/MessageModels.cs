@@ -13,9 +13,17 @@ public class ErrorData(string message)
     public string Message { get; set; } = message;
 }
 
-public class CommunicationData(TcpClient targetClient, string message, DateTime timeSend)
+public enum TransferType
 {
-    public TcpClient TargetClient { get; set; } = targetClient;
-    public string Message { get; set; } = message;
-    public DateTime TimeSend { get; set; } = timeSend;
+    Text,
+    Image,
+    Video,
+    Audio,
+    File,
+    Folder,
+}
+public struct TransferData(TransferType transferType, byte[]? rawData)
+{
+    public TransferType TransferType { get; set; } = transferType;
+    public byte[]? RawData { get; set; } = rawData;
 }

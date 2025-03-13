@@ -12,7 +12,7 @@ public abstract class MessageDatabase : ADatabase
     
     public static async Task SaveChatMessage(string? senderId, string? receiverId, ChatMessage message)
     {
-        if (senderId == null || receiverId == null || string.IsNullOrWhiteSpace(message.Content)) return;
+        if (senderId == null || receiverId == null) return;
 
         (senderId, receiverId) = NormalizeParticipants(senderId, receiverId);
 

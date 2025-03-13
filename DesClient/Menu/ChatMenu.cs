@@ -1,4 +1,6 @@
-﻿using DesClient.Models;
+﻿using System.Text;
+using DesClient.Algorithm;
+using DesClient.Models;
 using DesClient.Services;
 using Shared.Models;
 
@@ -50,12 +52,12 @@ public static class ChatMenu
             case "1":
                 Console.Write("Nhập tin nhắn: ");
                 string message = Console.ReadLine() ?? "";
-
+                var encryptedCode = new TransferData(TransferType.Text, new DesAlgorithm().Encrypt(Encoding.UTF8.GetBytes(message)));
                 var chatConversation = new ChatConversation(senderId: SessionManager.GetUserId(),
                     receiverId: targetUser.Id,
                     [
                         new ChatMessage(senderId: SessionManager.GetUserId(),
-                            content: message,
+                            content: encryptedCode,
                             senderName: SessionManager.GetUserName(),
                             receiverName: targetUser.UserName,
                             timestamp: DateTime.Now)
@@ -97,8 +99,9 @@ public static class ChatMenu
     public static void LoadMessage(ChatMessage? newMessage)
     {
         if (newMessage == null) return;
+        var message = new DesAlgorithm().Decrypt(newMessage.Content?.RawData!);
         Console.WriteLine(newMessage.SenderId == SessionManager.GetUserId()
-            ? $"\nMe: {newMessage.Content} ... ({DateTime.UtcNow:HH:mm:ss})"
+            ? $"\nMe: {message} ... ({DateTime.UtcNow:HH:mm:ss})"
             : $"\n{newMessage.SenderId}: {newMessage.Content} ... ({DateTime.UtcNow:HH:mm:ss})");
     }
 }

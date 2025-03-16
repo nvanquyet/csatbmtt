@@ -1,6 +1,8 @@
 ﻿using DesServer.Database;
+using DesServer.Database.Repositories;
 using Shared.Models;
 using Shared.Services;
+using Shared.Utils.Patterns;
 
 namespace DesServer.Services
 {
@@ -10,12 +12,12 @@ namespace DesServer.Services
         {
             if (username == null || password == null)
                 return (false, "Username or password must not empty");
-            if (UserDatabase.UsernameValidation(username))
+            if (UserRepository.UsernameValidation(username))
             {
                 return (false, "Username already exists.");
             }
 
-            UserDatabase.RegisterUser(username, password);
+            UserRepository.RegisterUser(username, password);
             return (true, "User registered successfully!");
         }
 
@@ -25,7 +27,7 @@ namespace DesServer.Services
             if (username == null || password == null)
                 return (false, "Username or password must not empty");
             
-            user = UserDatabase.Login(username, password);
+            user = UserRepository.Login(username, password);
             
             if (user != null)
             {

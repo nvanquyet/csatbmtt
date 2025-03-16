@@ -2,9 +2,9 @@
 using MongoDB.Driver;
 using Shared.Models;
 
-namespace DesServer.Database;
+namespace DesServer.Database.Repositories;
 
-public abstract class MessageDatabase : ADatabase
+public abstract class MessageRepository : DatabaseContext
 {
     private static readonly IMongoCollection<ChatConversation> ChatMessagesCollection = DatabaseService.GetCollection<ChatConversation>(ServerConfig.ChatMessagesCollection);
     

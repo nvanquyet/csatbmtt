@@ -1,20 +1,12 @@
 ﻿using System.Text;
-using DesClient.Utils;
+using Shared.Security.Interface;
+using Shared.Utils;
 
-namespace DesClient.Algorithm;
+namespace Shared.Security.Algorithm;
 
-class DesAlgorithm
+public class DesAlgorithm : IEncryptionAlgorithm
 {
-
-    private const string KEY = "AIEMSKKF";
-    private byte[] Keybytes
-    {
-        get
-        {
-            return Encoding.ASCII.GetBytes(KEY);
-        }
-    }
-
+    
     private static readonly int[] PC1 = new int[]
     {
         57, 49, 41, 33, 25, 17, 9,
@@ -151,7 +143,7 @@ class DesAlgorithm
     };
 
 
-    public byte[] Encrypt(byte[] textbytes)
+    public byte[] Encrypt(byte[] textbytes, byte[] key)
     {
         //input
         byte[] holderL = new byte[4];
@@ -166,12 +158,12 @@ class DesAlgorithm
         }
         int blockcount = textbytes.Length / 8;
 
-        byte[][] subkeys = GenerateSubkeys(Keybytes);
+        byte[][] subkeys = GenerateSubkeys(key);
 
         for (int stage = 1; stage <= 16; stage++)
         {
             //get subkey
-            var keybytes = subkeys[stage - 1];
+            key = subkeys[stage - 1];
 
             // Split the block into halves
             for (int blocknum = 0; blocknum < blockcount; blocknum++)
@@ -192,7 +184,7 @@ class DesAlgorithm
                 byte[] buffholder = holderR;
                 //Function F
                 holderR = UseTable(holderR, E);
-                holderR = ByteUtils.XORBytes(holderR, keybytes);
+                holderR = ByteUtils.XORBytes(holderR, key);
                 holderR = Sbox(holderR);
                 holderR = UseTable(holderR, P);
                 //End F
@@ -229,7 +221,7 @@ class DesAlgorithm
         return textbytes;
     }
 
-    public byte[] Decrypt(byte[] textbytes)
+    public byte[] Decrypt(byte[] textbytes, byte[] key)
     {
         byte[] holderL = new byte[4];
         byte[] holderR = new byte[4];
@@ -243,12 +235,12 @@ class DesAlgorithm
         }
         int blockcount = textbytes.Length / 8;
 
-        byte[][] subkeys = GenerateSubkeys(Keybytes);
+        byte[][] subkeys = GenerateSubkeys(key);
 
         for (int stage = 1; stage <= 16; stage++)
         {
             //generate subkey
-            var keybytes = subkeys[16 - stage];
+            key = subkeys[16 - stage];
 
             // Split the block into halves
             for (int blocknum = 0; blocknum < blockcount; blocknum++)
@@ -269,7 +261,7 @@ class DesAlgorithm
                 byte[] buffholder = holderR;
                 //Function F
                 holderR = UseTable(holderR, E);
-                holderR = ByteUtils.XORBytes(holderR, keybytes);
+                holderR = ByteUtils.XORBytes(holderR, key);
                 holderR = Sbox(holderR);
                 holderR = UseTable(holderR, P);
                 //End F

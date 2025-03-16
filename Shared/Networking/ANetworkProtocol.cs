@@ -1,0 +1,26 @@
+﻿using Shared.Networking.Interfaces;
+
+namespace Shared.Networking;
+
+public abstract class ANetworkProtocol(INetworkHandler dataHandler) : INetworkProtocol
+{
+    protected readonly INetworkHandler DataHandler = dataHandler;
+    protected bool IsRunning;
+
+    public abstract void Start(int port);
+    
+    public virtual void Stop()
+    {
+        IsRunning = false;
+    }
+
+    public abstract void Send(byte[] data, string endpoint);
+    
+    public virtual void Dispose() => Stop();
+
+    protected static void ValidateData(byte[]? data)
+    {
+        if(data == null || data.Length == 0)
+            throw new NullReferenceException();
+    }
+}

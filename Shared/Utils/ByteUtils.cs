@@ -1,8 +1,10 @@
-﻿namespace DesClient.Utils;
+﻿using System.Text;
 
-static class ByteUtils
+namespace Shared.Utils;
+
+public static class ByteUtils
 {
-    public static byte[] StringToByteArray(string hex)
+    private static byte[] StringToByteArray(string hex)
     {
         return Enumerable.Range(0, hex.Length)
             .Where(x => x % 2 == 0)
@@ -77,10 +79,25 @@ static class ByteUtils
         return outer;
     }
 
+    public static int CountBits(byte b)
+    {
+        var count = 0;
+        while (b != 0)
+        {
+            count += (b & 1);
+            b >>= 1;
+        }
+        return count;
+    }
+    
     public static byte[] RotateRight(byte[] inner, int len, int step)
     {
         return RotateLeft(inner, len, 28 - step);
     }
+
+    public static byte[] GetBytesFromString(string s) => Encoding.UTF8.GetBytes(s);
+    
+    public static string GetStringFromBytes(byte[] bytes) => Encoding.UTF8.GetString(bytes);
 
     // public static String bytesToHex(byte bytes[])
     // {

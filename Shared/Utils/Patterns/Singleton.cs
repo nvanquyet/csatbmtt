@@ -1,4 +1,5 @@
-﻿namespace Shared.Models;
+﻿
+namespace Shared.Utils.Patterns;
 
 public abstract class Singleton<T> where T : class, new()
 {

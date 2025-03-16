@@ -1,5 +1,4 @@
-﻿using MongoDB.Bson;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Shared.Models;
@@ -8,11 +7,14 @@ public enum CommandType
 {
     None,
     Authentication,
+    Login,
     Registration,
-    GetAllUsers,
+    GetAvailableClients,
     SendMessage,
     ReceiveMessage,
     LoadMessage,
+    GetClientRsaKey,
+    GetServerRsaKey
 }
 
 public enum StatusCode
@@ -23,7 +25,7 @@ public enum StatusCode
     InvalidRequest = 1005 
 }
 
-public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where T : class?
+public class MessageNetwork<T>(CommandType type, StatusCode code, T data)
 {
     [JsonProperty("type")]
     public CommandType Type { get; set; } = type;
@@ -35,6 +37,7 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where 
     public T Data { get; set; } = data;
 
     public string ToJson() => JsonConvert.SerializeObject(this);
+    
     public static MessageNetwork<T>? FromJson(string json) => JsonConvert.DeserializeObject<MessageNetwork<T>>(json);
     
     public bool TryParseData<TV>(out TV? newData) where TV : class
@@ -68,6 +71,4 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data) where 
         }
         return false;
     }
-
-
 }

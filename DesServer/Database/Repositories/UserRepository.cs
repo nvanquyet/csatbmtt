@@ -3,9 +3,9 @@ using MongoDB.Driver;
 using Shared.Models;
 using Shared.Services;
 
-namespace DesServer.Database;
+namespace DesServer.Database.Repositories;
 
-public abstract class UserDatabase : ADatabase
+public abstract class UserRepository : DatabaseContext
 {
     private static readonly IMongoCollection<User> Users = DatabaseService.GetCollection<User>(ServerConfig.UserCollection);
     public static bool RegisterUser(string username, string password)

@@ -1,19 +1,39 @@
 ﻿using DesServer.Logs;
-using DesServer.Services;
+using DesServer.Networking.Protocols.Tcp;
+using DesServer.Networking.Protocols.Udp;
+using Shared.Networking.Interfaces;
 
 namespace DesServer.Networking
 {
-    public class NetworkManager(string ipAddress, int tcpPort, int udpPort)
+    public class NetworkManager : IDisposable
     {
-        private readonly TcpServerService _tcpServerService = new(ipAddress, tcpPort);
-        private readonly UdpServerService _udpServerService = new(ipAddress, udpPort);
+        private readonly List<INetworkProtocol> _protocols = new();
 
-        public void Start()
+        public NetworkManager(int tcpPort, int udpPort)
         {
-            // Start both TCP and UDP services
-            Logger.ConsoleLog("Starting...");
-            Task.Run(() => _tcpServerService.Start());
-            Task.Run(() => _udpServerService.Start());
+            // Khởi tạo TCP và UDP
+            var tcpProtocol = new TcpProtocol(new TcpHandler());
+            var udpProtocol = new UdpProtocol(new UdpHandler());
+
+            _protocols.Add(tcpProtocol);
+            _protocols.Add(udpProtocol);
+
+            tcpProtocol.Start(tcpPort);
+            udpProtocol.Start(udpPort);
+
+            Logger.ConsoleLog("Network services started...");
         }
+
+        public void Stop()
+        {
+            foreach (var protocol in _protocols)
+            {
+                protocol.Stop();
+            }
+
+            Logger.ConsoleLog("Network services stopped.");
+        }
+
+        public void Dispose() => Stop();
     }
 }

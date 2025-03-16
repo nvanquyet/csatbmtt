@@ -1,5 +1,6 @@
 ﻿using DesServer.Models;
 using Shared.Models;
+using Shared.Utils.Patterns;
 
 namespace DesServer.Controllers;
 

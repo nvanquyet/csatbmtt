@@ -97,6 +97,7 @@ public class TcpHandler : INetworkHandler
                             code: StatusCode.Success,
                             data: "Register Public Key Success"
                         ).ToJson();
+                        MsgService.SendTcpMessage(client, response);
                     }
                     else throw new InvalidOperationException("PublicKey not found for client.");
                 }

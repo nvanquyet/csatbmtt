@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using Shared.AppSettings;
 using Shared.Security.Interface;
+using Shared.Utils;
 
 namespace Shared.Security.Algorithm;
 
@@ -10,7 +11,7 @@ public class AesAlgorithm : IEncryptionAlgorithm
 
     public AesAlgorithm()
     {
-        GenerateKey(Config.KeyEncryptionLength);
+        //GenerateKey(Config.KeyEncryptionLength);
     }
     
     public byte[] Key => _aes.Key;
@@ -24,11 +25,11 @@ public class AesAlgorithm : IEncryptionAlgorithm
 
     public byte[] Encrypt(byte[] data, byte[] key)
     {
-        throw new NotImplementedException();
+        return ByteUtils.GetBytesFromString("anhyeuem");
     }
 
     public byte[] Decrypt(byte[] encryptedData, byte[] key)
     {
-        throw new NotImplementedException();
+        return ByteUtils.GetBytesFromString("anhyeuem");
     }
 }

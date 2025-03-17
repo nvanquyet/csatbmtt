@@ -45,7 +45,6 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
                     Console.WriteLine(receivedMessage);
 
                     if (!IsCompleteJson(receivedMessage)) continue;
-                    Console.WriteLine("✅ Received TCP JSON: " + receivedMessage);
                     var data = ByteUtils.GetBytesFromString(receivedMessage);
                     DataHandler?.OnDataReceived(data, "");
                     messageBuilder.Clear();

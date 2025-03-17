@@ -20,7 +20,7 @@ public class ClientKeyStore : Singleton<ClientKeyStore>, IClientKeyStore
     {
         if (_clientsById.TryGetValue(id, out var existingId))
         {
-            existingId.PublicKey = publicKey;
+            //existingId.PublicKey = publicKey;
         }
         else
         {

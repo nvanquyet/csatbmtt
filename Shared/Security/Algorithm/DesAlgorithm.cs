@@ -461,16 +461,17 @@ public class DesAlgorithm : IEncryptionAlgorithm
     
     #endregion
 
+    private byte[]? _key;
     public DesAlgorithm()
     {
-        Key = GenerateKey(Config.KeyEncryptionLength);
+        GenerateKey(Config.KeyEncryptionLength);
     }
     
-    public byte[] Key { get; }
+    public byte[] Key => _key ??= GenerateKey(Config.KeyEncryptionLength);
 
     public byte[] GenerateKey(int length)
     {
-        throw new NotImplementedException();
+        return ByteUtils.GetBytesFromString("anhyeuem");
     }
 }
 

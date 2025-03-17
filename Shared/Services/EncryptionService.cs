@@ -6,15 +6,21 @@ namespace Shared.Services;
 
 public class EncryptionService : Singleton<EncryptionService>, IEncryptionService
 {
-    private readonly Dictionary<EncryptionType, IEncryptionAlgorithm> _algorithms = new()
-    {
-        { EncryptionType.Aes, new AesAlgorithm() },
-        { EncryptionType.Des, new DesAlgorithm() },
-        { EncryptionType.Rsa, new RsaAlgorithm() }
-    };
-    
-    public IEncryptionAlgorithm GetAlgorithm(EncryptionType encryptionType) => _algorithms[encryptionType];
+    private readonly Dictionary<EncryptionType, IEncryptionAlgorithm> _algorithms;
 
+    public EncryptionService()
+    {
+        _algorithms ??= new Dictionary<EncryptionType, IEncryptionAlgorithm>()
+        {
+            { EncryptionType.Aes, new AesAlgorithm() },
+            { EncryptionType.Des, new DesAlgorithm() },
+            { EncryptionType.Rsa, new RsaAlgorithm() }
+        };
+    }
+
+
+    public IEncryptionAlgorithm GetAlgorithm(EncryptionType encryptionType) => _algorithms[encryptionType];
+    
     public byte[] EncryptData(EncryptionType type, byte[] data, byte[] key)
     {
         if (!_algorithms.TryGetValue(type, out var algorithm))

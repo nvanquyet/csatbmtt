@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using DesClient.Menu;
 using DesClient.Services;
 using Shared.Models;
@@ -22,6 +23,7 @@ public class TcpHandler : INetworkHandler
     public void OnDataReceived(string message, string sourceEndpoint) => HandleMessage(message);
 
 
+    [SuppressMessage("ReSharper.DPA", "DPA0002: Excessive memory allocations in SOH", MessageId = "type: System.Byte[]; size: 11253MB")]
     private static Task HandleMessage(string message)
     {
         var msg = MessageNetwork<dynamic>.FromJson(message);
@@ -32,19 +34,22 @@ public class TcpHandler : INetworkHandler
                 if (msg.TryParseData(out User? user) && user != null)
                 {
                     AuthService.SaveUserInfo(user);
-                    MainMenu.ShowMenu2(NetworkManager.Instance.TcpService);
 
                     //Todo: Register Rsa public key
                     if (user.Id != null)
                     {
-                        var clientInfo = new ClientInfo(id: user.Id, EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa)
-                            .Key);
+                        var clientInfo = new ClientInfo(id: user.Id, EncryptionService.Instance
+                            .GetAlgorithm(EncryptionType.Rsa)
+                            .Key); 
                         var response = new MessageNetwork<ClientInfo>(type: CommandType.RegisterClientRsaKey,
                             code: StatusCode.Success, data: clientInfo).ToJson();
                         //Send to server
                         NetworkManager.Instance.TcpService.Send(response, "");
                     }
+
+                    MainMenu.ShowMenu2(NetworkManager.Instance.TcpService);
                 }
+
                 break;
             case CommandType.Registration:
                 Console.WriteLine("Register Success");
@@ -57,6 +62,7 @@ public class TcpHandler : INetworkHandler
                 {
                     ChatMenu.ChatWith(allUsers);
                 }
+
                 break;
             case CommandType.ReceiveMessage:
                 // if (msg.TryParseData(out ChatMessage? cM))

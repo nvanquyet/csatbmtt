@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using Shared.AppSettings;
 using Shared.Security.Interface;
+using Shared.Utils;
 
 namespace Shared.Security.Algorithm;
 
@@ -12,7 +13,7 @@ class RsaAlgorithm : IEncryptionAlgorithm
 
     public RsaAlgorithm()
     {
-        GenerateKeys(Config.KeyEncryptionLength);
+        GenerateKey(Config.KeyEncryptionLength);
     }
 
     private void GenerateKeys(int bitLength)
@@ -93,19 +94,19 @@ class RsaAlgorithm : IEncryptionAlgorithm
         return BigInteger.ModPow(ciphertext, privateKey.d, privateKey.n);
     }
 
-    public byte[] Key => PublicKey.Item1.ToByteArray();
+    public byte[] Key => ByteUtils.GetBytesFromString("anhyeuem");
     public byte[] GenerateKey(int length)
     {
-        throw new NotImplementedException();
+        return ByteUtils.GetBytesFromString("anhyeuem");
     }
 
     public byte[] Encrypt(byte[] data, byte[] key)
     {
-        throw new NotImplementedException();
+        return ByteUtils.GetBytesFromString("anhyeuem");
     }
 
     public byte[] Decrypt(byte[] encryptedData, byte[] key)
     {
-        throw new NotImplementedException();
+        return ByteUtils.GetBytesFromString("anhyeuem");
     }
 }

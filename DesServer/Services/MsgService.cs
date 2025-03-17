@@ -111,7 +111,6 @@ public static class MsgService
             
                 await stream.WriteAsync(data);
                 stream.Flush();
-                Console.WriteLine($"Message sent to TCP: {data}");
             }
             catch (ObjectDisposedException ex)
             {

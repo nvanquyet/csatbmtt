@@ -10,10 +10,6 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         throw new NotImplementedException();
     }
 
-    public override void Send(byte[] data, string endpoint)
-    {
-        throw new NotImplementedException();
-    }
 
     public override void Send(string data, string endpoint)
     {

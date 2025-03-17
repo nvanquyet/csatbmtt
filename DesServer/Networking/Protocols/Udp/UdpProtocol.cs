@@ -38,7 +38,8 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
     }
     
-    public override void Send(byte[] data, string endpoint)
+
+    public override void Send(string data, string endpoint)
     {
         try
         {
@@ -46,13 +47,12 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
             var ip = IPAddress.Parse(parts[0]);
             var port = int.Parse(parts[1]);
             var targetEndpoint = new IPEndPoint(ip, port);
-            _udpClient?.Send(data, data.Length, targetEndpoint);
+            var bData = ByteUtils.GetBytesFromString(data);
+            _udpClient?.Send(bData, bData.Length, targetEndpoint);
         }
         catch (Exception ex)
         {
             Logs.Logger.Log($"Failed to send to {endpoint}: {ex.Message}");
         }
     }
-
-    public override void Send(string data, string endpoint) => Send(ByteUtils.GetBytesFromString(data), endpoint);
 }

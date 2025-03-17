@@ -62,11 +62,11 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
     }
 
-    public override void Send(byte[] data, string endpoint)
+
+    public override void Send(string data, string endpoint)
     {
         var tcpStream = _tcpClient?.GetStream();
-        tcpStream?.WriteAsync(data, 0, data.Length);
+        tcpStream?.WriteAsync(ByteUtils.GetBytesFromString(data), 0, data.Length);
     }
-    public override void Send(string data, string endpoint) => Send(ByteUtils.GetBytesFromString(data), endpoint);
     
 }

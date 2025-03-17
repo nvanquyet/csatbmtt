@@ -22,8 +22,6 @@ public static class MsgService
         /// <param name="client">The client (destination) that will receive the message.</param>
         /// <param name="message">The content of the message to be sent.</param>
         void EnqueueMessage(T? client, string message);
-        
-        void EnqueueMessage(T? client, byte[] data);
     }
     private abstract class MessageDispatcherBase<T> : IMessageDispatcher<T> where T : class
     {
@@ -156,11 +154,9 @@ public static class MsgService
     private static readonly IMessageDispatcher<TcpClient> TcpDispatch = new TcpDispatcher();
     private static readonly IMessageDispatcher<UdpClient> UdpDispatch = new UdpDispatcher();
 
-    public static void SendTcpMessage(TcpClient? tcpClient, byte[] msg) => TcpDispatch.EnqueueMessage(tcpClient, msg);
     public static void SendTcpMessage(TcpClient? tcpClient, string msg) => TcpDispatch.EnqueueMessage(tcpClient, msg);
     
     public static void SendUdpMessage(UdpClient? udpClient, string msg) => UdpDispatch.EnqueueMessage(udpClient, msg);
-    public static void SendUdpMessage(UdpClient? udpClient, byte[] msg) => UdpDispatch.EnqueueMessage(udpClient, msg);
 
     public static void SendErrorMessage(TcpClient? client, string error)
     {

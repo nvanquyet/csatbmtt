@@ -142,8 +142,7 @@ public class TcpHandler : INetworkHandler
             Console.WriteLine($"Error: {ex.StackTrace}");
         }
     }
-
-
+    
     private static void HandleGetAvailableClient(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (message is { Code: StatusCode.Success } && client != null)
@@ -275,14 +274,5 @@ public class TcpHandler : INetworkHandler
         }
         else MsgService.SendErrorMessage(client, "Server Error");
     }
-
-
-    private static void HandleGetAllUsers(TcpClient? client)
-    {
-        if (client == null) return;
-        var allUsers = UserRepository.GetAllUsers();
-        var msg = new MessageNetwork<List<User>>(type: CommandType.GetAvailableClients, code: StatusCode.Success,
-            data: allUsers);
-        MsgService.SendTcpMessage(client, msg.ToJson());
-    }
+    
 }

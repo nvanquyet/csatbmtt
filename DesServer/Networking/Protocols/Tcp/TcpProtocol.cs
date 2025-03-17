@@ -78,14 +78,11 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
     }
 
-    public override void Send(byte[] data, string endpoint)
+    public override void Send(string data, string endpoint)
     {
-        ValidateData(data);
         if (!_clients.TryGetValue(endpoint, out var client) || !client.Connected) return;
         MsgService.SendTcpMessage(client,data);
     }
-
-    public override void Send(string data, string endpoint) => Send(ByteUtils.GetBytesFromString(data), endpoint);
 
     public override void Stop()
     {

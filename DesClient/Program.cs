@@ -1,9 +1,4 @@
-﻿using DesClient.Menu;
-using DesClient.Network;
-using DesClient.Network.Tcp;
-using DesClient.Network.Udp;
-using DesClient.Services;
-using Shared.Networking.Interfaces;
+﻿using DesClient.Network;
 
 namespace DesClient
 {
@@ -11,7 +6,7 @@ namespace DesClient
     {
         public static void Main(string[] args)
         {
-            _ = new NetworkManager();
+            _ = NetworkManager.Instance;
             while (true)
             {
                 

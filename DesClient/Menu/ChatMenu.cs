@@ -8,7 +8,6 @@ public static class ChatMenu
 {
     public static void ChatWith(List<UserDto> users)
     {
-        Console.Clear();
         Console.WriteLine("=== Chọn người để chat ===");
 
         // Lấy thông tin user hiện tại (giả sử có SessionManager)

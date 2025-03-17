@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using Shared.AppSettings;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
@@ -24,49 +25,71 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     {
         var buffer = new byte[1024];
         var messageBuilder = new StringBuilder();
+
         if (_tcpClient != null)
         {
             var stream = _tcpClient.GetStream();
             while (IsRunning)
             {
+                // Trong phương thức ListenForTcpMessagesAsync()
                 try
                 {
                     var bytesRead = await stream.ReadAsync(buffer);
                     if (bytesRead <= 0) continue;
+
+                    // Thêm dữ liệu mới vào messageBuilder
                     messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
 
-                    // Kiểm tra kiểu dữ liệu trong "data"
-                    var receivedMessage = messageBuilder.ToString();
+                    // Kiểm tra nếu JSON hợp lệ
+                    var receivedMessage = messageBuilder.ToString().Trim();
+                    Console.WriteLine(receivedMessage);
 
-                    // Kiểm tra nếu dữ liệu là đối tượng hoặc mảng
-                    if ((receivedMessage.Contains("\"data\":\"") || receivedMessage.Contains("\"data\":{")) &&
-                        receivedMessage.Contains('}'))
-                    {
-                        if (!receivedMessage.Contains('}')) continue;
-                        DataHandler?.OnDataReceived(ByteUtils.GetBytesFromString(receivedMessage), "");
-                        messageBuilder.Clear();
-                    }
-                    else if (receivedMessage.Contains("\"data\":[{") && receivedMessage.Contains("}]}"))
-                    {
-                        if (!receivedMessage.Contains("}]}")) continue;
-                        DataHandler?.OnDataReceived(ByteUtils.GetBytesFromString(receivedMessage), "");
-                        messageBuilder.Clear(); // Xóa dữ liệu đã xử lý
-                    }
+                    if (!IsCompleteJson(receivedMessage)) continue;
+                    Console.WriteLine("✅ Received TCP JSON: " + receivedMessage);
+                    var data = ByteUtils.GetBytesFromString(receivedMessage);
+                    DataHandler?.OnDataReceived(data, "");
+                    messageBuilder.Clear();
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error reading TCP message: " + ex.Message);
+                    Console.WriteLine("❌ Error reading TCP message: " + ex.Message);
                     break;
                 }
             }
         }
     }
 
+    // 🛠 Hàm kiểm tra JSON hợp lệ (chấp nhận cả object {} và array [])
+    private bool IsCompleteJson(string receivedMessage)
+    {
+        try
+        {
+            // Thử phân tích JSON
+            JsonDocument.Parse(receivedMessage);
+        
+            // Kiểm tra cụ thể cho cấu trúc với data là mảng
+            if (receivedMessage.Contains("\"data\":["))
+            {
+                return receivedMessage.TrimEnd().EndsWith("}]}");
+            }
+            // Kiểm tra cho cấu trúc với data là chuỗi hoặc object
+            if (receivedMessage.Contains("\"data\":\"") || receivedMessage.Contains("\"data\":{"))
+            {
+                return receivedMessage.TrimEnd().EndsWith("}");
+            }
+
+            return true; // Nếu JSON hợp lệ nhưng không thuộc các trường hợp cụ thể trên
+        }
+        catch
+        {
+            Console.WriteLine("Json invalid");
+            return false; // JSON không hợp lệ
+        }
+    }
 
     public override void Send(string data, string endpoint)
     {
         var tcpStream = _tcpClient?.GetStream();
         tcpStream?.WriteAsync(ByteUtils.GetBytesFromString(data), 0, data.Length);
     }
-    
 }

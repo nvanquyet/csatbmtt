@@ -154,10 +154,10 @@ public class TcpHandler : INetworkHandler
                     .ToList();
                 //filter List without userId
                 data = data.Where(us => us?.Id != userId).ToList();
-                var response = new MessageNetwork<List<UserDto>?>(
+                var response = new MessageNetwork<List<UserDto?>>(
                     type: CommandType.GetAvailableClients,
                     code: StatusCode.Success,
-                    data: data!
+                    data: data
                 ).ToJson();
                 MsgService.SendTcpMessage(client, response);
                 // _ = MsgService.SendTcpMessage(

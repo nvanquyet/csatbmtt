@@ -11,7 +11,6 @@ public static class MainMenu
     {
         while (true)
         {
-            Console.Clear();
             Console.WriteLine("=== Menu 1 ===");
             Console.WriteLine("1. Login");
             Console.WriteLine("2. Register");
@@ -42,7 +41,6 @@ public static class MainMenu
     {
         while (true)
         {
-            Console.Clear();
             Console.WriteLine("=== Menu 2 ===");
             Console.WriteLine("1. Find all users");
             Console.WriteLine("2. Log out");

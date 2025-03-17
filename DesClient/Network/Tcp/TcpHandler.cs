@@ -16,7 +16,6 @@ public class TcpHandler : INetworkHandler
     public void OnDataReceived(byte[] data, string sourceEndpoint)
     {
         var message = ByteUtils.GetStringFromBytes(data);
-        Console.WriteLine($"TCP Received from {sourceEndpoint}: {message}");
         OnDataReceived(message, sourceEndpoint);
     }
 

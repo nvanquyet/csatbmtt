@@ -21,17 +21,17 @@ namespace DesServer.Networking
             tcpProtocol.Start(tcpPort);
             udpProtocol.Start(udpPort);
 
-            Logger.ConsoleLog("Network services started...");
+            Logger.Log("Network services started...");
         }
 
-        public void Stop()
+        private void Stop()
         {
             foreach (var protocol in _protocols)
             {
                 protocol.Stop();
             }
 
-            Logger.ConsoleLog("Network services stopped.");
+            Logger.Log("Network services stopped.");
         }
 
         public void Dispose() => Stop();

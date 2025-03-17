@@ -8,7 +8,7 @@
 //
 // public class TcpService
 // {
-//     private TcpClient? _tcpClient;
+//     private ? _tcpClient;
 //     private NetworkStream? _tcpStream;
 //     
 //     public TcpClient? GetTcpClient() => _tcpClient;

@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Shared.AppSettings;
 using Shared.Security.Interface;
 using Shared.Utils;
 
@@ -6,6 +7,8 @@ namespace Shared.Security.Algorithm;
 
 public class DesAlgorithm : IEncryptionAlgorithm
 {
+    
+    #region  Core Algorithm
     
     private static readonly int[] PC1 = new int[]
     {
@@ -141,7 +144,6 @@ public class DesAlgorithm : IEncryptionAlgorithm
         33,  1,   41,   9,  49,  17,  57,  25
 
     };
-
 
     public byte[] Encrypt(byte[] textbytes, byte[] key)
     {
@@ -309,9 +311,9 @@ public class DesAlgorithm : IEncryptionAlgorithm
     }
     private static byte[] UseTable(byte[] arr, int[] table)
     {
-        int len = table.Length;
-        int bytenum = (len - 1) / 8 + 1;
-        byte[] output = new byte[bytenum];
+        var len = table.Length;
+        var bytenum = (len - 1) / 8 + 1;
+        var output = new byte[bytenum];
         for (int i = 0; i < len; i++)
         {
             int val = ByteUtils.GetBitAt(arr, table[i] - 1);
@@ -454,6 +456,21 @@ public class DesAlgorithm : IEncryptionAlgorithm
             x = (byte)(x << 1);
         }
         return "";
+    }
+    
+    
+    #endregion
+
+    public DesAlgorithm()
+    {
+        Key = GenerateKey(Config.KeyEncryptionLength);
+    }
+    
+    public byte[] Key { get; }
+
+    public byte[] GenerateKey(int length)
+    {
+        throw new NotImplementedException();
     }
 }
 

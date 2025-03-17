@@ -7,7 +7,7 @@ namespace DesServer
     {
         static void Main(string[] args)
         {
-            var networkManager = new NetworkManager(Config.ServerTcpPort, Config.ServerUdpPort);
+            _ = new NetworkManager(Config.ServerTcpPort, Config.ServerUdpPort);
             
             Console.WriteLine("Server is running. Press any key to exit...");
             Console.ReadKey();

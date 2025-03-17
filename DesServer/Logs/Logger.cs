@@ -19,10 +19,4 @@ public static class Logger
 
         if(Config.LogToConsole) Console.WriteLine(logEntry);
     }
-
-
-    public static void ConsoleLog(string message)
-    {
-        if(ServerConfig.ShowConsoleLog) Console.WriteLine(message);
-    } 
 }

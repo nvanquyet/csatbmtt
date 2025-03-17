@@ -7,7 +7,7 @@ public abstract class ANetworkProtocol(INetworkHandler dataHandler) : INetworkPr
     protected readonly INetworkHandler DataHandler = dataHandler;
     protected bool IsRunning;
 
-    public abstract void Start(int port);
+    public abstract Task Start(int port);
     
     public virtual void Stop()
     {
@@ -15,7 +15,7 @@ public abstract class ANetworkProtocol(INetworkHandler dataHandler) : INetworkPr
     }
 
     public abstract void Send(byte[] data, string endpoint);
-    
+    public abstract void Send(string data, string endpoint);
     public virtual void Dispose() => Stop();
 
     protected static void ValidateData(byte[]? data)

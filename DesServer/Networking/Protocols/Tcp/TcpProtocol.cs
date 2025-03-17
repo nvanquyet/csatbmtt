@@ -1,8 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using DesServer.Services;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
+using Shared.Utils;
 
 namespace DesServer.Networking.Protocols.Tcp;
 
@@ -12,7 +14,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     private Thread? _listenerThread;
     private readonly ConcurrentDictionary<string, TcpClient> _clients = new();
 
-    public override void Start(int port)
+    public override Task Start(int port)
     {
         IsRunning = true;
         _listener = new TcpListener(IPAddress.Any, port);
@@ -22,6 +24,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         _listenerThread.Start();
 
         Logs.Logger.Log($"TCP server started on port {port}");
+        return Task.CompletedTask;
     }
 
     private void ListenForClients()
@@ -78,17 +81,11 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     public override void Send(byte[] data, string endpoint)
     {
         ValidateData(data);
-
         if (!_clients.TryGetValue(endpoint, out var client) || !client.Connected) return;
-        try
-        {
-            client.GetStream().Write(data, 0, data.Length);
-        }
-        catch (Exception ex)
-        {
-            Logs.Logger.Log($"Failed to send to {endpoint}: {ex.Message}");
-        }
+        MsgService.SendTcpMessage(client,data);
     }
+
+    public override void Send(string data, string endpoint) => Send(ByteUtils.GetBytesFromString(data), endpoint);
 
     public override void Stop()
     {

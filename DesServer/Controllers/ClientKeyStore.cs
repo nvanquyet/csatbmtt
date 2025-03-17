@@ -8,7 +8,7 @@ namespace DesServer.Controllers;
 
 public interface IClientKeyStore
 {
-    void RegisterClient(string id, byte[] publicKey);
+    bool RegisterClient(string id, byte[] publicKey);
     List<ClientInfo> GetAllClients();
 }
 
@@ -16,7 +16,7 @@ public class ClientKeyStore : Singleton<ClientKeyStore>, IClientKeyStore
 {
     private readonly Dictionary<string, ClientInfo> _clientsById = new();
 
-    public void RegisterClient(string id, byte[] publicKey)
+    public bool RegisterClient(string id, byte[] publicKey)
     {
         if (_clientsById.TryGetValue(id, out var existingId))
         {
@@ -28,6 +28,7 @@ public class ClientKeyStore : Singleton<ClientKeyStore>, IClientKeyStore
             
             _clientsById[newClient.Id] = newClient;
         }
+        return true;
     }
 
     public ClientInfo? GetClientById(string id) => _clientsById.GetValueOrDefault(id);

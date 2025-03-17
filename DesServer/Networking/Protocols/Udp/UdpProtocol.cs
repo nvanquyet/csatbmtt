@@ -2,13 +2,14 @@
 using System.Net.Sockets;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
+using Shared.Utils;
 
 namespace DesServer.Networking.Protocols.Udp;
 
 public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHandler)
 {
     private UdpClient? _udpClient;
-    public override void Start(int port)
+    public override Task Start(int port)
     {
         IsRunning = true;
         _udpClient = new UdpClient(port);
@@ -16,7 +17,9 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
         var receiveThread = new Thread(ReceiveData);
         receiveThread.Start();
+        return Task.CompletedTask;
     }
+    
     private void ReceiveData()
     {
         try
@@ -50,4 +53,6 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
             Logs.Logger.Log($"Failed to send to {endpoint}: {ex.Message}");
         }
     }
+
+    public override void Send(string data, string endpoint) => Send(ByteUtils.GetBytesFromString(data), endpoint);
 }

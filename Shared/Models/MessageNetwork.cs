@@ -6,7 +6,6 @@ namespace Shared.Models;
 public enum CommandType
 {
     None,
-    Authentication,
     Login,
     Registration,
     GetAvailableClients,
@@ -14,7 +13,7 @@ public enum CommandType
     ReceiveMessage,
     LoadMessage,
     GetClientRsaKey,
-    GetServerRsaKey
+    RegisterClientRsaKey,
 }
 
 public enum StatusCode

@@ -1,0 +1,176 @@
+﻿using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
+using Shared.Models;
+using Shared.Utils;
+
+namespace DesServer.Services;
+
+public static class MsgService
+{
+    private class ClientQueue
+    {
+        public ConcurrentQueue<byte[]> Queue { get; } = new ConcurrentQueue<byte[]>();
+        public SemaphoreSlim Semaphore { get; } = new SemaphoreSlim(1, 1);
+        public bool IsProcessing { get; set; } = false;
+    }
+    private interface IMessageDispatcher<in T> where T : class
+    {
+        /// <summary>
+        /// Enqueue the message to be sent to the given client.
+        /// </summary>
+        /// <param name="client">The client (destination) that will receive the message.</param>
+        /// <param name="message">The content of the message to be sent.</param>
+        void EnqueueMessage(T? client, string message);
+        
+        void EnqueueMessage(T? client, byte[] data);
+    }
+    private abstract class MessageDispatcherBase<T> : IMessageDispatcher<T> where T : class
+    {
+        // Shared static state across implementations.
+        private static readonly ConcurrentDictionary<T, ClientQueue> ClientQueues = new();
+
+        public void EnqueueMessage(T? client, string message)
+        {
+            EnqueueMessage(client, ByteUtils.GetBytesFromString(message));
+            Console.WriteLine($"Message sent to TCP: {message}");
+        }
+
+        public void EnqueueMessage(T? client, byte[] data)
+        {
+            if (client is null or TcpClient { Connected: false })
+            {
+                Console.WriteLine("client không kết nối.");
+                return;
+            }
+
+            // Lấy hoặc tạo mới hàng đợi cho client đó
+            var queue = ClientQueues.GetOrAdd(client, _ => new ClientQueue());
+            queue.Queue.Enqueue(data);
+
+            // Nếu chưa có tiến trình xử lý hàng đợi cho client này, bắt đầu xử lý
+            if (!queue.IsProcessing)
+            {
+                _ = ProcessQueue(client, queue);
+            }
+            
+            // Nếu chưa có tiến trình xử lý cho endpoint này, bắt đầu xử lý hàng đợi
+            if (!queue.IsProcessing)
+            {
+                _ = ProcessQueue(client, queue);
+            }
+        }
+
+        private async Task ProcessQueue(T client, ClientQueue queue)
+        {
+            queue.IsProcessing = true;
+            try
+            {
+                // Tiếp tục xử lý cho đến khi hàng đợi rỗng
+                while (queue.Queue.TryDequeue(out byte[]? data))
+                {
+                    // Sử dụng semaphore để đảm bảo không có hai tác vụ gửi cùng lúc cho cùng một client
+                    await queue.Semaphore.WaitAsync();
+                    try
+                    {
+                        // Gọi hàm gửi tin nhắn bất đồng bộ
+                        await SendMessage(client, data);
+                    }
+                    finally
+                    {
+                        queue.Semaphore.Release();
+                    }
+                }
+            }
+            finally
+            {
+                queue.IsProcessing = false;
+            }
+        }
+
+        protected abstract Task SendMessage(T client, byte[] data);
+    }
+
+    private class TcpDispatcher : MessageDispatcherBase<TcpClient>
+    {
+        protected override async Task SendMessage(TcpClient client, byte[] data)
+        {
+            try
+            {
+                if (!client.Connected)
+                {
+                    Console.WriteLine("TCP client is not connected.");
+                    return;
+                }
+    
+                var stream = client.GetStream();
+    
+                if (!stream.CanWrite)
+                {
+                     Console.WriteLine("NetworkStream is not writable.");
+                    return;
+                }
+            
+                await stream.WriteAsync(data);
+                stream.Flush();
+                Console.WriteLine($"Message sent to TCP: {data}");
+            }
+            catch (ObjectDisposedException ex)
+            {
+                Console.WriteLine("Stream or TcpClient was disposed: " + ex.Message);
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine("I/O Error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error sending message to TCP: " + ex.Message);
+            }
+        }
+    }
+
+    private class UdpDispatcher : MessageDispatcherBase<UdpClient>
+    {
+        protected override async Task SendMessage(UdpClient client, byte[] data)
+        {
+            try
+            {
+                // Ví dụ: ta cần địa chỉ IP/Port, 
+                // nhưng UdpClient mặc định không lưu trữ Endpoint đích 
+                // -> Tuỳ vào logic của bạn, có thể cài đặt ở chỗ khác.
+                var endpoint = new IPEndPoint(IPAddress.Loopback, 9999);
+
+                await client.SendAsync(data, data.Length, endpoint);
+
+                Console.WriteLine($"[UDP] Sent to {endpoint}: {data}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error sending UDP message: " + ex.Message);
+            }
+        }
+    }
+
+    
+    private static readonly IMessageDispatcher<TcpClient> TcpDispatch = new TcpDispatcher();
+    private static readonly IMessageDispatcher<UdpClient> UdpDispatch = new UdpDispatcher();
+
+    public static void SendTcpMessage(TcpClient? tcpClient, byte[] msg) => TcpDispatch.EnqueueMessage(tcpClient, msg);
+    public static void SendTcpMessage(TcpClient? tcpClient, string msg) => TcpDispatch.EnqueueMessage(tcpClient, msg);
+    
+    public static void SendUdpMessage(UdpClient? udpClient, string msg) => UdpDispatch.EnqueueMessage(udpClient, msg);
+    public static void SendUdpMessage(UdpClient? udpClient, byte[] msg) => UdpDispatch.EnqueueMessage(udpClient, msg);
+
+    public static void SendErrorMessage(TcpClient? client, string error)
+    {
+        var errorMessage = new MessageNetwork<ErrorData>
+        (
+            type: CommandType.None,
+            code:  StatusCode.Error,
+            data: new ErrorData($"Error: {error}")
+        ).ToJson();
+
+        SendTcpMessage(client, errorMessage);
+    }
+}

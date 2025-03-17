@@ -1,6 +1,10 @@
 ﻿using System.Text;
+using DesClient.Menu;
+using DesClient.Services;
 using Shared.Models;
 using Shared.Networking.Interfaces;
+using Shared.Security.Interface;
+using Shared.Services;
 using Shared.Utils;
 
 namespace DesClient.Network.Tcp;
@@ -8,6 +12,7 @@ namespace DesClient.Network.Tcp;
 public class TcpHandler : INetworkHandler
 {
     private static StringBuilder _messageBuilder = new StringBuilder();
+
     public void OnDataReceived(byte[] data, string sourceEndpoint)
     {
         var message = ByteUtils.GetStringFromBytes(data);
@@ -18,57 +23,70 @@ public class TcpHandler : INetworkHandler
     public void OnDataReceived(string message, string sourceEndpoint) => HandleMessage(message);
 
 
-    private Task HandleMessage(string message)
+    private static Task HandleMessage(string message)
     {
         var msg = MessageNetwork<dynamic>.FromJson(message);
-        if (msg?.Code == StatusCode.Success)
+        if (msg?.Code != StatusCode.Success) return Task.CompletedTask;
+        switch (msg.Type)
         {
-            switch (msg.Type)
-            {
-                case CommandType.Authentication:
-                    if (msg.TryParseData(out User? user))
+            case CommandType.Login:
+                if (msg.TryParseData(out User? user) && user != null)
+                {
+                    AuthService.SaveUserInfo(user);
+                    MainMenu.ShowMenu2(NetworkManager.Instance.TcpService);
+
+                    //Todo: Register Rsa public key
+                    if (user.Id != null)
                     {
-                        //AuthService.SaveUserInfo(user);
-                        //MainMenu.ShowMenu2(this);
+                        var clientInfo = new ClientInfo(id: user.Id, EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa)
+                            .Key);
+                        var response = new MessageNetwork<ClientInfo>(type: CommandType.RegisterClientRsaKey,
+                            code: StatusCode.Success, data: clientInfo).ToJson();
+                        //Send to server
+                        NetworkManager.Instance.TcpService.Send(response, "");
                     }
-                    break;
-                case CommandType.Registration:
-                    Console.WriteLine("Register Success");
-                    //MainMenu.ShowMenu(this);
-                    break;
-                case CommandType.GetAvailableClients:
-                   // if (msg.TryParseData(out List<User>? allUsers))
-                        // (allUsers != null)
-                            //ChatMenu.ChatWith(allUsers, this);
-                    break;
-                case CommandType.ReceiveMessage:
-                    // if (msg.TryParseData(out ChatMessage? cM))
-                    // {
-                    //     //ChatMenu.LoadMessage(cM);
-                    // }
-                    break;
-                case CommandType.LoadMessage:
-                    // if (msg.TryParseData(out ChatMessage[]? allMessages))
-                    // {
-                    //     ChatMenu.LoadAllMessage(allMessages);
-                    // }
-                    // else
-                    // {
-                    //     Console.WriteLine("Load All Messages Failed");
-                    // }
-                    break;
-                default:
-                    Console.WriteLine("Unknown Command");
-                    break;
-            }
-        }
-        else
-        {
-            //MainMenu.ShowMenu(this);
+                }
+                break;
+            case CommandType.Registration:
+                Console.WriteLine("Register Success");
+                break;
+            case CommandType.RegisterClientRsaKey:
+                Console.WriteLine("Register RSA public key Success");
+                break;
+            case CommandType.GetAvailableClients:
+                if (msg.TryParseData(out List<User>? allUsers) && allUsers != null)
+                {
+                    ChatMenu.ChatWith(allUsers);
+                }
+                break;
+            case CommandType.ReceiveMessage:
+                // if (msg.TryParseData(out ChatMessage? cM))
+                // {
+                //     //ChatMenu.LoadMessage(cM);
+                // }
+                break;
+            case CommandType.LoadMessage:
+                // if (msg.TryParseData(out ChatMessage[]? allMessages))
+                // {
+                //     ChatMenu.LoadAllMessage(allMessages);
+                // }
+                // else
+                // {
+                //     Console.WriteLine("Load All Messages Failed");
+                // }
+                break;
+            case CommandType.None:
+            case CommandType.SendMessage:
+            case CommandType.GetClientRsaKey:
+            default:
+                Console.WriteLine("Unknown Command");
+                break;
         }
 
         return Task.CompletedTask;
     }
-    
-    public void OnClientConnected<T>(T? client) where T : class { }
+
+    public void OnClientConnected<T>(T? client) where T : class
+    {
+    }
 }

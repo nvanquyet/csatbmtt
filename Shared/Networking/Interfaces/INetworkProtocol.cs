@@ -2,7 +2,8 @@
 
 public interface INetworkProtocol : IDisposable
 {
-    void Start(int port);
+    Task Start(int port);
     void Stop();
     void Send(byte[] data, string endpoint);
+    void Send(string data, string endpoint);
 }

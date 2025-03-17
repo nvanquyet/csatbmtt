@@ -6,6 +6,7 @@ using DesServer.Controllers;
 using DesServer.Database.Repositories;
 using DesServer.Models;
 using DesServer.Services;
+using Microsoft.Extensions.Configuration;
 using Shared.Models;
 using Shared.Networking.Interfaces;
 using Shared.Services;
@@ -19,21 +20,17 @@ public class TcpHandler : INetworkHandler
 
     public void OnDataReceived(byte[] data, string sourceEndpoint)
     {
-        if (_clients.TryGetValue(sourceEndpoint, out var client))
-        {
-            var message = ByteUtils.GetStringFromBytes(data);
-            Logs.Logger.Log($"TCP Received from {sourceEndpoint}: {message}");
-            HandleClientComm(client, message);
-        }
+        if (!_clients.TryGetValue(sourceEndpoint, out var client)) return;
+        var message = ByteUtils.GetStringFromBytes(data);
+        Logs.Logger.Log($"TCP Received from {sourceEndpoint}: {message}");
+        HandleClientComm(client, message);
     }
 
     public void OnDataReceived(string message, string sourceEndpoint)
     {
-        if (_clients.TryGetValue(sourceEndpoint, out var client))
-        {
-            Logs.Logger.Log($"TCP Received from {sourceEndpoint}: {message}");
-            HandleClientComm(client, message);
-        }
+        if (!_clients.TryGetValue(sourceEndpoint, out var client)) return;
+        Logs.Logger.Log($"TCP Received from {sourceEndpoint}: {message}");
+        HandleClientComm(client, message);
     }
 
     public void OnClientConnected<T>(T? client) where T : class
@@ -49,17 +46,14 @@ public class TcpHandler : INetworkHandler
         try
         {
             var message = MessageNetwork<dynamic>.FromJson(jsonMessage);
-            if (message == null)
-            {
-                MsgService.SendErrorMessage(client, "Invalid message format", StatusCode.Error,
-                    ServerConfig.ShowConsoleLog);
-                return;
-            }
-
+            if (message == null) throw new InvalidOperationException("Invalid message format");
             switch (message.Type)
             {
                 case CommandType.Login:
                     HandleLogin(client, message);
+                    break;
+                case CommandType.Registration:
+                    HandleRegistration(client, message);
                     break;
                 case CommandType.GetAvailableClients:
                     HandleGetAvailableClient(client, message);
@@ -67,35 +61,59 @@ public class TcpHandler : INetworkHandler
                 case CommandType.GetClientRsaKey:
                     HandleGetClientRsaKey(client, message);
                     break;
-                // case CommandType.Authentication:
-                //     HandleAuthentication(client, message);
-                //     break;
-                // case CommandType.Registration:
-                //     HandleRegistration(client, message);
-                //     break;
-                // case CommandType.GetAvailableClients:
-                //     HandleGetAllUsers(client);
-                //     break;
-                // case CommandType.LoadMessage:
-                //     _ = HandleLoadMessage(client, message);
-                //     break;
+                case CommandType.LoadMessage:
+                    _ = HandleLoadMessage(client, message);
+                    break;
                 case CommandType.SendMessage:
                     _ = HandleSendMessage(client, message);
                     break;
-                default:
-                    MsgService.SendErrorMessage(client, "Unsupported action type", StatusCode.Error,
-                        ServerConfig.ShowConsoleLog);
+                case CommandType.RegisterClientRsaKey:
+                    _ = HandleRegisterClientKey(client, message);
                     break;
+                case CommandType.None:
+                case CommandType.ReceiveMessage:
+                default:
+                    throw new InvalidOperationException("Unsupported action type");
             }
         }
         catch (Exception ex)
         {
-            MsgService.SendErrorMessage(client, $"Server error: {ex.Message}", StatusCode.Error,
-                ServerConfig.ShowConsoleLog);
+            MsgService.SendErrorMessage(client, $"Server error: {ex.Message}");
         }
     }
 
-    private void HandleGetClientRsaKey(TcpClient? client, MessageNetwork<dynamic> message)
+    private static Task HandleRegisterClientKey(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        try
+        {
+            if (message is { Code: StatusCode.Success } && client != null)
+            {
+                if (message.TryParseData(out ClientInfo? info) && info != null)
+                {
+                    if (ClientKeyStore.Instance.RegisterClient(info.Id, info.PublicKey))
+                    {
+                        var response = new MessageNetwork<string>(
+                            type: CommandType.RegisterClientRsaKey,
+                            code: StatusCode.Success,
+                            data: "Register Public Key Success"
+                        ).ToJson();
+                    }
+                    else throw new InvalidOperationException("PublicKey not found for client.");
+                    
+                }
+                else throw new KeyNotFoundException("Target client not found.");
+            }
+            else throw new ArgumentException("Invalid message or client is null.");
+        }
+        catch (Exception ex)
+        {
+            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+            Console.WriteLine($"Error: {ex.StackTrace}");
+        }
+        return Task.CompletedTask;
+    }
+
+    private static void HandleGetClientRsaKey(TcpClient? client, MessageNetwork<dynamic> message)
     {
         try
         {
@@ -105,42 +123,29 @@ public class TcpHandler : INetworkHandler
                 {
                     var data = ClientKeyStore.Instance.GetClientById(info.Id)?.PublicKey;
 
-                    if (data == null)
-                    {
-                        throw new InvalidOperationException("PublicKey not found for client.");
-                    }
+                    if (data == null) throw new InvalidOperationException("PublicKey not found for client.");
 
                     var response = new MessageNetwork<object>(
                         type: CommandType.GetClientRsaKey,
                         code: StatusCode.Success,
                         data: data
                     ).ToJson();
-
-                    // _ = MsgService.SendTcpMessage(
-                    //     ConnectionController.Instance.GetUserConnection(chatConversation.ReceiverId)?.TcpClient,
-                    //     response, ServerConfig.ShowConsoleLog);
+                    MsgService.SendTcpMessage(client, response);
+                    
                 }
-                else
-                {
-                    throw new KeyNotFoundException("Target client not found.");
-                }
+                else throw new KeyNotFoundException("Target client not found.");
             }
-            else
-            {
-                throw new ArgumentException("Invalid message or client is null.");
-            }
+            else throw new ArgumentException("Invalid message or client is null.");
         }
         catch (Exception ex)
         {
-            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}", StatusCode.Error,
-                ServerConfig.ShowConsoleLog);
-
+            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
             Console.WriteLine($"Error: {ex.StackTrace}");
         }
     }
 
 
-    private void HandleGetAvailableClient(TcpClient? client, MessageNetwork<dynamic> message)
+    private static void HandleGetAvailableClient(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (message is { Code: StatusCode.Success } && client != null)
         {
@@ -160,50 +165,69 @@ public class TcpHandler : INetworkHandler
             }
             else
             {
-                MsgService.SendErrorMessage(client, "Target not found", StatusCode.InvalidRequest,
-                    ServerConfig.ShowConsoleLog);
+                MsgService.SendErrorMessage(client, "Target not found");
             }
         }
         else
         {
-            MsgService.SendErrorMessage(client, "Server Error", StatusCode.InvalidRequest,
-                ServerConfig.ShowConsoleLog);
+            MsgService.SendErrorMessage(client, "Server Error");
         }
     }
 
-    private void HandleLogin(TcpClient? client, MessageNetwork<dynamic> message)
+    private static void HandleLogin(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (message is { Code: StatusCode.Success } && client != null)
         {
-            if (message.TryParseData(out ClientInfo? info) && info != null)
+            if (message.TryParseData(out User? u) && u != null)
             {
-                ClientKeyStore.Instance.RegisterClient(info.Id, info.PublicKey);
-                var data = ClientKeyStore.Instance.GetAllWithoutClient(info.Id);
-                var response = new MessageNetwork<object>(
-                    type: CommandType.Login,
-                    code: StatusCode.Success,
-                    data: data
-                ).ToJson();
-
-                //MsgService.SendTcpMessage(client, response);
-                // _ = MsgService.SendTcpMessage(
-                //     ConnectionController.Instance.GetUserConnection(chatConversation.ReceiverId)?.TcpClient,
-                //     response, ServerConfig.ShowConsoleLog);
+                var lR = ClientSessionService.Instance.LoginUser(u.UserName, u.Password, out var user);
+                if (lR.Item1)
+                {
+                    if (user != null)
+                    {
+                        var response = new MessageNetwork<object>(
+                            type: CommandType.Login,
+                            code: StatusCode.Success,
+                            data: user
+                        ).ToJson();
+                        MsgService.SendTcpMessage(client, response);
+                    }
+                    else MsgService.SendErrorMessage(client, "Login failed");
+                }
+                else MsgService.SendErrorMessage(client, lR.Item2);
             }
-            else
-            {
-                MsgService.SendErrorMessage(client, "Target not found", StatusCode.InvalidRequest,
-                    ServerConfig.ShowConsoleLog);
-            }
+            else MsgService.SendErrorMessage(client, "Target not found");
         }
-        else
-        {
-            MsgService.SendErrorMessage(client, "Server Error", StatusCode.InvalidRequest,
-                ServerConfig.ShowConsoleLog);
-        }
+        else MsgService.SendErrorMessage(client, "Server Error");
     }
 
-    private async Task HandleSendMessage(TcpClient? client, MessageNetwork<dynamic> message)
+    private static void HandleRegistration(TcpClient? client, MessageNetwork<dynamic> messageNetwork)
+    {
+        if (messageNetwork is { Code: StatusCode.Success, Data: not null })
+        {
+            if (messageNetwork.TryParseData(out User? user) && user != null)
+            {
+                var result = ClientSessionService.Instance.RegisterUser(
+                    user.UserName,
+                    user.Password
+                );
+                if (result.Item1)
+                {
+                    var response = new MessageNetwork<object>(
+                        type: CommandType.Registration,
+                        code: StatusCode.Success,
+                        data: user
+                    ).ToJson();
+                    MsgService.SendTcpMessage(client, response);
+                }
+                else MsgService.SendErrorMessage(client, $"Registration failed {result.Item2}");
+            }
+            else MsgService.SendErrorMessage(client, "Missing credentials");
+        }
+        else MsgService.SendErrorMessage(client, "Invalid registration");
+    }
+
+    private static async Task HandleSendMessage(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (message is { Code: StatusCode.Success } && client != null)
         {
@@ -220,24 +244,15 @@ public class TcpHandler : INetworkHandler
                 ).ToJson();
 
                 //MsgService.SendTcpMessage(client, response);
-                _ = MsgService.SendTcpMessage(
-                    ConnectionController.Instance.GetUserConnection(chatConversation.ReceiverId)?.TcpClient,
-                    response, ServerConfig.ShowConsoleLog);
+                //MsgService.SendTcpMessage(
+                // ConnectionController.Instance.GetUserConnection(chatConversation.ReceiverId)?.TcpClient);
             }
-            else
-            {
-                MsgService.SendErrorMessage(client, "Target not found", StatusCode.InvalidRequest,
-                    ServerConfig.ShowConsoleLog);
-            }
+            else MsgService.SendErrorMessage(client, "Target not found");
         }
-        else
-        {
-            MsgService.SendErrorMessage(client, "Server Error", StatusCode.InvalidRequest,
-                ServerConfig.ShowConsoleLog);
-        }
+        else MsgService.SendErrorMessage(client, "Server Error");
     }
 
-    private async Task HandleLoadMessage(TcpClient? client, MessageNetwork<dynamic> message)
+    private static async Task HandleLoadMessage(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (message is { Code: StatusCode.Success } && client != null)
         {
@@ -252,106 +267,20 @@ public class TcpHandler : INetworkHandler
                     data: allChatMessage
                 ).ToJson();
 
-                _ = MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
+                MsgService.SendTcpMessage(client, response);
             }
-            else
-            {
-                MsgService.SendErrorMessage(client, "Target not found", StatusCode.InvalidRequest,
-                    ServerConfig.ShowConsoleLog);
-            }
+            else MsgService.SendErrorMessage(client, "Target not found");
         }
-        else
-        {
-            MsgService.SendErrorMessage(client, "Server Error", StatusCode.InvalidRequest,
-                ServerConfig.ShowConsoleLog);
-        }
+        else MsgService.SendErrorMessage(client, "Server Error");
     }
 
-    private void HandleAuthentication(TcpClient? client, MessageNetwork<dynamic> messageNetwork)
-    {
-        if (messageNetwork is { Code: StatusCode.Success })
-        {
-            if (messageNetwork.TryParseData(out AuthData? authData) && authData != null)
-            {
-                var result = ClientSessionService.Instance.LoginUser(
-                    authData.Username,
-                    authData.Password,
-                    out User? user
-                );
-                var response = new MessageNetwork<object?>(
-                    type: CommandType.Authentication,
-                    code: result.Item1 ? StatusCode.Success : StatusCode.Failed,
-                    data: result.Item1 ? (object?)user : (object)result.Item2
-                ).ToJson();
-
-                if (result.Item1)
-                {
-                    var socket = client?.Client;
-                    if (socket != null && user?.Id != null && client != null)
-                    {
-                        var remoteEndPoint = socket.RemoteEndPoint as IPEndPoint;
-                        if (remoteEndPoint != null)
-                        {
-                            string ipAddress = remoteEndPoint.Address.ToString();
-                            int port = remoteEndPoint.Port;
-                            ConnectionController.Instance.AddClient(userId: user.Id,
-                                client: new UserConnection(userId: user.Id, tcpClient: client, ipAddress: ipAddress,
-                                    port: port, lastConnection: DateTime.Now));
-                        }
-                    }
-                }
-
-                _ = MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
-            }
-            else
-            {
-                MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest,
-                    ServerConfig.ShowConsoleLog);
-            }
-        }
-        else
-        {
-            MsgService.SendErrorMessage(client, "Invalid authentication", StatusCode.InvalidRequest,
-                ServerConfig.ShowConsoleLog);
-        }
-    }
-
-    private void HandleRegistration(TcpClient? client, MessageNetwork<dynamic> messageNetwork)
-    {
-        if (messageNetwork is { Code: StatusCode.Success, Data: not null })
-        {
-            if (messageNetwork.TryParseData(out AuthData? authData) && authData != null)
-            {
-                var result = ClientSessionService.Instance.RegisterUser(
-                    authData.Username,
-                    authData.Password
-                );
-                var response = new MessageNetwork<object>(
-                    type: CommandType.Registration,
-                    code: result.Item1 ? StatusCode.Success : StatusCode.Failed,
-                    data: result.Item1 ? (object)authData : (object)result.Item2
-                ).ToJson();
-                _ = MsgService.SendTcpMessage(client, response, ServerConfig.ShowConsoleLog);
-            }
-            else
-            {
-                MsgService.SendErrorMessage(client, "Missing credentials", StatusCode.InvalidRequest,
-                    ServerConfig.ShowConsoleLog);
-            }
-        }
-        else
-        {
-            MsgService.SendErrorMessage(client, "Invalid registration", StatusCode.InvalidRequest,
-                ServerConfig.ShowConsoleLog);
-        }
-    }
-
-    private void HandleGetAllUsers(TcpClient? client)
+   
+    private static void HandleGetAllUsers(TcpClient? client)
     {
         if (client == null) return;
         var allUsers = UserRepository.GetAllUsers();
         var msg = new MessageNetwork<List<User>>(type: CommandType.GetAvailableClients, code: StatusCode.Success,
             data: allUsers);
-        _ = MsgService.SendTcpMessage(client, msg.ToJson(), ServerConfig.ShowConsoleLog);
+        MsgService.SendTcpMessage(client, msg.ToJson());
     }
 }

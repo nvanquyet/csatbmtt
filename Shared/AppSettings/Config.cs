@@ -10,4 +10,6 @@ public static class Config
     
     public const bool LogToConsole = true;
     public const string DefaultPassword = "123456";
+    
+    public const int KeyEncryptionLength = 256;
 }

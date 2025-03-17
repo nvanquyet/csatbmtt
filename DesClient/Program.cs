@@ -12,6 +12,10 @@ namespace DesClient
         public static void Main(string[] args)
         {
             _ = new NetworkManager();
+            while (true)
+            {
+                
+            }
         }
     }
 }

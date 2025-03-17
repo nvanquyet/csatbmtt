@@ -99,7 +99,6 @@ public class TcpHandler : INetworkHandler
                         ).ToJson();
                     }
                     else throw new InvalidOperationException("PublicKey not found for client.");
-                    
                 }
                 else throw new KeyNotFoundException("Target client not found.");
             }
@@ -110,6 +109,7 @@ public class TcpHandler : INetworkHandler
             MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
             Console.WriteLine($"Error: {ex.StackTrace}");
         }
+
         return Task.CompletedTask;
     }
 
@@ -131,7 +131,6 @@ public class TcpHandler : INetworkHandler
                         data: data
                     ).ToJson();
                     MsgService.SendTcpMessage(client, response);
-                    
                 }
                 else throw new KeyNotFoundException("Target client not found.");
             }
@@ -149,16 +148,19 @@ public class TcpHandler : INetworkHandler
     {
         if (message is { Code: StatusCode.Success } && client != null)
         {
-            if (message.TryParseData(out ClientInfo? info) && info != null)
+            if (message.TryParseData(out string? userId) && userId != null)
             {
-                var data = ClientKeyStore.Instance.GetAllWithoutClient(info.Id);
-                var response = new MessageNetwork<object>(
+                var data = UserRepository.GetAllUsers().Select(u =>
+                        u is { Id: not null, UserName: not null } ? new UserDto(id: u.Id, userName: u.UserName) : null)
+                    .ToList();
+                //filter List without userId
+                data = data.Where(us => us?.Id != userId).ToList();
+                var response = new MessageNetwork<List<UserDto>?>(
                     type: CommandType.GetAvailableClients,
                     code: StatusCode.Success,
-                    data: data
+                    data: data!
                 ).ToJson();
-
-                //MsgService.SendTcpMessage(client, response);
+                MsgService.SendTcpMessage(client, response);
                 // _ = MsgService.SendTcpMessage(
                 //     ConnectionController.Instance.GetUserConnection(chatConversation.ReceiverId)?.TcpClient,
                 //     response, ServerConfig.ShowConsoleLog);
@@ -274,7 +276,7 @@ public class TcpHandler : INetworkHandler
         else MsgService.SendErrorMessage(client, "Server Error");
     }
 
-   
+
     private static void HandleGetAllUsers(TcpClient? client)
     {
         if (client == null) return;

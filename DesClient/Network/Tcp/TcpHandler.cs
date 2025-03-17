@@ -54,7 +54,7 @@ public class TcpHandler : INetworkHandler
                 Console.WriteLine("Register RSA public key Success");
                 break;
             case CommandType.GetAvailableClients:
-                if (msg.TryParseData(out List<User>? allUsers) && allUsers != null)
+                if (msg.TryParseData(out List<UserDto>? allUsers) && allUsers != null)
                 {
                     ChatMenu.ChatWith(allUsers);
                 }

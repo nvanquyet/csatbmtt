@@ -154,6 +154,7 @@ public class TcpHandler : INetworkHandler
                     .ToList();
                 //filter List without userId
                 data = data.Where(us => us?.Id != userId).ToList();
+                Console.WriteLine($"Found {data.Count} users.");
                 var response = new MessageNetwork<List<UserDto?>>(
                     type: CommandType.GetAvailableClients,
                     code: StatusCode.Success,

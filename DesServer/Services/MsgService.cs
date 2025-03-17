@@ -31,10 +31,9 @@ public static class MsgService
         public void EnqueueMessage(T? client, string message)
         {
             EnqueueMessage(client, ByteUtils.GetBytesFromString(message));
-            Console.WriteLine($"Message sent to TCP: {message}");
         }
 
-        public void EnqueueMessage(T? client, byte[] data)
+        private void EnqueueMessage(T? client, byte[] data)
         {
             if (client is null or TcpClient { Connected: false })
             {
@@ -111,6 +110,7 @@ public static class MsgService
             
                 await stream.WriteAsync(data);
                 stream.Flush();
+                Console.WriteLine($"Message sent to TCP: {ByteUtils.GetStringFromBytes(data)}");
             }
             catch (ObjectDisposedException ex)
             {

@@ -6,5 +6,5 @@ public interface INetworkHandler
     
     void OnDataReceived(string message, string sourceEndpoint);
 
-    void OnClientConnected<T>(T? client) where T : class;
+    void OnClientConnected<T>(string id,T? client) where T : class;
 }

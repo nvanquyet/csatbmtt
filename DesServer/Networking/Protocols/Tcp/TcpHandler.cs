@@ -27,7 +27,7 @@ public class TcpHandler : INetworkHandler
         HandleClientComm(client, message);
     }
 
-    public void OnClientConnected<T>(T? client) where T : class
+    public void OnClientConnected<T>(string? userId, T? client) where T : class
     {
         if (client is not TcpClient c) return;
         var endpoint = c?.Client.RemoteEndPoint?.ToString();
@@ -64,12 +64,12 @@ public class TcpHandler : INetworkHandler
                 case CommandType.RegisterClientRsaKey:
                     _ = HandleRegisterClientKey(client, message);
                     break;
-                case CommandType.ChatRequest:
-                    _ = HandleChatRequest(client, message);
-                    break;
-                case CommandType.ChatResponse:
-                    _ = HandleChatResponse(client, message);
-                    break;
+                // case CommandType.ChatRequest:
+                //     _ = HandleChatRequest(client, message);
+                //     break;
+                // case CommandType.ChatResponse:
+                //     _ = HandleChatResponse(client, message);
+                //     break;
                 case CommandType.None:
                 case CommandType.ReceiveMessage:
                 default:
@@ -82,58 +82,58 @@ public class TcpHandler : INetworkHandler
         }
     }
 
-    private static Task HandleChatResponse(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        try
-        {
-            if (message is { Code: StatusCode.Success } && client != null)
-            {
-                if (message.TryParseData(out ChatResponseDto? dto) && dto != null)
-                {
-                    if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
-                    if (!Clients.TryGetValue(dto.ToUser.Id, out var toClient))
-                        throw new InvalidOperationException("Invalid user id");
-                    MsgService.SendTcpMessage(toClient, message.ToJson());
-                }
-                else throw new KeyNotFoundException("Target client not found.");
-            }
-            else throw new ArgumentException("Invalid message or client is null.");
-        }
-        catch (Exception ex)
-        {
-            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-            Console.WriteLine($"Error: {ex.StackTrace}");
-        }
+    // private static Task HandleChatResponse(TcpClient? client, MessageNetwork<dynamic> message)
+    // {
+    //     try
+    //     {
+    //         if (message is { Code: StatusCode.Success } && client != null)
+    //         {
+    //             if (message.TryParseData(out ChatResponseDto? dto) && dto != null)
+    //             {
+    //                 if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
+    //                 if (!Clients.TryGetValue(dto.ToUser.Id, out var toClient))
+    //                     throw new InvalidOperationException("Invalid user id");
+    //                 MsgService.SendTcpMessage(toClient, message.ToJson());
+    //             }
+    //             else throw new KeyNotFoundException("Target client not found.");
+    //         }
+    //         else throw new ArgumentException("Invalid message or client is null.");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+    //         Console.WriteLine($"Error: {ex.StackTrace}");
+    //     }
+    //
+    //     return Task.CompletedTask;
+    // }
 
-        return Task.CompletedTask;
-    }
-
-    private static Task HandleChatRequest(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        try
-        {
-            if (message is { Code: StatusCode.Success } && client != null)
-            {
-                if (message.TryParseData(out ChatRequestDto? dto) && dto != null)
-                {
-                    if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
-                    //Get TcpClient from target
-                    if (!Clients.TryGetValue(dto.ToUser.Id, out var toClient))
-                        throw new InvalidOperationException("Invalid user id");
-                    MsgService.SendTcpMessage(toClient, message.ToJson());
-                }
-                else throw new KeyNotFoundException("Target client not found.");
-            }
-            else throw new ArgumentException("Invalid message or client is null.");
-        }
-        catch (Exception ex)
-        {
-            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-            Console.WriteLine($"Error: {ex.StackTrace}");
-        }
-
-        return Task.CompletedTask;
-    }
+    // private static Task HandleChatRequest(TcpClient? client, MessageNetwork<dynamic> message)
+    // {
+    //     try
+    //     {
+    //         if (message is { Code: StatusCode.Success } && client != null)
+    //         {
+    //             if (message.TryParseData(out ChatRequestDto? dto) && dto != null)
+    //             {
+    //                 if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
+    //                 //Get TcpClient from target
+    //                 if (!Clients.TryGetValue(dto.ToUser.Id, out var toClient))
+    //                     throw new InvalidOperationException("Invalid user id");
+    //                 MsgService.SendTcpMessage(toClient, message.ToJson());
+    //             }
+    //             else throw new KeyNotFoundException("Target client not found.");
+    //         }
+    //         else throw new ArgumentException("Invalid message or client is null.");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+    //         Console.WriteLine($"Error: {ex.StackTrace}");
+    //     }
+    //
+    //     return Task.CompletedTask;
+    // }
 
     private static Task HandleRegisterClientKey(TcpClient? client, MessageNetwork<dynamic> message)
     {
@@ -230,7 +230,7 @@ public class TcpHandler : INetworkHandler
         }
     }
 
-    private static void HandleLogin(TcpClient? client, MessageNetwork<dynamic> message)
+    private void HandleLogin(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (message is { Code: StatusCode.Success } && client != null)
         {
@@ -241,6 +241,8 @@ public class TcpHandler : INetworkHandler
                 {
                     if (user != null)
                     {
+                        OnClientConnected(user.Id, client);
+
                         var response = new MessageNetwork<object>(
                             type: CommandType.Login,
                             code: StatusCode.Success,

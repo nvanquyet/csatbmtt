@@ -21,6 +21,15 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         return Task.CompletedTask;
     }
 
+    [Obsolete("Obsolete")]
+    public override void Dispose()
+    {
+        IsRunning = false;
+        _tcpClient?.Dispose();
+        _listenThread?.Abort();
+        base.Dispose();
+    }
+
     private void ListenForTcpMessages()
     {
         _listenThread = new Thread(async void () =>

@@ -17,6 +17,7 @@ public class TcpHandler : INetworkHandler
     }
 
     public void OnDataReceived(string message, string sourceEndpoint) => HandleMessage(message);
+    public void OnClientConnected<T>(string id, T? client) where T : class { }
 
 
     private static Task HandleMessage(string message)
@@ -55,24 +56,23 @@ public class TcpHandler : INetworkHandler
             case CommandType.GetAvailableClients:
                 if (msg.TryParseData(out List<UserDto>? allUsers) && allUsers != null)
                 {
-                    ChatMenu.ChatWith(allUsers);
-                }
-
-                break;
-            case CommandType.ChatRequest:
-                if (msg.TryParseData(out ChatRequestDto? dto) && dto != null)
-                {
-                    ChatMenu.ShowBoxConfirm(dto);
+                    ChatMenu.ChatWith(allUsers, NetworkManager.Instance.TcpService);
                 }
                 break;
-            case CommandType.ChatResponse:
-                if (msg.TryParseData(out ChatResponseDto? r) && r != null)
-                {
-                    Console.WriteLine($"User {r.FromUser?.UserName} {(r.Accepted ? "Accepted" : "Rejected")}");
-                    if (r.Accepted) ChatMenu.ShowChatMenu(r.FromUser, NetworkManager.Instance.TcpService, false);
-                }
-
-                break;
+            // case CommandType.ChatRequest:
+            //     if (msg.TryParseData(out ChatRequestDto? dto) && dto != null)
+            //     {
+            //         ChatMenu.ShowBoxConfirm(dto);
+            //     }
+            //     break;
+            // case CommandType.ChatResponse:
+            //     if (msg.TryParseData(out ChatResponseDto? r) && r != null)
+            //     {
+            //         Console.WriteLine($"User {r.FromUser?.UserName} {(r.Accepted ? "Accepted" : "Rejected")}");
+            //         if (r.Accepted) ChatMenu.ShowChatMenu(r.FromUser, NetworkManager.Instance.TcpService, false);
+            //     }
+            //
+            //     break;
             case CommandType.ReceiveMessage:
                 if (msg.TryParseData(out ChatMessage? cM))
                 {

@@ -47,9 +47,6 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
     private void HandleClient(TcpClient client)
     {
-        //Client Connected
-        DataHandler?.OnClientConnected(client);
-        
         var endpoint = client.Client.RemoteEndPoint?.ToString();
         var stream = client.GetStream();
         
@@ -77,7 +74,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
     }
 
-    public override void Send(string data, string endpoint)
+    public override void Send(string data, string endpoint = "")
     {
         if (!_clients.TryGetValue(endpoint, out var client) || !client.Connected) return;
         MsgService.SendTcpMessage(client,data);

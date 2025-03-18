@@ -10,7 +10,7 @@ namespace DesClient.Menu;
 
 public static class ChatMenu
 {
-    public static void ChatWith(List<UserDto> users)
+    public static void ChatWith(List<UserDto> users, INetworkProtocol protocol)
     {
         Console.WriteLine("=== Chọn người để chat ===");
 
@@ -29,20 +29,20 @@ public static class ChatMenu
         //ShowChatMenu(filteredUsers[index], NetworkManager.Instance.TcpService);
         //Todo: Require connect to other client
         var selectedUser = filteredUsers[index];
-
+        ShowChatMenu(selectedUser, protocol);
         // Gửi yêu cầu chat đến server
-        var chatRequest =
-            new ChatRequestDto(fromUser: new UserDto(SessionManager.GetUserId(), SessionManager.GetUserName()),
-                toUser: new UserDto(selectedUser.Id, selectedUser.UserName));
-
-        NetworkManager.Instance.TcpService.Send(new MessageNetwork<ChatRequestDto>(
-            CommandType.ChatRequest, StatusCode.Success, chatRequest).ToJson(), "");
-        
-        Console.WriteLine($"Wait {selectedUser.UserName}... response");
+        // var chatRequest =
+        //     new ChatRequestDto(fromUser: new UserDto(SessionManager.GetUserId(), SessionManager.GetUserName()),
+        //         toUser: new UserDto(selectedUser.Id, selectedUser.UserName));
+        //
+        // NetworkManager.Instance.TcpService.Send(new MessageNetwork<ChatRequestDto>(
+        //     CommandType.ChatRequest, StatusCode.Success, chatRequest).ToJson(), "");
+        //
+        // Console.WriteLine($"Wait {selectedUser.UserName}... response");
     }
 
 
-    public static void ShowChatMenu(UserDto? targetUser, INetworkProtocol protocol, bool clearChat = true,
+    private static void ShowChatMenu(UserDto? targetUser, INetworkProtocol protocol, bool clearChat = true,
         bool loadHistory = true)
     {
         if (clearChat) Console.Clear();
@@ -119,29 +119,29 @@ public static class ChatMenu
             ? $"\nMe: {Encoding.UTF8.GetString(message)} ... ({DateTime.UtcNow:HH:mm:ss})"
             : $"\n{newMessage.SenderId}: {newMessage.Content} ... ({DateTime.UtcNow:HH:mm:ss})");
     }
-
-    public static void ShowBoxConfirm(ChatRequestDto dto)
-    {
-        Console.WriteLine($"Bạn nhận được yêu cầu chat từ {dto.FromUser?.UserName}. Chấp nhận? (Y/N)");
-
-        var response = Console.ReadLine();
-        var isAccepted = response?.Trim().ToLower() == "y";
-
-        // Gửi phản hồi về server
-        var chatResponse = new ChatResponseDto(fromUser: dto.ToUser, toUser: dto.FromUser, accepted: isAccepted);
-
-        NetworkManager.Instance.TcpService.Send(new MessageNetwork<ChatResponseDto>(
-            CommandType.ChatResponse, StatusCode.Success, chatResponse).ToJson(), "");
-
-        if (isAccepted)
-        {
-            Console.WriteLine("Kết nối chat được thiết lập!");
-            ShowChatMenu(dto.FromUser, NetworkManager.Instance.TcpService);
-        }
-        else
-        {
-            Console.WriteLine("Bạn đã từ chối yêu cầu chat.");
-            MainMenu.ShowMenu2(NetworkManager.Instance.TcpService);
-        }
-    }
+    //
+    // public static void ShowBoxConfirm(ChatRequestDto dto)
+    // {
+    //     Console.WriteLine($"Bạn nhận được yêu cầu chat từ {dto.FromUser?.UserName}. Chấp nhận? (Y/N)");
+    //
+    //     var response = Console.ReadLine();
+    //     var isAccepted = response?.Trim().ToLower() == "y";
+    //
+    //     // Gửi phản hồi về server
+    //     var chatResponse = new ChatResponseDto(fromUser: dto.ToUser, toUser: dto.FromUser, accepted: isAccepted);
+    //
+    //     NetworkManager.Instance.TcpService.Send(new MessageNetwork<ChatResponseDto>(
+    //         CommandType.ChatResponse, StatusCode.Success, chatResponse).ToJson(), "");
+    //
+    //     if (isAccepted)
+    //     {
+    //         Console.WriteLine("Kết nối chat được thiết lập!");
+    //         ShowChatMenu(dto.FromUser, NetworkManager.Instance.TcpService);
+    //     }
+    //     else
+    //     {
+    //         Console.WriteLine("Bạn đã từ chối yêu cầu chat.");
+    //         MainMenu.ShowMenu2(NetworkManager.Instance.TcpService);
+    //     }
+    // }
 }

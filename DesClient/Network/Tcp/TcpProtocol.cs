@@ -10,14 +10,34 @@ namespace DesClient.Network.Tcp;
 
 public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHandler)
 {
+    private static Thread? _listenThread;
     private TcpClient? _tcpClient;
 
     public override Task Start(int port)
     {
         IsRunning = true;
         _tcpClient = new TcpClient(Config.ServerIp, Config.ServerTcpPort);
-        _ = ListenForTcpMessagesAsync();
+        ListenForTcpMessages();
         return Task.CompletedTask;
+    }
+
+    private void ListenForTcpMessages()
+    {
+        _listenThread = new Thread(async void () =>
+        {
+            try
+            {
+                await ListenForTcpMessagesAsync();
+            }
+            catch (Exception e)
+            {
+               Console.WriteLine(e);
+            }
+        })
+        {
+            IsBackground = true // Đảm bảo thread dừng khi app dừng
+        };
+        _listenThread.Start();
     }
 
     private async Task ListenForTcpMessagesAsync()

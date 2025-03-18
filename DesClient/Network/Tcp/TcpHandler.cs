@@ -64,7 +64,6 @@ public class TcpHandler : INetworkHandler
                 {
                     ChatMenu.ShowBoxConfirm(dto);
                 }
-
                 break;
             case CommandType.ChatResponse:
                 if (msg.TryParseData(out ChatResponseDto? r) && r != null)

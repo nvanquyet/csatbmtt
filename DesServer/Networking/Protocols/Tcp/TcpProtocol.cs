@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
 
@@ -55,6 +54,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     
                 var receivedData = new byte[bytesRead];
                 Array.Copy(buffer, receivedData, bytesRead);
+                Console.WriteLine($"Received {receivedData.Length} bytes from {client.Client.RemoteEndPoint}");
                 DataHandler.OnDataReceived(receivedData, "");
             }
         }

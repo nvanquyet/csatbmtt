@@ -43,7 +43,6 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     private void HandleClient(TcpClient client)
     {
         var stream = client.GetStream();
-        Console.WriteLine($"Client connected to");
         try
         {
             var buffer = new byte[4096];
@@ -55,7 +54,6 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
                 var receivedData = new byte[bytesRead];
                 Array.Copy(buffer, receivedData, bytesRead);
             }
-            Console.WriteLine($"Client disconnected from {client.Client.RemoteEndPoint}");
         }
         catch (Exception ex)
         {

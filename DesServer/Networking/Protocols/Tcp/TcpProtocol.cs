@@ -44,6 +44,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     private void HandleClient(TcpClient client)
     {
         var stream = client.GetStream();
+        DataHandler.OnClientConnected(client);
         try
         {
             var buffer = new byte[4096];
@@ -54,7 +55,6 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     
                 var receivedData = new byte[bytesRead];
                 Array.Copy(buffer, receivedData, bytesRead);
-                Console.WriteLine($"Received {receivedData.Length} bytes from {client.Client.RemoteEndPoint}");
                 DataHandler.OnDataReceived(receivedData, "");
             }
         }

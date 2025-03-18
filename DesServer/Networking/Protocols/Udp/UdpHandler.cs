@@ -18,4 +18,9 @@ public class UdpHandler : INetworkHandler
     {
         throw new NotImplementedException();
     }
+
+    public void OnClientConnected<T>(T? client) where T : class
+    {
+        throw new NotImplementedException();
+    }
 }

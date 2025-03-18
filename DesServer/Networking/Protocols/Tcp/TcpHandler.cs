@@ -10,7 +10,7 @@ namespace DesServer.Networking.Protocols.Tcp;
 
 public class TcpHandler : INetworkHandler
 {
-    private static readonly Dictionary<string, TcpClient?> Clients = new Dictionary<string, TcpClient?>();
+    private static readonly Dictionary<string, TcpClient?> Clients = new();
 
     public void OnDataReceived(byte[] data, string sourceEndpoint)
     {
@@ -30,6 +30,13 @@ public class TcpHandler : INetworkHandler
     public void OnClientConnected<T>(string? userId, T? client) where T : class
     {
         if (client is not TcpClient c) return;
+        var endpoint = c?.Client.RemoteEndPoint?.ToString();
+        if (endpoint != null) Clients[endpoint] = c;
+    }
+
+    public void OnClientConnected<T>(T? client) where T : class
+    {
+        if(client is not TcpClient c) return;
         var endpoint = c?.Client.RemoteEndPoint?.ToString();
         if (endpoint != null) Clients[endpoint] = c;
     }

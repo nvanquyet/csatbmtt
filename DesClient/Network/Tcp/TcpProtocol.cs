@@ -88,9 +88,29 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
     public override void Send(string data, string endpoint = "")
     {
-        Console.WriteLine($"data: {data} {_tcpClient?.Client.RemoteEndPoint}");
-        var tcpStream = _tcpClient?.GetStream();
-        _ = tcpStream?.WriteAsync(ByteUtils.GetBytesFromString(data), 0, data.Length);
-        tcpStream?.Flush();
+        if (_tcpClient == null || !_tcpClient.Connected)
+        {
+            Console.WriteLine("❌ Không có kết nối TCP!");
+            return;
+        }
+
+        try
+        {
+            var bytes = ByteUtils.GetBytesFromString(data);
+            var tcpStream = _tcpClient.GetStream();
+
+            Console.WriteLine($"📤 [{DateTime.Now}] Đang gửi {bytes.Length} bytes tới {_tcpClient.Client.RemoteEndPoint}...");
+        
+            _ = tcpStream.WriteAsync(bytes, 0, bytes.Length);
+            _ = tcpStream.FlushAsync();
+
+            Console.WriteLine("✅ Dữ liệu đã được gửi!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Lỗi khi gửi dữ liệu: {ex.Message}");
+        }
     }
+
+
 }

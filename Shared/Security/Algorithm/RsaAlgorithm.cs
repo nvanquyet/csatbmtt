@@ -94,7 +94,8 @@ class RsaAlgorithm : IEncryptionAlgorithm
         return BigInteger.ModPow(ciphertext, privateKey.d, privateKey.n);
     }
 
-    public byte[] Key => ByteUtils.GetBytesFromString("anhyeuem");
+    public byte[] EncryptKey => ByteUtils.GetBytesFromString("anhyeuem");
+    public byte[] DecryptKey => ByteUtils.GetBytesFromString("anhyeuem");
     public byte[] GenerateKey(int length)
     {
         return ByteUtils.GetBytesFromString("anhyeuem");

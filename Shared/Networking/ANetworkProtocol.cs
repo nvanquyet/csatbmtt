@@ -14,7 +14,7 @@ public abstract class ANetworkProtocol(INetworkHandler dataHandler) : INetworkPr
         IsRunning = false;
     }
 
-    public abstract void Send(string data, string endpoint);
+    public abstract void Send(string data, string endpoint = "");
     public virtual void Dispose() => Stop();
 
     protected static void ValidateData(byte[]? data)

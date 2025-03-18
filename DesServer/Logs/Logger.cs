@@ -1,5 +1,4 @@
-﻿using DesServer.AppSetting;
-using Shared.AppSettings;
+﻿using Shared.AppSettings;
 
 namespace DesServer.Logs;
 

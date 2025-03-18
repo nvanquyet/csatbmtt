@@ -1,26 +1,20 @@
-﻿using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using DesServer.AppSetting;
+﻿using System.Net.Sockets;
 using DesServer.Controllers;
 using DesServer.Database.Repositories;
-using DesServer.Models;
 using DesServer.Services;
-using Microsoft.Extensions.Configuration;
 using Shared.Models;
 using Shared.Networking.Interfaces;
-using Shared.Services;
 using Shared.Utils;
 
 namespace DesServer.Networking.Protocols.Tcp;
 
 public class TcpHandler : INetworkHandler
 {
-    private readonly Dictionary<string, TcpClient?> _clients = new Dictionary<string, TcpClient?>();
+    private static readonly Dictionary<string, TcpClient?> Clients = new Dictionary<string, TcpClient?>();
 
     public void OnDataReceived(byte[] data, string sourceEndpoint)
     {
-        if (!_clients.TryGetValue(sourceEndpoint, out var client)) return;
+        if (!Clients.TryGetValue(sourceEndpoint, out var client)) return;
         var message = ByteUtils.GetStringFromBytes(data);
         Logs.Logger.Log($"TCP Received from {sourceEndpoint}: {message}");
         HandleClientComm(client, message);
@@ -28,7 +22,7 @@ public class TcpHandler : INetworkHandler
 
     public void OnDataReceived(string message, string sourceEndpoint)
     {
-        if (!_clients.TryGetValue(sourceEndpoint, out var client)) return;
+        if (!Clients.TryGetValue(sourceEndpoint, out var client)) return;
         Logs.Logger.Log($"TCP Received from {sourceEndpoint}: {message}");
         HandleClientComm(client, message);
     }
@@ -37,7 +31,7 @@ public class TcpHandler : INetworkHandler
     {
         if (client is not TcpClient c) return;
         var endpoint = c?.Client.RemoteEndPoint?.ToString();
-        if (endpoint != null) _clients[endpoint] = c;
+        if (endpoint != null) Clients[endpoint] = c;
     }
 
 
@@ -70,6 +64,12 @@ public class TcpHandler : INetworkHandler
                 case CommandType.RegisterClientRsaKey:
                     _ = HandleRegisterClientKey(client, message);
                     break;
+                case CommandType.ChatRequest:
+                    _ = HandleChatRequest(client, message);
+                    break;
+                case CommandType.ChatResponse:
+                    _ = HandleChatResponse(client, message);
+                    break;
                 case CommandType.None:
                 case CommandType.ReceiveMessage:
                 default:
@@ -80,6 +80,59 @@ public class TcpHandler : INetworkHandler
         {
             MsgService.SendErrorMessage(client, $"Server error: {ex.Message}");
         }
+    }
+
+    private static Task HandleChatResponse(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        try
+        {
+            if (message is { Code: StatusCode.Success } && client != null)
+            {
+                if (message.TryParseData(out ChatResponseDto? dto) && dto != null)
+                {
+                    if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
+                    if (!Clients.TryGetValue(dto.ToUser.Id, out var toClient))
+                        throw new InvalidOperationException("Invalid user id");
+                    MsgService.SendTcpMessage(toClient, message.ToJson());
+                }
+                else throw new KeyNotFoundException("Target client not found.");
+            }
+            else throw new ArgumentException("Invalid message or client is null.");
+        }
+        catch (Exception ex)
+        {
+            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+            Console.WriteLine($"Error: {ex.StackTrace}");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static Task HandleChatRequest(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        try
+        {
+            if (message is { Code: StatusCode.Success } && client != null)
+            {
+                if (message.TryParseData(out ChatRequestDto? dto) && dto != null)
+                {
+                    if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
+                    //Get TcpClient from target
+                    if (!Clients.TryGetValue(dto.ToUser.Id, out var toClient))
+                        throw new InvalidOperationException("Invalid user id");
+                    MsgService.SendTcpMessage(toClient, message.ToJson());
+                }
+                else throw new KeyNotFoundException("Target client not found.");
+            }
+            else throw new ArgumentException("Invalid message or client is null.");
+        }
+        catch (Exception ex)
+        {
+            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+            Console.WriteLine($"Error: {ex.StackTrace}");
+        }
+
+        return Task.CompletedTask;
     }
 
     private static Task HandleRegisterClientKey(TcpClient? client, MessageNetwork<dynamic> message)
@@ -143,7 +196,7 @@ public class TcpHandler : INetworkHandler
             Console.WriteLine($"Error: {ex.StackTrace}");
         }
     }
-    
+
     private static void HandleGetAvailableClient(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (message is { Code: StatusCode.Success } && client != null)
@@ -276,5 +329,4 @@ public class TcpHandler : INetworkHandler
         }
         else MsgService.SendErrorMessage(client, "Server Error");
     }
-    
 }

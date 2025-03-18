@@ -39,7 +39,7 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     }
     
 
-    public override void Send(string data, string endpoint)
+    public override void Send(string data, string endpoint = "")
     {
         try
         {

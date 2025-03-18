@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using Shared.AppSettings;
@@ -86,7 +85,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
     }
 
-    public override void Send(string data, string endpoint)
+    public override void Send(string data, string endpoint = "")
     {
         var tcpStream = _tcpClient?.GetStream();
         tcpStream?.WriteAsync(ByteUtils.GetBytesFromString(data), 0, data.Length);

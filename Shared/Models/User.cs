@@ -12,8 +12,8 @@ public class User(string? userName, string? password)
     public string? Password { get; init; } = password;
 }
 
-public class UserDto(string id, string userName)
+public class UserDto(string? id, string? userName)
 {
-    public string Id { get; set; } = id;
-    public string UserName { get; set; } = userName;
+    public string? Id { get; set; } = id;
+    public string? UserName { get; set; } = userName;
 }

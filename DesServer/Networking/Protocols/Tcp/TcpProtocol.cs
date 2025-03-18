@@ -4,7 +4,6 @@ using System.Net.Sockets;
 using DesServer.Services;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
-using Shared.Utils;
 
 namespace DesServer.Networking.Protocols.Tcp;
 

@@ -1,7 +1,5 @@
-﻿using DesServer.Database;
-using DesServer.Database.Repositories;
+﻿using DesServer.Database.Repositories;
 using Shared.Models;
-using Shared.Services;
 using Shared.Utils.Patterns;
 
 namespace DesServer.Services

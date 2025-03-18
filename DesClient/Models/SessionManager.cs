@@ -1,5 +1,4 @@
-﻿using MongoDB.Bson;
-using Shared.Models;
+﻿using Shared.Models;
 
 namespace DesClient.Models;
 

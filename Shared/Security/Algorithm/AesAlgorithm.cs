@@ -14,7 +14,8 @@ public class AesAlgorithm : IEncryptionAlgorithm
         //GenerateKey(Config.KeyEncryptionLength);
     }
     
-    public byte[] Key => _aes.Key;
+    public byte[] EncryptKey => _aes.Key;
+    public byte[] DecryptKey => _aes.Key;
 
     public byte[] GenerateKey(int length)
     {

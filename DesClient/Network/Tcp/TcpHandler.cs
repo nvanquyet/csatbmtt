@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text;
-using DesClient.Menu;
+﻿using DesClient.Menu;
 using DesClient.Services;
 using Shared.Models;
 using Shared.Networking.Interfaces;
@@ -12,8 +10,6 @@ namespace DesClient.Network.Tcp;
 
 public class TcpHandler : INetworkHandler
 {
-    private static StringBuilder _messageBuilder = new StringBuilder();
-
     public void OnDataReceived(byte[] data, string sourceEndpoint)
     {
         var message = ByteUtils.GetStringFromBytes(data);
@@ -23,7 +19,6 @@ public class TcpHandler : INetworkHandler
     public void OnDataReceived(string message, string sourceEndpoint) => HandleMessage(message);
 
 
-    [SuppressMessage("ReSharper.DPA", "DPA0002: Excessive memory allocations in SOH", MessageId = "type: System.Byte[]; size: 11253MB")]
     private static Task HandleMessage(string message)
     {
         var msg = MessageNetwork<dynamic>.FromJson(message);
@@ -40,7 +35,7 @@ public class TcpHandler : INetworkHandler
                     {
                         var clientInfo = new ClientInfo(id: user.Id, EncryptionService.Instance
                             .GetAlgorithm(EncryptionType.Rsa)
-                            .Key); 
+                            .EncryptKey);
                         var response = new MessageNetwork<ClientInfo>(type: CommandType.RegisterClientRsaKey,
                             code: StatusCode.Success, data: clientInfo).ToJson();
                         //Send to server
@@ -64,21 +59,38 @@ public class TcpHandler : INetworkHandler
                 }
 
                 break;
+            case CommandType.ChatRequest:
+                if (msg.TryParseData(out ChatRequestDto? dto) && dto != null)
+                {
+                    ChatMenu.ShowBoxConfirm(dto);
+                }
+
+                break;
+            case CommandType.ChatResponse:
+                if (msg.TryParseData(out ChatResponseDto? r) && r != null)
+                {
+                    Console.WriteLine($"User {r.FromUser?.UserName} {(r.Accepted ? "Accepted" : "Rejected")}");
+                    if (r.Accepted) ChatMenu.ShowChatMenu(r.FromUser, NetworkManager.Instance.TcpService, false);
+                }
+
+                break;
             case CommandType.ReceiveMessage:
-                // if (msg.TryParseData(out ChatMessage? cM))
-                // {
-                //     //ChatMenu.LoadMessage(cM);
-                // }
+                if (msg.TryParseData(out ChatMessage? cM))
+                {
+                    ChatMenu.LoadMessage(cM);
+                }
+
                 break;
             case CommandType.LoadMessage:
-                // if (msg.TryParseData(out ChatMessage[]? allMessages))
-                // {
-                //     ChatMenu.LoadAllMessage(allMessages);
-                // }
-                // else
-                // {
-                //     Console.WriteLine("Load All Messages Failed");
-                // }
+                if (msg.TryParseData(out ChatMessage[]? allMessages))
+                {
+                    ChatMenu.LoadAllMessage(allMessages);
+                }
+                else
+                {
+                    Console.WriteLine("Load All Messages Failed");
+                }
+
                 break;
             case CommandType.None:
             case CommandType.SendMessage:

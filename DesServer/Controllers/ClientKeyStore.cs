@@ -1,7 +1,4 @@
-﻿using System.Net.Sockets;
-using System.Text;
-using Shared.Models;
-using Shared.Utils;
+﻿using Shared.Models;
 using Shared.Utils.Patterns;
 
 namespace DesServer.Controllers;
@@ -20,7 +17,7 @@ public class ClientKeyStore : Singleton<ClientKeyStore>, IClientKeyStore
     {
         if (_clientsById.TryGetValue(id, out var existingId))
         {
-            //existingId.PublicKey = publicKey;
+            existingId.PublicKey = publicKey;
         }
         else
         {

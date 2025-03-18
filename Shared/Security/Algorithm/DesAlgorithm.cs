@@ -467,7 +467,8 @@ public class DesAlgorithm : IEncryptionAlgorithm
         GenerateKey(Config.KeyEncryptionLength);
     }
     
-    public byte[] Key => _key ??= GenerateKey(Config.KeyEncryptionLength);
+    public byte[] EncryptKey => _key ??= GenerateKey(Config.KeyEncryptionLength);
+    public byte[] DecryptKey => _key ??= GenerateKey(Config.KeyEncryptionLength);
 
     public byte[] GenerateKey(int length)
     {

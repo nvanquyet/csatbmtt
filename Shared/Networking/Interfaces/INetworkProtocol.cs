@@ -4,5 +4,5 @@ public interface INetworkProtocol : IDisposable
 {
     Task Start(int port);
     void Stop();
-    void Send(string data, string endpoint);
+    void Send(string data, string endpoint = "");
 }

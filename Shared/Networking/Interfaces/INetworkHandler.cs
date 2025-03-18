@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace Shared.Networking.Interfaces;
+﻿namespace Shared.Networking.Interfaces;
 
 public interface INetworkHandler
 {

@@ -9,7 +9,8 @@ public enum EncryptionType
 
 public interface IEncryptionAlgorithm
 {
-    byte[] Key { get; }
+    byte[] EncryptKey { get; }
+    byte[] DecryptKey { get; }
     protected byte[] GenerateKey(int length);
     byte[] Encrypt(byte[] data, byte[] key);
     byte[] Decrypt(byte[] encryptedData, byte[] key);

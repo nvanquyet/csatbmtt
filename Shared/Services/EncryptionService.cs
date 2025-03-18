@@ -21,19 +21,19 @@ public class EncryptionService : Singleton<EncryptionService>, IEncryptionServic
 
     public IEncryptionAlgorithm GetAlgorithm(EncryptionType encryptionType) => _algorithms[encryptionType];
     
-    public byte[] EncryptData(EncryptionType type, byte[] data, byte[] key)
+    public byte[] EncryptData(EncryptionType type, byte[] data)
     {
         if (!_algorithms.TryGetValue(type, out var algorithm))
             throw new ArgumentException($"Algorithm {type} is not supported");
 
-        return algorithm.Encrypt(data, key);
+        return algorithm.Encrypt(data, algorithm.EncryptKey);
     }
 
-    public byte[] DecryptData(EncryptionType type, byte[] encryptedData, byte[] key)
+    public byte[] DecryptData(EncryptionType type, byte[] encryptedData)
     {
         if (!_algorithms.TryGetValue(type, out var algorithm))
             throw new ArgumentException($"Algorithm {type} is not supported");
 
-        return algorithm.Decrypt(encryptedData, key);
+        return algorithm.Decrypt(encryptedData, algorithm.EncryptKey);
     }
 }

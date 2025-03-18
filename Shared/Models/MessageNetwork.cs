@@ -37,7 +37,7 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data)
     [JsonProperty("data")]
     public T Data { get; set; } = data;
 
-    public string ToJson() => JsonConvert.SerializeObject(this);
+    public string ToJson() => JsonConvert.SerializeObject(this) + "\n";
     
     public static MessageNetwork<T>? FromJson(string json) => JsonConvert.DeserializeObject<MessageNetwork<T>>(json);
     

@@ -34,6 +34,6 @@ public class EncryptionService : Singleton<EncryptionService>, IEncryptionServic
         if (!_algorithms.TryGetValue(type, out var algorithm))
             throw new ArgumentException($"Algorithm {type} is not supported");
 
-        return algorithm.Decrypt(encryptedData, algorithm.EncryptKey);
+        return algorithm.Decrypt(encryptedData, algorithm.DecryptKey);
     }
 }

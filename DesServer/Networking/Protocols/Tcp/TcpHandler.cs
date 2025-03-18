@@ -38,6 +38,7 @@ public class TcpHandler : INetworkHandler
     {
         if(client is not TcpClient c) return;
         var endpoint = c?.Client.RemoteEndPoint?.ToString();
+        Console.WriteLine($"Connected to {endpoint}");
         if (endpoint != null) Clients[endpoint] = c;
     }
 

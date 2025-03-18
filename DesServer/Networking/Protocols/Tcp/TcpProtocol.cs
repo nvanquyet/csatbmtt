@@ -44,23 +44,24 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     private void HandleClient(TcpClient client)
     {
         var stream = client.GetStream();
+        var endPoint = client?.Client.RemoteEndPoint?.ToString();
         DataHandler.OnClientConnected(client);
         try
         {
             var buffer = new byte[4096];
-            while (IsRunning && client.Connected)
+            while (IsRunning && client is { Connected: true })
             {
                 var bytesRead = stream.Read(buffer, 0, buffer.Length);
                 if (bytesRead == 0) continue;
     
                 var receivedData = new byte[bytesRead];
                 Array.Copy(buffer, receivedData, bytesRead);
-                DataHandler.OnDataReceived(receivedData, "");
+                if (endPoint != null) DataHandler.OnDataReceived(receivedData, endPoint);
             }
         }
         catch (Exception ex)
         {
-            Logs.Logger.Log($"Client {client.Client.RemoteEndPoint} error: {ex.Message}");
+            Logs.Logger.Log($"Client {client?.Client.RemoteEndPoint} error: {ex.Message}");
         }
     }
 

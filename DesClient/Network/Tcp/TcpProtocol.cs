@@ -11,100 +11,128 @@ namespace DesClient.Network.Tcp;
 public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHandler)
 {
     private TcpClient? _tcpClient;
+    private NetworkStream? _stream;
+    private CancellationTokenSource? _cts;
 
-    public override Task Start(int port)
+    public override async Task Start(int port)
     {
         IsRunning = true;
-        _tcpClient = new TcpClient(Config.ServerIp, Config.ServerTcpPort);
-        _ = ListenForTcpMessagesAsync();
-        return Task.CompletedTask;
+        _tcpClient = new TcpClient();
+
+        try
+        {
+            await _tcpClient.ConnectAsync(Config.ServerIp, Config.ServerTcpPort);
+            _stream = _tcpClient.GetStream();
+            _cts = new CancellationTokenSource();
+
+            Console.WriteLine($"✅ Kết nối đến server: {_tcpClient.Client.RemoteEndPoint}");
+
+            _ = Task.Run(() => ListenForTcpMessagesAsync(_cts.Token)); // Khởi chạy lắng nghe
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"❌ Lỗi kết nối TCP: {e.Message}");
+            throw;
+        }
     }
 
-
-    private async Task ListenForTcpMessagesAsync()
+    private async Task ListenForTcpMessagesAsync(CancellationToken token)
     {
         var buffer = new byte[1024];
         var messageBuilder = new StringBuilder();
 
-        if (_tcpClient != null)
+        if (_tcpClient is null || _stream is null)
         {
-            var stream = _tcpClient.GetStream();
-            while (IsRunning)
+            Console.WriteLine("❌ Client chưa được kết nối!");
+            return;
+        }
+
+        try
+        {
+            while (IsRunning && _tcpClient.Connected && !token.IsCancellationRequested)
             {
-                // Trong phương thức ListenForTcpMessagesAsync()
-                try
+                if (!_stream.DataAvailable)
                 {
-                    var bytesRead = await stream.ReadAsync(buffer);
-                    if (bytesRead <= 0) continue;
-
-                    // Thêm dữ liệu mới vào messageBuilder
-                    messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
-
-                    // Kiểm tra nếu JSON hợp lệ
-                    var receivedMessage = messageBuilder.ToString().Trim();
-                    Console.WriteLine(receivedMessage);
-
-                    if (!IsCompleteJson(receivedMessage)) continue;
-                    var data = ByteUtils.GetBytesFromString(receivedMessage);
-                    DataHandler?.OnDataReceived(data, "");
-                    messageBuilder.Clear();
+                    await Task.Delay(10, token);
+                    continue;
                 }
-                catch (Exception ex)
+
+                var bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length, token);
+                if (bytesRead <= 0)
                 {
-                    Console.WriteLine("❌ Error reading TCP message: " + ex.Message);
+                    Console.WriteLine("⚠️ Kết nối bị đóng bởi server!");
                     break;
                 }
+
+                messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+
+                var receivedMessage = messageBuilder.ToString().Trim();
+                Console.WriteLine($"📥 Nhận dữ liệu từ server: {receivedMessage}");
+
+                if (!IsCompleteJson(receivedMessage)) continue;
+
+                var data = ByteUtils.GetBytesFromString(receivedMessage);
+                DataHandler?.OnDataReceived(data, "");
+
+                messageBuilder.Clear();
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Lỗi khi đọc TCP: {ex.Message}");
+        }
+        finally
+        {
+            CloseConnection();
         }
     }
 
-    // 🛠 Hàm kiểm tra JSON hợp lệ (chấp nhận cả object {} và array [])
     private bool IsCompleteJson(string receivedMessage)
     {
         try
         {
-            // Thử phân tích JSON
             JsonDocument.Parse(receivedMessage);
-
-            // Kiểm tra cụ thể cho cấu trúc với data là mảng
-            if (receivedMessage.Contains("\"data\":["))
-            {
-                return receivedMessage.TrimEnd().EndsWith("}]}");
-            }
-
-            // Kiểm tra cho cấu trúc với data là chuỗi hoặc object
-            if (receivedMessage.Contains("\"data\":\"") || receivedMessage.Contains("\"data\":{"))
-            {
-                return receivedMessage.TrimEnd().EndsWith("}");
-            }
-
-            return true; // Nếu JSON hợp lệ nhưng không thuộc các trường hợp cụ thể trên
+            return receivedMessage.TrimEnd().EndsWith("}") || receivedMessage.TrimEnd().EndsWith("}]}");
         }
         catch
         {
-            Console.WriteLine("Json invalid");
-            return false; // JSON không hợp lệ
+            return false;
         }
     }
 
-    public override void Send(string data, string endpoint = "")
+    public override async void Send(string data, string endpoint = "")
     {
-        if (_tcpClient is not { Connected: true })
+        if (_tcpClient is not { Connected: true } || _stream == null)
         {
+            Console.WriteLine("❌ Không có kết nối TCP để gửi dữ liệu!");
             return;
         }
 
         try
         {
             var bytes = ByteUtils.GetBytesFromString(data);
-            var tcpStream = _tcpClient.GetStream();
+            await _stream.WriteAsync(bytes, 0, bytes.Length);
+            await _stream.FlushAsync();
 
-            _ = tcpStream.WriteAsync(bytes, 0, bytes.Length);
-            _ = tcpStream.FlushAsync();
+            Console.WriteLine($"📤 Gửi dữ liệu ({bytes.Length} bytes) thành công!");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Lỗi khi gửi dữ liệu: {ex.Message}");
         }
+    }
+
+    public override void Stop()
+    {
+        CloseConnection();
+    }
+
+    private void CloseConnection()
+    {
+        IsRunning = false;
+        _cts?.Cancel();
+        _stream?.Close();
+        _tcpClient?.Close();
+        Console.WriteLine("🛑 Kết nối TCP đã đóng.");
     }
 }

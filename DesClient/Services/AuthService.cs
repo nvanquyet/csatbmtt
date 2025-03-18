@@ -91,10 +91,10 @@ public static class AuthService
                     code: StatusCode.Success,
                     data: new User(user.UserName, user.Password)
                 );
-
+                Console.WriteLine($"User {message.ToJson()}");
                 protocol?.Send(message.ToJson(), "");
             }
-
+            
             SessionManager.SetUser(user);
             return true;
         }

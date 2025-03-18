@@ -90,7 +90,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     {
         Console.WriteLine($"data: {data} {_tcpClient?.Client.RemoteEndPoint}");
         var tcpStream = _tcpClient?.GetStream();
-        tcpStream?.WriteAsync(ByteUtils.GetBytesFromString(data), 0, data.Length);
+        _ = tcpStream?.WriteAsync(ByteUtils.GetBytesFromString(data), 0, data.Length);
         tcpStream?.Flush();
     }
 }

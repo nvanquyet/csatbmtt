@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35806.99 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesServer", "DesServer\DesServer.csproj", "{D7BE0731-E800-41F7-BD64-D3EEA6591F88}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{D7BE0731-E800-41F7-BD64-D3EEA6591F88}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{4E63E282-A3D8-49BA-BBE7-C40C7552223D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesClient", "DesClient\DesClient.csproj", "{DB97CCFD-AF0F-4123-9F30-910ED70302FD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{1F08D6DB-72C8-4084-83FC-9C2ED736EFB9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,10 @@ Global
 		{4E63E282-A3D8-49BA-BBE7-C40C7552223D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E63E282-A3D8-49BA-BBE7-C40C7552223D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E63E282-A3D8-49BA-BBE7-C40C7552223D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DB97CCFD-AF0F-4123-9F30-910ED70302FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DB97CCFD-AF0F-4123-9F30-910ED70302FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DB97CCFD-AF0F-4123-9F30-910ED70302FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DB97CCFD-AF0F-4123-9F30-910ED70302FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F08D6DB-72C8-4084-83FC-9C2ED736EFB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F08D6DB-72C8-4084-83FC-9C2ED736EFB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F08D6DB-72C8-4084-83FC-9C2ED736EFB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F08D6DB-72C8-4084-83FC-9C2ED736EFB9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

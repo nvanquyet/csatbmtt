@@ -2,8 +2,9 @@
   "ExpandedNodes": [
     "",
     "\\DesClient",
-    "\\DesServer"
+    "\\DesServer",
+    "\\WinFormsDesk",
+    "\\WinFormsDesk\\Form"
   ],
-  "SelectedNode": "\\DesServer.sln",
   "PreviewInSolutionExplorer": false
 }

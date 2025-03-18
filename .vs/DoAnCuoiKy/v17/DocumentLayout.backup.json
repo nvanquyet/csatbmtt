@@ -3,10 +3,6 @@
   "WorkspaceRootPath": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\WinFormsDesk\\Form\\LoginForm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:WinFormsDesk\\Form\\LoginForm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\DesClient\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:DesClient\\Program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -31,32 +27,19 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "LoginForm.cs",
-              "DocumentMoniker": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\WinFormsDesk\\Form\\LoginForm.cs",
-              "RelativeDocumentMoniker": "WinFormsDesk\\Form\\LoginForm.cs",
-              "ToolTip": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\WinFormsDesk\\Form\\LoginForm.cs",
-              "RelativeToolTip": "WinFormsDesk\\Form\\LoginForm.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-18T19:00:25.952Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
               "Title": "Program.cs",
               "DocumentMoniker": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\DesClient\\Program.cs",
               "RelativeDocumentMoniker": "DesClient\\Program.cs",
               "ToolTip": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\DesClient\\Program.cs",
               "RelativeToolTip": "DesClient\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-03-10T18:54:42.407Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 1,
               "Title": "SimpleDESText.cs",
               "DocumentMoniker": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\DesClient\\SimpleDESText.cs",
               "RelativeDocumentMoniker": "DesClient\\SimpleDESText.cs",
@@ -64,11 +47,12 @@
               "RelativeToolTip": "DesClient\\SimpleDESText.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-10T18:54:41.37Z"
+              "WhenOpened": "2025-03-10T18:54:41.37Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "DesClient.csproj",
               "DocumentMoniker": "W:\\Fourth_Years\\Csat_Bmtt\\DoAnCuoiKy\\DesClient\\DesClient.csproj",
               "RelativeDocumentMoniker": "DesClient\\DesClient.csproj",
@@ -76,7 +60,8 @@
               "RelativeToolTip": "DesClient\\DesClient.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-03-10T18:54:22.686Z"
+              "WhenOpened": "2025-03-10T18:54:22.686Z",
+              "EditorCaption": ""
             }
           ]
         }

@@ -1,7 +1,5 @@
-﻿using System.Collections.Concurrent;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using DesServer.Services;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
 
@@ -11,7 +9,6 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 {
     private TcpListener? _listener;
     private Thread? _listenerThread;
-    private readonly ConcurrentDictionary<string, TcpClient> _clients = new();
 
     public override Task Start(int port)
     {
@@ -33,9 +30,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
             while (IsRunning)
             {
                 var client = _listener?.AcceptTcpClient();
-                var endpoint = client?.Client.RemoteEndPoint?.ToString();
                 if (client == null) continue;
-                if (endpoint != null) _clients.TryAdd(endpoint, client);
                 new Thread(() => HandleClient(client)).Start();
             }
         }
@@ -52,7 +47,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         
         try
         {
-            byte[] buffer = new byte[4096];
+            var buffer = new byte[4096];
             while (IsRunning && client.Connected)
             {
                 var bytesRead = stream.Read(buffer, 0, buffer.Length);
@@ -69,22 +64,15 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
         finally
         {
-            if (endpoint != null) _clients.TryRemove(endpoint, out _);
             client.Dispose();
         }
     }
 
-    public override void Send(string data, string endpoint = "")
-    {
-        if (!_clients.TryGetValue(endpoint, out var client) || !client.Connected) return;
-        MsgService.SendTcpMessage(client,data);
-    }
+    public override void Send(string data, string endpoint = "") { }
 
     public override void Stop()
     {
         base.Stop();
         _listener?.Stop();
-        foreach (var client in _clients.Values) client.Dispose();
-        _clients.Clear();
     }
 }

@@ -42,9 +42,8 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
     private void HandleClient(TcpClient client)
     {
-        var endpoint = client.Client.RemoteEndPoint?.ToString();
         var stream = client.GetStream();
-        
+        Console.WriteLine($"Client connected to");
         try
         {
             var buffer = new byte[4096];
@@ -55,16 +54,11 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
                 var receivedData = new byte[bytesRead];
                 Array.Copy(buffer, receivedData, bytesRead);
-                if (endpoint != null) DataHandler?.OnDataReceived(receivedData, endpoint);
             }
         }
         catch (Exception ex)
         {
-            Logs.Logger.Log($"Client {endpoint} error: {ex.Message}");
-        }
-        finally
-        {
-            client.Dispose();
+            Logs.Logger.Log($"Client {client.Client.RemoteEndPoint} error: {ex.Message}");
         }
     }
 

@@ -17,7 +17,6 @@ public class NetworkManager : Singleton<NetworkManager>
         Console.WriteLine("Connecting to server...");
         TcpService.Start(0);
         Console.WriteLine("Connected to TCP Server!");
-
         if (AuthService.TryAutoLogin(TcpService)) Console.WriteLine("Đang thử đăng nhập với tài khoản đã lưu...");
         else MainMenu.ShowMenu(TcpService);
     }

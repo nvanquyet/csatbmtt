@@ -20,7 +20,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         return Task.CompletedTask;
     }
 
-    
+
     private async Task ListenForTcpMessagesAsync()
     {
         var buffer = new byte[1024];
@@ -65,12 +65,13 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         {
             // Thử phân tích JSON
             JsonDocument.Parse(receivedMessage);
-        
+
             // Kiểm tra cụ thể cho cấu trúc với data là mảng
             if (receivedMessage.Contains("\"data\":["))
             {
                 return receivedMessage.TrimEnd().EndsWith("}]}");
             }
+
             // Kiểm tra cho cấu trúc với data là chuỗi hoặc object
             if (receivedMessage.Contains("\"data\":\"") || receivedMessage.Contains("\"data\":{"))
             {
@@ -88,9 +89,8 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
     public override void Send(string data, string endpoint = "")
     {
-        if (_tcpClient == null || !_tcpClient.Connected)
+        if (_tcpClient is not { Connected: true })
         {
-            Console.WriteLine("❌ Không có kết nối TCP!");
             return;
         }
 
@@ -99,18 +99,12 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
             var bytes = ByteUtils.GetBytesFromString(data);
             var tcpStream = _tcpClient.GetStream();
 
-            Console.WriteLine($"📤 [{DateTime.Now}] Đang gửi {bytes.Length} bytes tới {_tcpClient.Client.RemoteEndPoint}...");
-        
             _ = tcpStream.WriteAsync(bytes, 0, bytes.Length);
             _ = tcpStream.FlushAsync();
-
-            Console.WriteLine("✅ Dữ liệu đã được gửi!");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Lỗi khi gửi dữ liệu: {ex.Message}");
         }
     }
-
-
 }

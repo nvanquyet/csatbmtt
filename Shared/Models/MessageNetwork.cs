@@ -14,8 +14,9 @@ public enum CommandType
     LoadMessage,
     GetClientRsaKey,
     RegisterClientRsaKey,
-    // ChatRequest,
-    // ChatResponse
+    ClientDisconnect,
+    ChatRequest,
+    ChatResponse
 }
 
 public enum StatusCode

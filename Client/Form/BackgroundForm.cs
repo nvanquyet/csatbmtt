@@ -1,4 +1,7 @@
-﻿using Timer = System.Windows.Forms.Timer;
+﻿using Client.Models;
+using Client.Network;
+using Shared.Models;
+using Timer = System.Windows.Forms.Timer;
 
 namespace Client.Form;
 
@@ -19,7 +22,7 @@ public partial class BackgroundForm : Form
         this.Opacity = 0;
         this.WindowState = FormWindowState.Minimized;
     }
-    
+
     /// <summary>
     /// Hàm này sẽ kiểm tra liên tục (mỗi 500ms) xem có form nào mở không.
     /// Nếu không có form nào mở, nó sẽ gọi Application.Exit() để thoát ứng dụng.
@@ -32,6 +35,11 @@ public partial class BackgroundForm : Form
         {
             if (Application.OpenForms.Count > 1) return;
             timer.Stop();
+            var response = new MessageNetwork<string?>(type: CommandType.ClientDisconnect, code: StatusCode.Success,
+                data: SessionManager.GetUserId()).ToJson();
+            NetworkManager.Instance.TcpService.Send(response);
+            NetworkManager.Instance.TcpService.Stop();
+            NetworkManager.Instance.UdpService.Stop();
             Console.WriteLine($"Exit");
             Application.Exit();
         };

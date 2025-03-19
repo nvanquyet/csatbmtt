@@ -1,13 +1,16 @@
 ﻿using System.ComponentModel;
+using System.Windows.Forms;
+using System.Drawing;
 
-namespace Client.Form;
-
-partial class HomeForm
+namespace Client.Form
 {
-        private System.ComponentModel.IContainer components = null;
+    partial class HomeForm
+    {
+        private IContainer components = null;
         private TextBox txtSearch;
-        private Button btnSearch;
         private ListView lstChatHistory;
+        private Button btnLogout;           // Nút Đăng xuất
+        private ListBox lstUserSuggestions; // Danh sách gợi ý người dùng
 
         protected override void Dispose(bool disposing)
         {
@@ -21,34 +24,56 @@ partial class HomeForm
         private void InitializeComponent()
         {
             this.txtSearch = new TextBox();
-            this.btnSearch = new Button();
             this.lstChatHistory = new ListView();
-
+            this.btnLogout = new Button();
+            this.lstUserSuggestions = new ListBox();
+            this.SuspendLayout();
+            // 
             // Form Settings
+            // 
             this.Text = "Home";
             this.ClientSize = new System.Drawing.Size(400, 300);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.StartPosition = FormStartPosition.CenterScreen;
-
-            // Search TextBox
-            txtSearch.Location = new System.Drawing.Point(20, 20);
-            txtSearch.Width = 250;
-            this.Controls.Add(txtSearch);
-
-            // Search Button
-            btnSearch.Text = "Search";
-            btnSearch.Location = new System.Drawing.Point(280, 18);
-            btnSearch.Click += new EventHandler(this.BtnSearch_Click);
-            this.Controls.Add(btnSearch);
-
-            // Chat History ListView
-            lstChatHistory.Location = new System.Drawing.Point(20, 60);
-            lstChatHistory.Size = new System.Drawing.Size(360, 200);
-            lstChatHistory.View = View.Details;
-            lstChatHistory.FullRowSelect = true;
-            lstChatHistory.Columns.Add("Username", 120);
-            lstChatHistory.Columns.Add("Last Message", 220);
-            this.Controls.Add(lstChatHistory);
+            // 
+            // btnLogout
+            // 
+            this.btnLogout.Text = "Logout";
+            this.btnLogout.Size = new Size(75, 23);
+            this.btnLogout.Location = new Point(310, 10); // Góc trên bên phải
+            this.btnLogout.Click += new System.EventHandler(this.BtnLogout_Click);
+            this.Controls.Add(this.btnLogout);
+            // 
+            // txtSearch
+            // 
+            this.txtSearch.Location = new Point(20, 40);
+            this.txtSearch.Width = 250;
+            this.txtSearch.TextChanged += new System.EventHandler(this.TxtSearch_TextChanged);
+            this.Controls.Add(this.txtSearch);
+            // 
+            // lstUserSuggestions
+            // 
+            this.lstUserSuggestions.Location = new Point(20, 65);
+            this.lstUserSuggestions.Size = new Size(340, 60);
+            this.lstUserSuggestions.Visible = false; // Ẩn ban đầu, sẽ hiển thị khi có dữ liệu gợi ý
+            this.lstUserSuggestions.Click += new System.EventHandler(this.LstUserSuggestions_Click);
+            this.Controls.Add(this.lstUserSuggestions);
+            // 
+            // lstChatHistory
+            // 
+            this.lstChatHistory.Location = new Point(20, 130);
+            this.lstChatHistory.Size = new Size(360, 150);
+            this.lstChatHistory.View = View.Details;
+            this.lstChatHistory.FullRowSelect = true;
+            this.lstChatHistory.Columns.Add("Username", 120);
+            this.lstChatHistory.Columns.Add("Last Message", 220);
+            this.lstChatHistory.Click += new System.EventHandler(this.LstChatHistory_Click);
+            this.Controls.Add(this.lstChatHistory);
+            // 
+            // HomeForm
+            // 
+            this.ResumeLayout(false);
+            this.PerformLayout();
         }
-    
+    }
 }

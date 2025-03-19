@@ -1,6 +1,10 @@
-﻿namespace Client.Form
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace Client.Form
 {
-   public partial class ChatForm : System.Windows.Forms.Form
+    partial class ChatForm
     {
         private FlowLayoutPanel messageContainer;
         private TextBox txtMessage;
@@ -8,64 +12,72 @@
         private Button btnSendFile;
         private Label lblSelectedFile;
         private Button btnRemoveFile;
+        private Button btnBack;   // Nút Back
         private OpenFileDialog openFileDialog;
         
         private void InitializeComponent()
         {
-            this.messageContainer = new();
-            this.txtMessage = new();
-            this.btnSend = new();
-            this.btnSendFile = new();
-            this.lblSelectedFile = new();
-            this.btnRemoveFile = new();
-            this.openFileDialog = new ();
+            this.messageContainer = new FlowLayoutPanel();
+            this.txtMessage = new TextBox();
+            this.btnSend = new Button();
+            this.btnSendFile = new Button();
+            this.lblSelectedFile = new Label();
+            this.btnRemoveFile = new Button();
+            this.btnBack = new Button(); // Khởi tạo nút Back
+            this.openFileDialog = new OpenFileDialog();
             
             this.SuspendLayout();
             
+            // btnBack: Nút quay lại HomeForm
+            this.btnBack.Text = "Back";
+            this.btnBack.Size = new Size(60, 25);
+            this.btnBack.Location = new Point(10, 10); // Ở góc trên bên trái
+            this.btnBack.Click += new EventHandler(this.BtnBack_Click);
+            this.Controls.Add(this.btnBack);
+            
             // Message Container
-            this.messageContainer = new FlowLayoutPanel();
             this.messageContainer.AutoScroll = true;
             this.messageContainer.FlowDirection = FlowDirection.TopDown;
             this.messageContainer.WrapContents = false;
-            this.messageContainer.Location = new Point(10, 10);
-            this.messageContainer.Size = new Size(380, 300);
+            // Đặt dưới nút Back
+            this.messageContainer.Location = new Point(10, 40);
+            this.messageContainer.Size = new Size(380, 260);
             this.messageContainer.BorderStyle = BorderStyle.FixedSingle;
-
-            // Xóa hoặc giảm margin/padding để bớt khoảng trống
             this.messageContainer.Margin = new Padding(0);
             this.messageContainer.Padding = new Padding(0);
             
-            //File Dialog 
+            // OpenFileDialog
             this.openFileDialog.Multiselect = true;
-            this.openFileDialog.Filter = "All Files|*.*"; // Có thể chỉnh sửa định dạng file
+            this.openFileDialog.Filter = "All Files|*.*";
             
             // Selected File Label
             this.lblSelectedFile.AutoSize = true;
-            this.lblSelectedFile.Location = new Point(10, 320);
+            this.lblSelectedFile.Location = new Point(10, 310);
             this.lblSelectedFile.Size = new Size(250, 20);
             this.lblSelectedFile.Visible = false;
-
+            
             // Remove File Button
             this.btnRemoveFile.Text = "❌";
             this.btnRemoveFile.Size = new Size(30, 25);
-            this.btnRemoveFile.Location = new Point(this.lblSelectedFile.Right + 10, 315); // Dịch ra xa hơn
+            this.btnRemoveFile.Location = new Point(this.lblSelectedFile.Right + 10, 305);
             this.btnRemoveFile.Visible = false;
             this.btnRemoveFile.Click += new EventHandler(this.BtnRemoveFile_Click);
             
             // Textbox Message
-            this.txtMessage.Location = new Point(10, 350);
+            this.txtMessage.Location = new Point(10, 340);
             this.txtMessage.Size = new Size(260, 25);
+            this.txtMessage.KeyDown += new KeyEventHandler(this.TxtMessage_KeyDown);
             
             // Send Button
             this.btnSend.Text = "Send";
             this.btnSend.Size = new Size(60, 25);
-            this.btnSend.Location = new Point(280, 350);
+            this.btnSend.Location = new Point(280, 340);
             this.btnSend.Click += new EventHandler(this.BtnSend_Click);
             
             // Send File Button
             this.btnSendFile.Text = "📎";
             this.btnSendFile.Size = new Size(40, 25);
-            this.btnSendFile.Location = new Point(340, 350);
+            this.btnSendFile.Location = new Point(340, 340);
             this.btnSendFile.Click += new EventHandler(this.BtnSendFile_Click);
             
             // ChatForm Settings

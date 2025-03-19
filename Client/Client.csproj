@@ -36,6 +36,9 @@
     <Compile Update="Form\ChatForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="Form\BackgroundForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
 
 </Project>

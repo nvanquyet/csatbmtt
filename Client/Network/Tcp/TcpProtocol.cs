@@ -1,11 +1,13 @@
 ﻿using System.Net.Sockets;
 using System.Text;
+using Client.Form;
 using Client.Menu;
 using Client.Services;
 using Shared.AppSettings;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
 using Shared.Utils;
+using Timer = System.Windows.Forms.Timer;
 
 namespace Client.Network.Tcp;
 
@@ -23,15 +25,29 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         try
         {
             await _tcpClient.ConnectAsync(Config.ServerIp, Config.ServerTcpPort);
+            Console.WriteLine("Connected to TCP Server!");
             _stream = _tcpClient.GetStream();
             _cts = new CancellationTokenSource();
 
             Console.WriteLine($"✅ Kết nối đến server: {_tcpClient.Client.RemoteEndPoint}");
-            
+            (FormController.GetForm(FormType.Login) as LoginForm)?.TryLogin();
+            // _ = new System.Threading.Timer((state) =>
+            // {
+            //     if (FormController.GetForm(FormType.Login) is LoginForm login)
+            //     {
+            //         Console.WriteLine("Try Login (ThreadingTimer)");
+            //         login.TryLogin();
+            //     }
+            //     else
+            //     {
+            //         Console.WriteLine("Login Failed (ThreadingTimer)");
+            //     }
+            // }, null, 500, System.Threading.Timeout.Infinite);
+            //
             _ = Task.Run(() => ListenForTcpMessagesAsync(_cts.Token)); // Khởi chạy lắng nghe
             
-            if (AuthService.TryAutoLogin(this)) Console.WriteLine("Đang thử đăng nhập với tài khoản đã lưu...");
-            else MainMenu.ShowMenu(this);
+            // if (AuthService.TryAutoLogin(this)) Console.WriteLine("Đang thử đăng nhập với tài khoản đã lưu...");
+            // else MainMenu.ShowMenu(this);
         }
         catch (Exception e)
         {
@@ -47,7 +63,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
         if (_tcpClient is null || _stream is null)
         {
-            Console.WriteLine("❌ Client chưa được kết nối!");
+            Console.WriteLine("Client chưa được kết nối!");
             return;
         }
 
@@ -61,24 +77,23 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
                     continue;
                 }
 
-                var bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length, token);
+                var bytesRead = await _stream.ReadAsync(buffer, token);
                 if (bytesRead <= 0)
                 {
-                    Console.WriteLine("⚠️ Kết nối bị đóng bởi server!");
+                    Console.WriteLine("Kết nối bị đóng bởi server!");
                     break;
                 }
 
                 messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
                 while (true)
                 {
-                    var endIndex = messageBuilder.ToString().IndexOf('\n'); // Tìm ký tự xuống dòng
-                    if (endIndex == -1) break; // Nếu không có, chờ dữ liệu tiếp theo
+                    var endIndex = messageBuilder.ToString().IndexOf('\n'); 
+                    if (endIndex == -1) break; 
 
-                    var completeJson = messageBuilder.ToString(0, endIndex); // Lấy JSON hoàn chỉnh
-                    messageBuilder.Remove(0, endIndex + 1); // Xóa phần đã xử lý khỏi buffer
+                    var completeJson = messageBuilder.ToString(0, endIndex); 
+                    messageBuilder.Remove(0, endIndex + 1); 
                     
                     var data = ByteUtils.GetBytesFromString(completeJson.Trim());
-                    Console.WriteLine("ProcessData: ");
                     DataHandler?.OnDataReceived(data, "");
                     
                 }
@@ -86,7 +101,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Lỗi khi đọc TCP: {ex.Message}");
+            Console.WriteLine($"Lỗi khi đọc TCP: {ex.Message}");
         }
         finally
         {

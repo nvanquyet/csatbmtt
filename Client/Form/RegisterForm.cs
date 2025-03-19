@@ -1,6 +1,8 @@
-﻿namespace Client.Form
+﻿using Client.Services;
+
+namespace Client.Form
 {
-    public partial class RegisterForm : System.Windows.Forms.Form
+    public partial class RegisterForm : Form
     {
         public RegisterForm()
         {
@@ -9,9 +11,9 @@
 
         private void BtnRegister_Click(object sender, EventArgs e)
         {
-            string username = txtUsername.Text;
-            string password = txtPassword.Text;
-            string confirmPassword = txtConfirmPassword.Text;
+            var username = txtUsername.Text;
+            var password = txtPassword.Text;
+            var confirmPassword = txtConfirmPassword.Text;
 
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword))
             {
@@ -26,8 +28,8 @@
             }
 
             // Log event (in a real application, you'd send data to a server or database)
-            Console.WriteLine($"Register Attempt: Username={username}, Password={password}");
-            MessageBox.Show("Registration successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Console.WriteLine($"Register with {username} {password}");
+            AuthService.Register(username, password);
         }
 
         private void BtnCancel_Click(object sender, EventArgs e) =>  this.Close();

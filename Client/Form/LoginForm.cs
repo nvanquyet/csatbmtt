@@ -1,24 +1,34 @@
-﻿namespace Client.Form;
+﻿using Client.Network;
+using Client.Services;
 
-public partial class LoginForm : System.Windows.Forms.Form
+namespace Client.Form;
+
+public partial class LoginForm : Form
 {
+    public bool RememberMe => chkRememberMe.Checked;
     public LoginForm()
     {
         InitializeComponent();
     }
 
+    public bool TryLogin() => AuthService.TryAutoLogin(NetworkManager.Instance.TcpService);
+
     private void BtnLogin_Click(object sender, EventArgs e)
     {
-        string username = txtUsername.Text;
-        string password = txtPassword.Text;
+        var username = txtUsername.Text;
+        var password = txtPassword.Text;
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            MessageBox.Show("Username or password are required");
+            return;
+        }
         Console.WriteLine($"[Login Attempt] Username: {username}, Password Length: {password.Length}");
-
-        MessageBox.Show("Login successful! Check console for log.");
+        AuthService.Login(username, password);
     }
 
     private void BtnRegister_Click(object sender, EventArgs e)
     {
-        RegisterForm registerForm = new RegisterForm();
-        registerForm.ShowDialog();
+        var registerForm = FormController.GetForm(FormType.Register);
+        registerForm?.ShowDialog();
     }
 }

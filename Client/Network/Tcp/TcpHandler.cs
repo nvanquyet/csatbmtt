@@ -1,4 +1,6 @@
-﻿using Client.Menu;
+﻿using Client.Form;
+using Client.Menu;
+using Client.Models;
 using Client.Services;
 using Shared.Models;
 using Shared.Networking.Interfaces;
@@ -23,17 +25,18 @@ public class TcpHandler : INetworkHandler
     private static Task HandleMessage(string message)
     {
         var msg = MessageNetwork<dynamic>.FromJson(message);
-        if (msg?.Code != StatusCode.Success) return Task.CompletedTask;
-        switch (msg.Type)
+        //if (msg?.Code != StatusCode.Success) return Task.CompletedTask;
+        switch (msg?.Type)
         {
             case CommandType.Login:
-                if (msg.TryParseData(out User? user) && user != null)
+                if (msg.Code == StatusCode.Success && msg.TryParseData(out User? user) && user != null)
                 {
-                    AuthService.SaveUserInfo(user);
-
+                    if((bool)(FormController.GetForm(FormType.Login) as LoginForm)?.RememberMe) AuthService.SaveUserInfo(user);
+                
                     //Todo: Register Rsa public key
                     if (user.Id != null)
                     {
+                        SessionManager.SetUser(user);
                         var clientInfo = new ClientInfo(id: user.Id, EncryptionService.Instance
                             .GetAlgorithm(EncryptionType.Rsa)
                             .EncryptKey);
@@ -42,13 +45,28 @@ public class TcpHandler : INetworkHandler
                         //Send to server
                         NetworkManager.Instance.TcpService.Send(response, "");
                     }
-
-                    MainMenu.ShowMenu2(NetworkManager.Instance.TcpService);
+                    //MainMenu.ShowMenu2(NetworkManager.Instance.TcpService);
+                    //Show Home Form and Dialog Login Success
+                    MessageBox.Show("Login Success.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    FormController.ShowDialog(FormType.Home);
                 }
-
+                else
+                {
+                    AuthService.Logout();
+                    FormController.ShowDialog(FormType.Login);
+                    MessageBox.Show("Login Failed Try Again", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
                 break;
             case CommandType.Registration:
-                Console.WriteLine("Register Success");
+                if (msg.Code == StatusCode.Success)
+                {
+                    MessageBox.Show("Register Success Login to Continue", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    FormController.GetForm(FormType.Register)?.Close();
+                }
+                else
+                {
+                    MessageBox.Show("Register Failed Try Again", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
                 break;
             case CommandType.RegisterClientRsaKey:
                 Console.WriteLine("Register RSA public key Success");

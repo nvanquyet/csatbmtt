@@ -16,6 +16,5 @@ public class NetworkManager : Singleton<NetworkManager>
     {
         Console.WriteLine("Connecting to server...");
         TcpService.Start(0);
-        Console.WriteLine("Connected to TCP Server!");
     }
 }

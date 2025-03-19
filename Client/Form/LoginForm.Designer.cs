@@ -10,6 +10,7 @@
         private TextBox txtPassword;
         private Button btnLogin;
         private Button btnRegister;
+        private CheckBox chkRememberMe;
 
         protected override void Dispose(bool disposing)
         {
@@ -29,6 +30,7 @@
             this.txtPassword = new TextBox();
             this.btnLogin = new Button();
             this.btnRegister = new Button();
+            this.chkRememberMe = new CheckBox();
 
             // Form Settings
             this.Text = "Login";
@@ -52,6 +54,12 @@
             txtUsername.Location = new System.Drawing.Point(120, 25);
             txtUsername.Width = 200;
             panelContainer.Controls.Add(txtUsername);
+            
+            // Remember Me Checkbox
+            chkRememberMe.Text = "Remember Me";
+            chkRememberMe.Location = new System.Drawing.Point(120, 95);
+            panelContainer.Controls.Add(chkRememberMe);
+
 
             // Password Label
             lblPassword.Text = "Password:";

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Drawing;
-using System.Windows.Forms;
-
-namespace Client.Form
+﻿namespace Client.Form
 {
-    public partial class ChatForm : System.Windows.Forms.Form
+    public partial class ChatForm : Form
     {
         private string _selectedFilePath = "";
 
@@ -51,6 +47,11 @@ namespace Client.Form
             _selectedFilePath = "";
             lblSelectedFile.Visible = false;
             btnRemoveFile.Visible = false;
+        }
+
+        private void BtnBack_Click(object sender, EventArgs e)
+        {
+            FormController.ShowDialog(FormType.Home);
         }
 
         private void AddMessage(string text, bool isMe)

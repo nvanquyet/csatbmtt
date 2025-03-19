@@ -9,21 +9,13 @@ namespace Client
         ///  The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        private static void Main()
         {
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
+            _ = NetworkManager.Instance;
             ApplicationConfiguration.Initialize();
-            Application.Run(new ChatForm());
+            Application.Run(new BackgroundForm());
         }
-        
-        // public static void ConsoleTest(string[] args)
-        // {
-        //     _ = NetworkManager.Instance;
-        //     while (true)
-        //     {
-        //         
-        //     }
-        // }
     }
 }

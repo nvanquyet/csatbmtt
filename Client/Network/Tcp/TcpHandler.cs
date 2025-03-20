@@ -12,15 +12,13 @@ namespace Client.Network.Tcp;
 
 public class TcpHandler : INetworkHandler
 {
-    public void OnDataReceived(byte[] data, string sourceEndpoint)
-    {
-        var message = ByteUtils.GetStringFromBytes(data);
-        OnDataReceived(message, sourceEndpoint);
-    }
-
     public void OnDataReceived(string message, string sourceEndpoint) => HandleMessage(message);
-    public void OnClientConnected<T>(string id, T? client) where T : class { }
-
+    public void OnDataReceived(byte[] message, string sourceEndpoint) => HandleMessage(ByteUtils.GetStringFromBytes(message));
+    public void OnClientDisconnect<T>(T? client) where T : class
+    {
+        //Todo Reconnect network
+        throw new NotImplementedException();
+    }
 
     private static Task HandleMessage(string message)
     {

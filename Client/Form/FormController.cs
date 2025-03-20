@@ -25,25 +25,7 @@ public static class FormController
             OpenForms.Add(formType, newForm);
         }
 
-        // Nếu có form hiện tại, ẩn hoặc đóng tùy thuộc vào tham số closeCurrent
-        if (_currentForm != null)
-        {
-            if (closeCurrent)
-            {
-                if (_currentForm.InvokeRequired)
-                    _currentForm.Invoke(new Action(() => _currentForm.Hide()));
-                else
-                    _currentForm.Hide();
-            }
-            else
-            {
-                if (_currentForm.InvokeRequired)
-                    _currentForm.Invoke(new Action(() => _currentForm.Hide()));
-                else
-                    _currentForm.Hide();
-            }
-        }
-
+        var oldForm = _currentForm;
         _currentForm = newForm;
 
         if (newForm != null)
@@ -61,6 +43,25 @@ public static class FormController
             {
                 newForm.Show();
                 newForm.BringToFront();
+            }
+        }
+
+        // Nếu có form hiện tại, ẩn hoặc đóng tùy thuộc vào tham số closeCurrent
+        if (oldForm != null)
+        {
+            if (closeCurrent)
+            {
+                if (oldForm.InvokeRequired)
+                    oldForm.Invoke(new Action(() => oldForm.Hide()));
+                else
+                    oldForm.Hide();
+            }
+            else
+            {
+                if (oldForm.InvokeRequired)
+                    oldForm.Invoke(new Action(() => oldForm.Hide()));
+                else
+                    oldForm.Hide();
             }
         }
     }

@@ -62,6 +62,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         catch (Exception ex)
         {
             Logs.Logger.Log($"Client {client?.Client.RemoteEndPoint} error: {ex.Message}");
+            DataHandler?.OnClientDisconnect(client);
         }
     }
 

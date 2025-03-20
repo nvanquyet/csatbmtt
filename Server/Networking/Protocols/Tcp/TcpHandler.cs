@@ -35,11 +35,14 @@ public class TcpHandler : INetworkHandler, IDisposable
         _ = HandleClientComm(client, message);
     }
 
-    public void OnClientConnected<T>(string? userId, T? client) where T : class
+    public void OnClientDisconnect<T>(T? client) where T : class
     {
         if (client is not TcpClient c) return;
-        var endpoint = c?.Client.RemoteEndPoint?.ToString();
-        if (endpoint != null) Clients.TryAdd(endpoint, c);
+        var endPoint = c?.Client.RemoteEndPoint?.ToString();
+        if (endPoint != null && Clients.TryRemove(endPoint, out var cl))
+        {
+            cl?.Dispose();
+        }
     }
 
     public void OnClientConnected<T>(T? client) where T : class
@@ -95,7 +98,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                     await HandleHandGetUserShake(client, message);
                     break;
                 case CommandType.CancelHandshake:
-                    await HandleCancelHandShake(client, message);
+                    OnClientDisconnect(client);
                     break;
                 case CommandType.None:
                 case CommandType.ReceiveMessage:
@@ -109,7 +112,7 @@ public class TcpHandler : INetworkHandler, IDisposable
         }
     }
 
-    private static Task HandleClientDisconnect(TcpClient? client, MessageNetwork<dynamic> message)
+    public static Task HandleClientDisconnect(TcpClient? client, MessageNetwork<dynamic> message)
     {
         var endPoint = client?.Client.RemoteEndPoint?.ToString();
         if (endPoint != null && Clients.TryRemove(endPoint, out var c))
@@ -353,12 +356,7 @@ public class TcpHandler : INetworkHandler, IDisposable
     //     }
     //     else MsgService.SendErrorMessage(client, "Server Error");
     // }
-
-
-    private static Task HandleReceiveMessage(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        return Task.CompletedTask;
-    }
+    
 
     #endregion
 
@@ -443,7 +441,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                 {
                     if (user != null)
                     {
-                        OnClientConnected(user.Id, client);
+                        OnClientDisconnect(client);
 
                         var response = new MessageNetwork<object>(
                             type: CommandType.Login,

@@ -9,12 +9,17 @@ public class UdpHandler : INetworkHandler
         throw new NotImplementedException();
     }
 
+    public void OnClientDisconnect<T>(T? client) where T : class
+    {
+        throw new NotImplementedException();
+    }
+
     public void OnDataReceived(string message, string sourceEndpoint)
     {
         throw new NotImplementedException();
     }
 
-    public void OnClientConnected<T>(string id,T? client) where T : class
+    public void OnClientDisconnect<T>(string id,T? client) where T : class
     {
         throw new NotImplementedException();
     }

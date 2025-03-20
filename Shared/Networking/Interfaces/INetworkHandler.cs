@@ -2,10 +2,8 @@
 
 public interface INetworkHandler
 {
-    void OnDataReceived(byte[] data, string sourceEndpoint);
-    
     void OnDataReceived(string message, string sourceEndpoint);
-
-    void OnClientConnected<T>(string id,T? client) where T : class;
+    void OnDataReceived(byte[] message, string sourceEndpoint);
+    void OnClientDisconnect<T>(T? client) where T : class;
     void OnClientConnected<T>(T? client) where T : class;
 }

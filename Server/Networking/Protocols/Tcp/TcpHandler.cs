@@ -18,6 +18,10 @@ public class TcpHandler : INetworkHandler, IDisposable
     {
         if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(userId)) return;
         if (!MapUserIdToIp.TryAdd(ip, userId)) MapUserIdToIp[ip] = userId;
+        foreach (var (key, value) in MapUserIdToIp)
+        {
+            Console.WriteLine($"Connect {key} to {value} ");
+        }
     }
 
     private static bool UserIsOnline(string userId) => MapUserIdToIp.ContainsKey(userId);
@@ -449,7 +453,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                             data: user
                         ).ToJson();
                         //Add to map
-                        MapIpToUserId(user.Id, client.GetStream().Socket.RemoteEndPoint?.ToString());
+                        MapIpToUserId(client.GetStream().Socket.RemoteEndPoint?.ToString(), user.Id);
                         MsgService.SendTcpMessage(client, response);
                     }
                     else MsgService.SendErrorMessage(client, "Login failed");

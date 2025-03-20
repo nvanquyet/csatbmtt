@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using System.Collections.Concurrent;
 using Server.Controllers;
 using Server.Database.Repositories;
 using Server.Services;
@@ -8,95 +9,92 @@ using Shared.Utils;
 
 namespace Server.Networking.Protocols.Tcp;
 
-public class TcpHandler : INetworkHandler
+public class TcpHandler : INetworkHandler, IDisposable
 {
-    private static readonly Dictionary<string, TcpClient?> Clients = new();
-    private static readonly Dictionary<string, string> IpToUserIdMap = new();
+    private static readonly ConcurrentDictionary<string, TcpClient?> Clients = new();
+    private static readonly ConcurrentDictionary<string, string?> MapUserIdToIp = new();
 
-    public static void MapIpToUserId(string ip, string userId)
+    private static void MapIpToUserId(string? ip, string? userId)
     {
-        if (IpToUserIdMap.TryAdd(ip, userId)) return;
-        IpToUserIdMap[ip] = userId;
+        if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(userId)) return;
+        if (!MapUserIdToIp.TryAdd(ip, userId)) MapUserIdToIp[ip] = userId;
     }
 
-    public static List<UserDto> GetAvailableUsers(List<User> users)
-    {
-        var availableUsers = (from kvp in IpToUserIdMap
-                join user in users on kvp.Value equals user.Id
-                select new UserDto(user.Id, user.UserName))
-            .ToList();
-
-        return availableUsers;
-    }
+    private static bool UserIsOnline(string userId) => MapUserIdToIp.ContainsKey(userId);
 
     public void OnDataReceived(byte[] data, string sourceEndpoint)
     {
         if (!Clients.TryGetValue(sourceEndpoint, out var client)) return;
         var message = ByteUtils.GetStringFromBytes(data);
-        Logs.Logger.Log($"TCP Received from {sourceEndpoint}: {message}");
-        HandleClientComm(client, message);
+        _ = HandleClientComm(client, message);
     }
 
     public void OnDataReceived(string message, string sourceEndpoint)
     {
         if (!Clients.TryGetValue(sourceEndpoint, out var client)) return;
-        Logs.Logger.Log($"TCP Received from {sourceEndpoint}: {message}");
-        HandleClientComm(client, message);
+        _ = HandleClientComm(client, message);
     }
 
     public void OnClientConnected<T>(string? userId, T? client) where T : class
     {
         if (client is not TcpClient c) return;
         var endpoint = c?.Client.RemoteEndPoint?.ToString();
-        if (endpoint != null) Clients[endpoint] = c;
+        if (endpoint != null) Clients.TryAdd(endpoint, c);
     }
 
     public void OnClientConnected<T>(T? client) where T : class
     {
         if (client is not TcpClient c) return;
         var endpoint = c?.Client.RemoteEndPoint?.ToString();
-        Console.WriteLine($"Connected to {endpoint}");
-        if (endpoint != null) Clients[endpoint] = c;
+        if (endpoint != null) Clients.TryAdd(endpoint, c);
     }
 
-
-    private void HandleClientComm(TcpClient? client, string jsonMessage)
+    private async Task HandleClientComm(TcpClient? client, string jsonMessage)
     {
+        if (client == null) return;
+
         try
         {
             var message = MessageNetwork<dynamic>.FromJson(jsonMessage);
             if (message == null) throw new InvalidOperationException("Invalid message format");
+
             switch (message.Type)
             {
                 case CommandType.Login:
-                    HandleLogin(client, message);
+                    await HandleLogin(client, message);
                     break;
                 case CommandType.Registration:
-                    HandleRegistration(client, message);
+                    await HandleRegistration(client, message);
                     break;
                 case CommandType.GetAvailableClients:
-                    HandleGetAvailableClient(client, message);
+                    await HandleGetAvailableClient(client, message);
                     break;
-                case CommandType.GetClientRsaKey:
-                    HandleGetClientRsaKey(client, message);
-                    break;
-                case CommandType.LoadMessage:
-                    _ = HandleLoadMessage(client, message);
-                    break;
+                // case CommandType.GetClientRsaKey:
+                //     await HandleGetClientRsaKey(client, message);
+                //     break;
+                // case CommandType.LoadMessage:
+                //     await HandleLoadMessage(client, message);
+                //     break;
                 case CommandType.SendMessage:
-                    _ = HandleSendMessage(client, message);
+                    await HandleSendMessage(client, message);
                     break;
-                case CommandType.RegisterClientRsaKey:
-                    _ = HandleRegisterClientKey(client, message);
-                    break;
+                // case CommandType.RegisterClientRsaKey:
+                //     await HandleRegisterClientKey(client, message);
+                //     break;
                 case CommandType.ClientDisconnect:
-                    _ = HandleClientDisconnect(client, message);
+                    await HandleClientDisconnect(client, message);
                     break;
-                case CommandType.ChatRequest:
-                    _ = HandleChatRequest(client, message);
+                case CommandType.HandshakeRequest:
+                    await HandleHandshakeRequest(client, message);
                     break;
-                case CommandType.ChatResponse:
-                    _ = HandleChatResponse(client, message);
+                case CommandType.HandshakeResponse:
+                    await HandleHandshakeResponse(client, message);
+                    break;
+                case CommandType.GetUserShake:
+                    await HandleHandGetUserShake(client, message);
+                    break;
+                case CommandType.CancelHandshake:
+                    await HandleCancelHandShake(client, message);
                     break;
                 case CommandType.None:
                 case CommandType.ReceiveMessage:
@@ -110,135 +108,42 @@ public class TcpHandler : INetworkHandler
         }
     }
 
-    private Task HandleClientDisconnect(TcpClient? client, MessageNetwork<dynamic> message)
+    private static Task HandleClientDisconnect(TcpClient? client, MessageNetwork<dynamic> message)
     {
-        //Remove from Tcp List
         var endPoint = client?.Client.RemoteEndPoint?.ToString();
-        if (endPoint != null && Clients.Remove(endPoint, out var c))
+        if (endPoint != null && Clients.TryRemove(endPoint, out var c))
         {
-            Logs.Logger.Log($"Disconnected from {endPoint}");
+            c?.Dispose();
         }
 
-        //Remove 
-        return Task.CompletedTask;
-    }
-
-    private static Task HandleChatResponse(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        try
-        {
-            if (message is { Code: StatusCode.Success } && client != null)
-            {
-                if (message.TryParseData(out ChatResponseDto? dto) && dto != null)
-                {
-                    if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
-                    if (!Clients.TryGetValue(dto.ToUser.Id, out var toClient))
-                        throw new InvalidOperationException("Invalid user id");
-                    MsgService.SendTcpMessage(toClient, message.ToJson());
-                }
-                else throw new KeyNotFoundException("Target client not found.");
-            }
-            else throw new ArgumentException("Invalid message or client is null.");
-        }
-        catch (Exception ex)
-        {
-            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-            Console.WriteLine($"Error: {ex.StackTrace}");
-        }
+        //Remove
 
         return Task.CompletedTask;
     }
 
-    private static Task HandleChatRequest(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        try
-        {
-            if (message is { Code: StatusCode.Success } && client != null)
-            {
-                if (message.TryParseData(out ChatRequestDto? dto) && dto != null)
-                {
-                    if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
-                    //Get TcpClient from target
-                    if (!Clients.TryGetValue(dto.ToUser.Id, out var toClient))
-                        throw new InvalidOperationException("Invalid user id");
-                    MsgService.SendTcpMessage(toClient, message.ToJson());
-                }
-                else throw new KeyNotFoundException("Target client not found.");
-            }
-            else throw new ArgumentException("Invalid message or client is null.");
-        }
-        catch (Exception ex)
-        {
-            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-            Console.WriteLine($"Error: {ex.StackTrace}");
-        }
+    #region HandShake
 
-        return Task.CompletedTask;
+    private static async Task HandleHandGetUserShake(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        if (message is { Code: StatusCode.Success } && client != null)
+        {
+            if (message.TryParseData(out UserDto? user) && user != null)
+            {
+                if (user.Id == null) return;
+                var data = await UserInteractionRepository.GetConversationRecord(user.Id);
+                var response = new MessageNetwork<ConversationRecord?>(
+                    type: CommandType.GetAvailableClients,
+                    code: StatusCode.Success,
+                    data: data
+                ).ToJson();
+                MsgService.SendTcpMessage(client, response);
+            }
+            else MsgService.SendErrorMessage(client, "Target not found");
+        }
+        else MsgService.SendErrorMessage(client, "Server Error");
     }
 
-    private static Task HandleRegisterClientKey(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        try
-        {
-            if (message is { Code: StatusCode.Success } && client != null)
-            {
-                if (message.TryParseData(out ClientInfo? info) && info != null)
-                {
-                    if (ClientKeyStore.Instance.RegisterClient(info.Id, info.PublicKey))
-                    {
-                        var response = new MessageNetwork<string>(
-                            type: CommandType.RegisterClientRsaKey,
-                            code: StatusCode.Success,
-                            data: "Register Public Key Success"
-                        ).ToJson();
-                        MsgService.SendTcpMessage(client, response);
-                    }
-                    else throw new InvalidOperationException("PublicKey not found for client.");
-                }
-                else throw new KeyNotFoundException("Target client not found.");
-            }
-            else throw new ArgumentException("Invalid message or client is null.");
-        }
-        catch (Exception ex)
-        {
-            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-            Console.WriteLine($"Error: {ex.StackTrace}");
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private static void HandleGetClientRsaKey(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        try
-        {
-            if (message is { Code: StatusCode.Success } && client != null)
-            {
-                if (message.TryParseData(out ClientInfo? info) && info != null)
-                {
-                    var data = ClientKeyStore.Instance.GetClientById(info.Id)?.PublicKey;
-
-                    if (data == null) throw new InvalidOperationException("PublicKey not found for client.");
-
-                    var response = new MessageNetwork<object>(
-                        type: CommandType.GetClientRsaKey,
-                        code: StatusCode.Success,
-                        data: data
-                    ).ToJson();
-                    MsgService.SendTcpMessage(client, response);
-                }
-                else throw new KeyNotFoundException("Target client not found.");
-            }
-            else throw new ArgumentException("Invalid message or client is null.");
-        }
-        catch (Exception ex)
-        {
-            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-            Console.WriteLine($"Error: {ex.StackTrace}");
-        }
-    }
-
-    private static void HandleGetAvailableClient(TcpClient? client, MessageNetwork<dynamic> message)
+    private static Task HandleGetAvailableClient(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (message is { Code: StatusCode.Success } && client != null)
         {
@@ -256,22 +161,277 @@ public class TcpHandler : INetworkHandler
                     data: data
                 ).ToJson();
                 MsgService.SendTcpMessage(client, response);
-                // _ = MsgService.SendTcpMessage(
-                //     ConnectionController.Instance.GetUserConnection(chatConversation.ReceiverId)?.TcpClient,
-                //     response, ServerConfig.ShowConsoleLog);
             }
-            else
-            {
-                MsgService.SendErrorMessage(client, "Target not found");
-            }
+            else MsgService.SendErrorMessage(client, "Target not found");
         }
-        else
-        {
-            MsgService.SendErrorMessage(client, "Server Error");
-        }
+        else MsgService.SendErrorMessage(client, "Server Error");
+
+        return Task.CompletedTask;
     }
 
-    private void HandleLogin(TcpClient? client, MessageNetwork<dynamic> message)
+    private static Task HandleHandshakeResponse(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        try
+        {
+            if (message is { Code: StatusCode.Success } && client != null)
+            {
+                if (message.TryParseData(out HandshakeDto? dto) && dto != null)
+                {
+                    if (string.IsNullOrEmpty(dto.FromUser?.Id)) throw new InvalidOperationException("Invalid user id");
+                    //Get TcpClient from target
+                    if (!MapUserIdToIp.TryGetValue(dto.FromUser.Id, out var fromUserId) || fromUserId == null)
+                    {
+                        message.Code = StatusCode.Error;
+                        dto.Description = "Target client not online.";
+                        message.Data = dto;
+                        MsgService.SendTcpMessage(client, message.ToJson());
+                    }
+                    else
+                    {
+                        if (!Clients.TryGetValue(fromUserId, out var toClient))
+                        {
+                            //Todo: Send error handshake cant get ip target
+                            message.Code = StatusCode.Error;
+                            dto.Description = "Can't connect to target client.";
+                            message.Data = dto;
+                            MsgService.SendTcpMessage(client, message.ToJson());
+                        }
+                        else
+                        {
+                            MsgService.SendTcpMessage(toClient, message.ToJson());
+                            MsgService.SendTcpMessage(toClient, message.ToJson());
+                        }
+                    }
+                }
+                else throw new KeyNotFoundException("Target client not found.");
+            }
+            else throw new ArgumentException("Invalid message or client is null.");
+        }
+        catch (Exception ex)
+        {
+            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+            Console.WriteLine($"Error: {ex.StackTrace}");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static Task HandleHandshakeRequest(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        try
+        {
+            if (message is { Code: StatusCode.Success } && client != null)
+            {
+                if (message.TryParseData(out HandshakeDto? dto) && dto != null)
+                {
+                    if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
+                    //Get TcpClient from target
+                    if (!MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var toUserId) || toUserId == null)
+                    {
+                        message.Code = StatusCode.Error;
+                        dto.Description = "Target client not online.";
+                        message.Data = dto;
+                        MsgService.SendTcpMessage(client, message.ToJson());
+                    }
+                    else
+                    {
+                        if (!Clients.TryGetValue(toUserId, out var toClient))
+                        {
+                            //Todo: Send error handshake cant get ip target
+                            message.Code = StatusCode.Error;
+                            dto.Description = "Can't connect to target client.";
+                            message.Data = dto;
+                            MsgService.SendTcpMessage(client, message.ToJson());
+                        }
+                        else
+                        {
+                            MsgService.SendTcpMessage(toClient, message.ToJson());
+                        }
+                    }
+                }
+                else throw new KeyNotFoundException("Target client not found.");
+            }
+            else throw new ArgumentException("Invalid message or client is null.");
+        }
+        catch (Exception ex)
+        {
+            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+            Console.WriteLine($"Error: {ex.StackTrace}");
+        }
+
+        return Task.CompletedTask;
+    }
+    
+    private static Task HandleCancelHandShake(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        try
+        {
+            if (message is { Code: StatusCode.Success } && client != null)
+            {
+                if (message.TryParseData(out HandshakeDto? dto) && dto != null)
+                {
+                    if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
+                    //Get TcpClient from target
+                    if (!MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var toUserId) || toUserId == null)
+                    {
+                        message.Code = StatusCode.Error;
+                        dto.Description = "Target client not online.";
+                        message.Data = dto;
+                        MsgService.SendTcpMessage(client, message.ToJson());
+                    }
+                    else
+                    {
+                        if (!Clients.TryGetValue(toUserId, out var toClient))
+                        {
+                            //Todo: Send error handshake cant get ip target
+                            message.Code = StatusCode.Error;
+                            dto.Description = "Can't connect to target client.";
+                            message.Data = dto;
+                            MsgService.SendTcpMessage(client, message.ToJson());
+                        }
+                        else
+                        {
+                            MsgService.SendTcpMessage(toClient, message.ToJson());
+                            MsgService.SendTcpMessage(client, message.ToJson());
+                        }
+                    }
+                }
+                else throw new KeyNotFoundException("Target client not found.");
+            }
+            else throw new ArgumentException("Invalid message or client is null.");
+        }
+        catch (Exception ex)
+        {
+            MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+            Console.WriteLine($"Error: {ex.StackTrace}");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    #endregion
+
+    #region Message
+
+    private static Task HandleSendMessage(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        if (message is { Code: StatusCode.Success } && client != null)
+        {
+            if (message.TryParseData(out MessageDto? messageDto) && messageDto is { ReceiverId: not null })
+            {
+                if (!MapUserIdToIp.TryGetValue(messageDto.ReceiverId, out var r) || r == null)
+                    return Task.CompletedTask;
+                if (!Clients.TryGetValue(r, out var toClient)) return Task.CompletedTask;
+                message.Type = CommandType.ReceiveMessage;
+                MsgService.SendTcpMessage(toClient, message.ToJson());
+            }
+            else MsgService.SendErrorMessage(client, "Target not found");
+        }
+        else MsgService.SendErrorMessage(client, "Server Error");
+
+        return Task.CompletedTask;
+    }
+
+    // private static async Task HandleLoadMessage(TcpClient? client, MessageNetwork<dynamic> message)
+    // {
+    //     if (message is { Code: StatusCode.Success } && client != null)
+    //     {
+    //         if (message.TryParseData(out ChatHistoryRequest? history) &&
+    //             history is { SenderId: not null, ReceiverId: not null })
+    //         {
+    //             var allChatMessage = await MessageRepository.LoadChatMessages(history.SenderId, history.ReceiverId);
+    //
+    //             var response = new MessageNetwork<object>(
+    //                 type: CommandType.LoadMessage,
+    //                 code: StatusCode.Success,
+    //                 data: allChatMessage
+    //             ).ToJson();
+    //             MsgService.SendTcpMessage(client, response);
+    //         }
+    //         else MsgService.SendErrorMessage(client, "Target not found");
+    //     }
+    //     else MsgService.SendErrorMessage(client, "Server Error");
+    // }
+
+
+    private static Task HandleReceiveMessage(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        return Task.CompletedTask;
+    }
+
+    #endregion
+
+    #region Client Key
+
+    // private static Task HandleRegisterClientKey(TcpClient? client, MessageNetwork<dynamic> message)
+    // {
+    //     try
+    //     {
+    //         if (message is { Code: StatusCode.Success } && client != null)
+    //         {
+    //             if (message.TryParseData(out ClientInfo? info) && info != null)
+    //             {
+    //                 if (ClientKeyStore.Instance.RegisterClient(info.Id, info.PublicKey))
+    //                 {
+    //                     var response = new MessageNetwork<string>(
+    //                         type: CommandType.RegisterClientRsaKey,
+    //                         code: StatusCode.Success,
+    //                         data: "Register Public Key Success"
+    //                     ).ToJson();
+    //                     MsgService.SendTcpMessage(client, response);
+    //                 }
+    //                 else throw new InvalidOperationException("PublicKey not found for client.");
+    //             }
+    //             else throw new KeyNotFoundException("Target client not found.");
+    //         }
+    //         else throw new ArgumentException("Invalid message or client is null.");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+    //         Console.WriteLine($"Error: {ex.StackTrace}");
+    //     }
+    //
+    //     return Task.CompletedTask;
+    // }
+    //
+    // private static Task HandleGetClientRsaKey(TcpClient? client, MessageNetwork<dynamic> message)
+    // {
+    //     try
+    //     {
+    //         if (message is { Code: StatusCode.Success } && client != null)
+    //         {
+    //             if (message.TryParseData(out ClientInfo? info) && info != null)
+    //             {
+    //                 var data = ClientKeyStore.Instance.GetClientById(info.Id)?.PublicKey;
+    //
+    //                 if (data == null) throw new InvalidOperationException("PublicKey not found for client.");
+    //
+    //                 var response = new MessageNetwork<object>(
+    //                     type: CommandType.GetClientRsaKey,
+    //                     code: StatusCode.Success,
+    //                     data: data
+    //                 ).ToJson();
+    //                 MsgService.SendTcpMessage(client, response);
+    //             }
+    //             else throw new KeyNotFoundException("Target client not found.");
+    //         }
+    //         else throw new ArgumentException("Invalid message or client is null.");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
+    //         Console.WriteLine($"Error: {ex.StackTrace}");
+    //     }
+    //
+    //     return Task.CompletedTask;
+    // }
+
+    #endregion
+
+    #region Login and Registration
+
+    private Task HandleLogin(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (message is { Code: StatusCode.Success } && client != null)
         {
@@ -289,6 +449,8 @@ public class TcpHandler : INetworkHandler
                             code: StatusCode.Success,
                             data: user
                         ).ToJson();
+                        //Add to map
+                        MapIpToUserId(client.GetStream().Socket.RemoteEndPoint?.ToString(), user.Id);
                         MsgService.SendTcpMessage(client, response);
                     }
                     else MsgService.SendErrorMessage(client, "Login failed");
@@ -298,9 +460,11 @@ public class TcpHandler : INetworkHandler
             else MsgService.SendErrorMessage(client, "Target not found");
         }
         else MsgService.SendErrorMessage(client, "Server Error");
+
+        return Task.CompletedTask;
     }
 
-    private static void HandleRegistration(TcpClient? client, MessageNetwork<dynamic> messageNetwork)
+    private static Task HandleRegistration(TcpClient? client, MessageNetwork<dynamic> messageNetwork)
     {
         if (messageNetwork is { Code: StatusCode.Success, Data: not null })
         {
@@ -324,52 +488,27 @@ public class TcpHandler : INetworkHandler
             else MsgService.SendErrorMessage(client, "Missing credentials");
         }
         else MsgService.SendErrorMessage(client, "Invalid registration");
+
+        return Task.CompletedTask;
     }
 
-    private static async Task HandleSendMessage(TcpClient? client, MessageNetwork<dynamic> message)
+    #endregion
+
+    public void Dispose()
     {
-        if (message is { Code: StatusCode.Success } && client != null)
+        foreach (var client in Clients.Values)
         {
-            if (message.TryParseData(out ChatConversation? chatConversation) && chatConversation != null)
+            try
             {
-                //Save to database
-                await MessageRepository.SaveChatMessage(chatConversation.SenderId, chatConversation.ReceiverId,
-                    chatConversation.Messages[0]);
-
-                var response = new MessageNetwork<object>(
-                    type: CommandType.ReceiveMessage,
-                    code: StatusCode.Success,
-                    data: chatConversation
-                ).ToJson();
-
-                //MsgService.SendTcpMessage(client, response);
-                //MsgService.SendTcpMessage(
-                // ConnectionController.Instance.GetUserConnection(chatConversation.ReceiverId)?.TcpClient);
+                client?.Dispose();
             }
-            else MsgService.SendErrorMessage(client, "Target not found");
-        }
-        else MsgService.SendErrorMessage(client, "Server Error");
-    }
-
-    private static async Task HandleLoadMessage(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        if (message is { Code: StatusCode.Success } && client != null)
-        {
-            if (message.TryParseData(out ChatHistoryRequest? history) &&
-                history is { SenderId: not null, ReceiverId: not null })
+            catch (Exception ex)
             {
-                var allChatMessage = await MessageRepository.LoadChatMessages(history.SenderId, history.ReceiverId);
-
-                var response = new MessageNetwork<object>(
-                    type: CommandType.LoadMessage,
-                    code: StatusCode.Success,
-                    data: allChatMessage
-                ).ToJson();
-
-                MsgService.SendTcpMessage(client, response);
+                MsgService.SendErrorMessage(client, "Error disposing client");
             }
-            else MsgService.SendErrorMessage(client, "Target not found");
         }
-        else MsgService.SendErrorMessage(client, "Server Error");
+
+        Clients.Clear();
+        MapUserIdToIp.Clear();
     }
 }

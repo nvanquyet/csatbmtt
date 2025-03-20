@@ -47,6 +47,11 @@ public static class FormController
     public static System.Windows.Forms.Form? GetForm(FormType formType) => OpenForms.GetValueOrDefault(formType);
 
     /// <summary>
+    /// Lấy form theo FormType.
+    /// </summary>
+    public static T? GetForm<T>(FormType formType) where T : Form => OpenForms.GetValueOrDefault(formType) as T;
+
+    /// <summary>
     /// Đóng một form theo FormType.
     /// </summary>
     public static void CloseForm(FormType formType)

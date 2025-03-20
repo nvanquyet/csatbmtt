@@ -6,5 +6,6 @@ public static class ServerConfig
     
     public const string DatabaseString = "Cosoantoan";
     public const string UserCollection = "Users";
+    public const string UserInteractionCollection = "UserInteractions";
     public const string ChatMessagesCollection = "ChatMessages";
 }

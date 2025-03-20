@@ -11,12 +11,14 @@ public enum CommandType
     GetAvailableClients,
     SendMessage,
     ReceiveMessage,
-    LoadMessage,
-    GetClientRsaKey,
-    RegisterClientRsaKey,
+    //LoadMessage,
+    // GetClientRsaKey,
+    // RegisterClientRsaKey,
     ClientDisconnect,
-    ChatRequest,
-    ChatResponse
+    HandshakeRequest,
+    HandshakeResponse,
+    GetUserShake,
+    CancelHandshake
 }
 
 public enum StatusCode

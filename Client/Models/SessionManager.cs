@@ -13,4 +13,6 @@ public static class SessionManager
     public static string? GetUserId() => _currentUser?.Id;
     public static string? GetUserName() => _currentUser?.UserName;
     
+    public static UserDto GetUserDto() => new UserDto(GetUserId(), GetUserName());
+    
 }

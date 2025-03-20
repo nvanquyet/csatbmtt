@@ -29,15 +29,18 @@ public class ChatMessage(
     public DateTime Timestamp { get; init; } = timestamp;
 }
 
-public class ChatRequestDto(UserDto? fromUser, UserDto? toUser)
+public class MessageDto(
+    string? receiverId,
+    TransferData? data)
 {
-    public UserDto? FromUser { get; init; } = fromUser;
-    public UserDto? ToUser { get; init; } = toUser;
+    public string? ReceiverId { get; init; } = receiverId;
+    public TransferData? Data { get; init; } = data;
 }
 
-public class ChatResponseDto(UserDto? fromUser, UserDto? toUser, bool accepted)
+public class HandshakeDto(UserDto? fromUser, UserDto? toUser)
 {
     public UserDto? FromUser { get; init; } = fromUser;
     public UserDto? ToUser { get; init; } = toUser;
-    public bool Accepted  { get; init; } = accepted;
+    public string Description { get; set; } = string.Empty;
+    public bool Accepted  { get; set; } = false;
 }

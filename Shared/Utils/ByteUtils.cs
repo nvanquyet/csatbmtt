@@ -22,6 +22,21 @@ public static class ByteUtils
 
         return outer;
     }
+    
+    public static string GetFileSize(long byteLength)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        var order = 0;
+        double size = byteLength;
+
+        while (size >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            size /= 1024;
+        }
+
+        return $"{size:0.##} {sizes[order]}";
+    }
 
     public static byte[] SelectBits(byte[] inner, int pos, int len)
     {

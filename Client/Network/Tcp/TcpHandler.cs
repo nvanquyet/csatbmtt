@@ -32,23 +32,18 @@ public class TcpHandler : INetworkHandler
                 if (msg.Code == StatusCode.Success && msg.TryParseData(out User? user) && user != null)
                 {
                     if((bool)(FormController.GetForm(FormType.Login) as LoginForm)?.RememberMe) AuthService.SaveUserInfo(user);
-                
-                    //Todo: Register Rsa public key
                     if (user.Id != null)
                     {
                         SessionManager.SetUser(user);
-                        var clientInfo = new ClientInfo(id: user.Id, EncryptionService.Instance
-                            .GetAlgorithm(EncryptionType.Rsa)
-                            .EncryptKey);
-                        var response = new MessageNetwork<ClientInfo>(type: CommandType.RegisterClientRsaKey,
-                            code: StatusCode.Success, data: clientInfo).ToJson();
-                        //Send to server
-                        NetworkManager.Instance.TcpService.Send(response, "");
+                        //Show Home Form and Dialog Login Success
+                        MessageBox.Show("Login Success.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        FormController.ShowDialog(FormType.Home);
                     }
-                    //MainMenu.ShowMenu2(NetworkManager.Instance.TcpService);
-                    //Show Home Form and Dialog Login Success
-                    MessageBox.Show("Login Success.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    FormController.ShowDialog(FormType.Home);
+                    else
+                    {
+                        AuthService.Logout();
+                        FormController.ShowDialog(FormType.Login);
+                    }
                 }
                 else
                 {
@@ -68,50 +63,89 @@ public class TcpHandler : INetworkHandler
                     MessageBox.Show("Register Failed Try Again", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 break;
-            case CommandType.RegisterClientRsaKey:
-                Console.WriteLine("Register RSA public key Success");
-                break;
             case CommandType.GetAvailableClients:
                 if (msg.TryParseData(out List<UserDto>? allUsers) && allUsers != null)
                 {
-                    ChatMenu.ChatWith(allUsers, NetworkManager.Instance.TcpService);
+                    //ChatMenu.ChatWith(allUsers, NetworkManager.Instance.TcpService);
+                    FormController.GetForm<HomeForm>(FormType.Home)?.SetAllUsers(allUsers);
                 }
                 break;
-            // case CommandType.ChatRequest:
-            //     if (msg.TryParseData(out ChatRequestDto? dto) && dto != null)
+            case CommandType.HandshakeRequest:
+                if (msg.TryParseData(out HandshakeDto? dtoRequest) && dtoRequest != null)
+                {
+                    if (msg.Code == StatusCode.Success)
+                    {
+                        FormController.GetForm<HomeForm>(FormType.Home)?.ShowHandshakeConfirm(dtoRequest);
+                    }
+                    else
+                    {
+                        FormController.GetForm<HomeForm>(FormType.Home)?.ShowHandshakeError(dtoRequest.Description);
+                    }
+                }
+                break;
+            case CommandType.HandshakeResponse:
+                if (msg.TryParseData(out HandshakeDto? dtoResponse) && dtoResponse != null)
+                {
+                    if (msg.Code == StatusCode.Success)
+                    {
+                        if (dtoResponse.Accepted)
+                        {
+                            FormController.GetForm<HomeForm>(FormType.Home)?.HandShakeSuccess(dtoResponse.Description);
+                            FormController.ShowDialog(FormType.Chat);
+                            FormController.GetForm<ChatForm>(FormType.Chat)?.SetUserTarget(dtoResponse.FromUser?.Id == SessionManager.GetUserId() ? dtoResponse.ToUser : dtoResponse.FromUser);
+                        }
+                        else
+                        {
+                            FormController.GetForm<HomeForm>(FormType.Home)?.ShowHandshakeError(
+                                dtoResponse.FromUser?.Id == SessionManager.GetUserId()
+                                    ? $"{dtoResponse.ToUser?.UserName} rejected handshake request."
+                                    : $"You rejected handshake request.");
+                        }
+                        
+                    } else
+                    {
+                        FormController.GetForm<HomeForm>(FormType.Home)?.ShowHandshakeError(dtoResponse.Description);
+                    }
+                }
+                break;
+            case CommandType.GetUserShake:
+                if (msg.TryParseData(out ConversationRecord? c) && c != null)
+                {
+                    FormController.GetForm<HomeForm>(FormType.Home)?.LoadHandshake(c);
+                }
+                break;
+            case CommandType.CancelHandshake:
+                if (msg.TryParseData(out HandshakeDto? cancel) && cancel != null)
+                {
+                    if (msg.Code == StatusCode.Success)
+                    {
+                        MessageBox.Show("Handshake Cancelled", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        FormController.ShowDialog(FormType.Home);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Handshake Cancelled Try Again", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                break;
+            case CommandType.ReceiveMessage:
+                if (msg.TryParseData(out MessageDto? md) && md?.Data != null)
+                {
+                    FormController.GetForm<ChatForm>(FormType.Chat)?.AddMessage(md.Data, false);
+                }
+            
+                break;
+            // case CommandType.LoadMessage:
+            //     if (msg.TryParseData(out ChatMessage[]? allMessages))
             //     {
-            //         ChatMenu.ShowBoxConfirm(dto);
+            //         ChatMenu.LoadAllMessage(allMessages);
             //     }
-            //     break;
-            // case CommandType.ChatResponse:
-            //     if (msg.TryParseData(out ChatResponseDto? r) && r != null)
+            //     else
             //     {
-            //         Console.WriteLine($"User {r.FromUser?.UserName} {(r.Accepted ? "Accepted" : "Rejected")}");
-            //         if (r.Accepted) ChatMenu.ShowChatMenu(r.FromUser, NetworkManager.Instance.TcpService, false);
+            //         Console.WriteLine("Load All Messages Failed");
             //     }
             //
             //     break;
-            case CommandType.ReceiveMessage:
-                if (msg.TryParseData(out ChatMessage? cM))
-                {
-                    ChatMenu.LoadMessage(cM);
-                }
-
-                break;
-            case CommandType.LoadMessage:
-                if (msg.TryParseData(out ChatMessage[]? allMessages))
-                {
-                    ChatMenu.LoadAllMessage(allMessages);
-                }
-                else
-                {
-                    Console.WriteLine("Load All Messages Failed");
-                }
-
-                break;
-            case CommandType.None:
-            case CommandType.SendMessage:
-            case CommandType.GetClientRsaKey:
             default:
                 Console.WriteLine("Unknown Command");
                 break;

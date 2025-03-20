@@ -17,7 +17,7 @@ public class TcpHandler : INetworkHandler, IDisposable
     private static void MapIpToUserId(string? ip, string? userId)
     {
         if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(userId)) return;
-        if (!MapUserIdToIp.TryAdd(ip, userId)) MapUserIdToIp[ip] = userId;
+        if (!MapUserIdToIp.TryAdd(ip, userId)) MapUserIdToIp[userId] = ip;
         foreach (var (key, value) in MapUserIdToIp)
         {
             Console.WriteLine($"Connect {key} to {value} ");
@@ -451,7 +451,6 @@ public class TcpHandler : INetworkHandler, IDisposable
                             data: user
                         ).ToJson();
                         //Add to map
-                        Console.WriteLine($"Client: {user.Id} {user.UserName} {client.GetStream().Socket.RemoteEndPoint}");
                         MapIpToUserId(client.GetStream().Socket.RemoteEndPoint?.ToString(), user.Id);
                         MsgService.SendTcpMessage(client, response);
                     }

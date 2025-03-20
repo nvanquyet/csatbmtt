@@ -55,7 +55,7 @@ public class TcpHandler : INetworkHandler, IDisposable
 
         try
         {
-            Console.WriteLine($"Server receive from {client.Client.RemoteEndPoint}: {jsonMessage}");
+            Console.WriteLine($"Message receive from {client.Client.RemoteEndPoint}: {jsonMessage}");
             var message = MessageNetwork<dynamic>.FromJson(jsonMessage);
             if (message == null) throw new InvalidOperationException("Invalid message format");
 

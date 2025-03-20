@@ -18,10 +18,6 @@ public class TcpHandler : INetworkHandler, IDisposable
     {
         if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(userId)) return;
         if (!MapUserIdToIp.TryAdd(userId, ip)) MapUserIdToIp[userId] = ip;
-        foreach (var (key, value) in MapUserIdToIp)
-        {
-            Console.WriteLine($"Connect {key} to {value} ");
-        }
     }
 
     private static bool UserIsOnline(string userId) => MapUserIdToIp.ContainsKey(userId);
@@ -244,7 +240,6 @@ public class TcpHandler : INetworkHandler, IDisposable
                     //Get TcpClient from target
                     if (!MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var ip) || ip == null)
                     {
-                        Console.WriteLine($"Ip: {ip}");
                         message.Code = StatusCode.Error;
                         dto.Description = "Target client not online.";
                         message.Data = dto;
@@ -252,7 +247,6 @@ public class TcpHandler : INetworkHandler, IDisposable
                     }
                     else
                     {
-                        Console.WriteLine($"Ip: {ip}");
                         if (!Clients.TryGetValue(ip, out var toClient))
                         {
                             //Todo: Send error handshake cant get ip target

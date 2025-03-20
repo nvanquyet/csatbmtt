@@ -33,15 +33,20 @@ public partial class BackgroundForm : Form
         timer.Interval = 500; // kiểm tra mỗi 500ms
         timer.Tick += (sender, e) =>
         {
+            Console.WriteLine($"Open Form: {Application.OpenForms.Count}");
             if (Application.OpenForms.Count > 1) return;
             timer.Stop();
             var response = new MessageNetwork<string?>(type: CommandType.ClientDisconnect, code: StatusCode.Success,
                 data: SessionManager.GetUserId()).ToJson();
-            NetworkManager.Instance.TcpService.Send(response);
-            NetworkManager.Instance.TcpService.Stop();
-            NetworkManager.Instance.UdpService.Stop();
+            _ = Task.Run(() =>
+            {
+                NetworkManager.Instance.TcpService.Send(response);
+                NetworkManager.Instance.TcpService.Stop();
+                NetworkManager.Instance.UdpService.Stop();
+            });
             Console.WriteLine($"Exit");
             Application.Exit();
+            Environment.Exit(0);
         };
         timer.Start();
     }

@@ -9,7 +9,7 @@ namespace Client.Form
     public partial class HomeForm : Form
     {
         // Giả sử danh sách toàn bộ người dùng
-        private List<UserDto> _allUsers = [];
+        private List<UserDto> _allUsers = new();
 
         public void SetAllUsers(List<UserDto> users)
         {
@@ -30,34 +30,34 @@ namespace Client.Form
 
         public HomeForm()
         {
-            using (_waitingForm = new Form())
+            _waitingForm = new Form
             {
-                _waitingForm.FormBorderStyle = FormBorderStyle.None;
-                _waitingForm.StartPosition = FormStartPosition.CenterParent;
-                _waitingForm.Size = new Size(250, 100);
-                _waitingForm.ControlBox = false;
-                _waitingForm.ShowInTaskbar = false;
+                FormBorderStyle = FormBorderStyle.None,
+                StartPosition = FormStartPosition.CenterParent,
+                Size = new Size(250, 100),
+                ControlBox = false,
+                ShowInTaskbar = false
+            };
 
-                var lblWait = new Label()
-                {
-                    Text = "Please wait, handshake in progress...",
-                    Dock = DockStyle.Fill,
-                    TextAlign = ContentAlignment.MiddleCenter,
-                    Font = new Font("Arial", 10, FontStyle.Bold)
-                };
-                _waitingForm.Controls.Add(lblWait);
-            }
+            var lblWait = new Label
+            {
+                Text = "Please wait, handshake in progress...",
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Arial", 10, FontStyle.Bold)
+            };
+            _waitingForm.Controls.Add(lblWait);
 
             //Send GetAvailable User
             var getAllAvailableUser = new MessageNetwork<UserDto>(type: CommandType.GetAvailableClients,
                 code: StatusCode.Success,
                 data: SessionManager.GetUserDto()).ToJson();
             NetworkManager.Instance.TcpService.Send(getAllAvailableUser);
+
             var getUserShake = new MessageNetwork<UserDto>(type: CommandType.GetUserShake, code: StatusCode.Success,
                 data: SessionManager.GetUserDto()).ToJson();
             NetworkManager.Instance.TcpService.Send(getUserShake);
-            
-            
+
             InitializeComponent();
         }
 
@@ -87,19 +87,26 @@ namespace Client.Form
         }
 
         // Hàm lọc danh sách người dùng dựa trên từ khóa tìm kiếm
-        private List<UserDto> GetUserSuggestions(string query)
+        private List<string> GetUserSuggestions(string query)
         {
             return string.IsNullOrWhiteSpace(query)
-                ? []
+                ? new List<string>()
                 : _allUsers.Where(u =>
-                    u.UserName != null && u.UserName.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+                    u.UserName != null && u.UserName.Contains(query, StringComparison.OrdinalIgnoreCase))
+                    .Select(u => u.UserName)
+                    .ToList();
         }
 
         // Sự kiện khi người dùng bấm vào một mục trong danh sách gợi ý
         private async void LstUserSuggestions_Click(object sender, EventArgs e)
         {
-            if (lstUserSuggestions.SelectedItem is not UserDto selectedUser)
+            if (lstUserSuggestions.SelectedItem is not string selectedUserName)
                 return;
+
+            var selectedUser = _allUsers.FirstOrDefault(u => u.UserName == selectedUserName);
+            if (selectedUser == null)
+                return;
+
             //Send request
             SendHandshakeRequest(SessionManager.GetUserDto(), selectedUser);
         }
@@ -131,7 +138,6 @@ namespace Client.Form
             NetworkManager.Instance.TcpService.Send(response);
         }
 
-
         #region HandShake
 
         /// <summary>
@@ -142,7 +148,6 @@ namespace Client.Form
             _waitingForm.Close();
             MessageBox.Show(errorMessage, "Handshake Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
-
 
         public void LoadHandshake(ConversationRecord conversationRecord)
         {
@@ -188,9 +193,6 @@ namespace Client.Form
         {
             var request = new MessageNetwork<HandshakeDto>(type: CommandType.HandshakeRequest, StatusCode.Success,
                 data: new HandshakeDto(fromUser, toUser));
-
-            //Generate Key
-
 
             NetworkManager.Instance.TcpService.Send(request.ToJson());
             _waitingForm.Show();

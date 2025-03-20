@@ -451,6 +451,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                             data: user
                         ).ToJson();
                         //Add to map
+                        Console.WriteLine($"Client: {user.Id} {user.UserName} {client.GetStream().Socket.RemoteEndPoint}");
                         MapIpToUserId(client.GetStream().Socket.RemoteEndPoint?.ToString(), user.Id);
                         MsgService.SendTcpMessage(client, response);
                     }

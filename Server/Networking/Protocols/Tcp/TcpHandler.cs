@@ -504,7 +504,7 @@ public class TcpHandler : INetworkHandler, IDisposable
             }
             catch (Exception ex)
             {
-                MsgService.SendErrorMessage(client, "Error disposing client");
+                MsgService.SendErrorMessage(client, $"Error disposing client {ex.Message}");
             }
         }
 

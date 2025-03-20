@@ -16,52 +16,62 @@ public static class FormController
     /// <summary>
     /// Hiển thị form theo loại (FormType).
     /// </summary>
-    public static void Show(FormType formType, bool closeCurrent = true)
+    public static void Show(FormType formType)
     {
-        // Lấy form từ danh sách đã mở hoặc tạo mới nếu chưa có
-        if (!OpenForms.TryGetValue(formType, out var newForm))
+        _ = Task.Run(() => SwitchToFormAsync(formType));
+    }
+    private static async Task SwitchToFormAsync(FormType formType, bool closeCurrent = true)
+    {
+        Console.WriteLine($"Switching to form {formType}");
+        if (!OpenForms.TryGetValue(formType, out Form? newForm))
         {
             newForm = CreateForm(formType);
             OpenForms.Add(formType, newForm);
         }
 
-        // Nếu có form hiện tại, ẩn hoặc đóng tùy thuộc vào tham số closeCurrent
+        // Sử dụng Task.Yield để cho phép UI thread xử lý các message pending trước khi chuyển đổi
+        await Task.Yield();
+
         if (_currentForm != null)
         {
             if (closeCurrent)
             {
                 if (_currentForm.InvokeRequired)
-                    _currentForm.Invoke(new Action(() => _currentForm.Hide()));
+                {
+                    await _currentForm.InvokeAsync(new Action(() => _currentForm.Close()));
+                }
                 else
-                    _currentForm.Hide();
+                {
+                    _currentForm.Close();
+                }
             }
             else
             {
                 if (_currentForm.InvokeRequired)
-                    _currentForm.Invoke(new Action(() => _currentForm.Hide()));
+                {
+                    await _currentForm.InvokeAsync(new Action(() => _currentForm.Hide()));
+                }
                 else
+                {
                     _currentForm.Hide();
+                }
             }
         }
 
         _currentForm = newForm;
 
-        if (newForm != null)
+        if (newForm is { InvokeRequired: true })
         {
-            // Nếu form mới được gọi từ luồng không phải UI, chuyển qua UI thread
-            if (newForm.InvokeRequired)
-            {
-                newForm.Invoke(new Action(() =>
-                {
-                    newForm.Show();
-                    newForm.BringToFront();
-                }));
-            }
-            else
+            await newForm.InvokeAsync(new Action(() =>
             {
                 newForm.Show();
                 newForm.BringToFront();
-            }
+            }));
+        }
+        else
+        {
+            newForm?.Show();
+            newForm.BringToFront();
         }
     }
 

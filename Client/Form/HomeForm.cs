@@ -123,7 +123,7 @@ namespace Client.Form
         {
             _waitingForm?.Close();
             // Xây dựng thông điệp hiển thị cho người dùng
-            string message = $"Do you want to start a handshake with {dtoRequest.FromUser}?";
+            string message = $"Do you want to start a handshake with {dtoRequest.FromUser?.UserName}?";
             string caption = "Handshake Confirmation";
 
             // Hiển thị dialog xác nhận với nút Yes/No

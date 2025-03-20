@@ -44,6 +44,7 @@ namespace Client.Form
 
         public void AddMessage(TransferData? data, bool isMe)
         {
+            if(!isMe) Console.WriteLine($"Received message: {data}");
             if (data == null) return;
             var rowPanel = CreateRowPanel(isMe);
 

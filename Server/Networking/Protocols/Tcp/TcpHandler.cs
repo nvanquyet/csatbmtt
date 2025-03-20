@@ -120,19 +120,6 @@ public class TcpHandler : INetworkHandler, IDisposable
         }
     }
 
-    public static Task HandleClientDisconnect(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        var endPoint = client?.Client.RemoteEndPoint?.ToString();
-        if (endPoint != null && Clients.TryRemove(endPoint, out var c))
-        {
-            c?.Dispose();
-        }
-
-        //Remove
-
-        return Task.CompletedTask;
-    }
-
     #region HandShake
 
     private static async Task HandleHandGetUserShake(TcpClient? client, MessageNetwork<dynamic> message)
@@ -210,6 +197,8 @@ public class TcpHandler : INetworkHandler, IDisposable
                         }
                         else
                         {
+                            dto.Description = "Successfully connected to target client.";
+                            message.Data = dto;
                             MsgService.SendTcpMessage(client, message.ToJson());
                             MsgService.SendTcpMessage(toClient, message.ToJson());
                         }

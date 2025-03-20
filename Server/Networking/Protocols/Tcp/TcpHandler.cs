@@ -445,8 +445,6 @@ public class TcpHandler : INetworkHandler, IDisposable
                 {
                     if (user != null)
                     {
-                        OnClientDisconnect(client);
-
                         var response = new MessageNetwork<object>(
                             type: CommandType.Login,
                             code: StatusCode.Success,

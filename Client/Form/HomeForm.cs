@@ -12,7 +12,7 @@ namespace Client.Form
         private List<UserDto> _allUsers = [];
         public void SetAllUsers(List<UserDto> users) => _allUsers = users;
 
-        private Form _waitingForm;
+        private readonly Form _waitingForm;
 
         public HomeForm()
         {
@@ -32,8 +32,6 @@ namespace Client.Form
                     Font = new Font("Arial", 10, FontStyle.Bold)
                 };
                 _waitingForm.Controls.Add(lblWait);
-
-                // Hiển thị form chờ không modal (vẫn cho phép code tiếp tục chạy)
             }
 
             InitializeComponent();

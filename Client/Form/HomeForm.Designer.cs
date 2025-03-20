@@ -74,6 +74,7 @@ namespace Client.Form
             // 
             this.ResumeLayout(false);
             this.PerformLayout();
+            FormController.InitializeUiContext();
         }
     }
 }

@@ -111,6 +111,7 @@ namespace Client.Form
             // Hoàn thiện
             this.ResumeLayout(false);
             this.PerformLayout();
+            FormController.InitializeUiContext();
         }
 
         private void TxtMessage_KeyDown(object sender, KeyEventArgs e)

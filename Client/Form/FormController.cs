@@ -12,12 +12,24 @@ public static class FormController
 {
     private static readonly Dictionary<FormType, Form?> OpenForms = new();
     private static Form? _currentForm;
-
+    private static SynchronizationContext? _uiSyncContext = SynchronizationContext.Current;
+    public static void InitializeUiContext()
+    {
+        _uiSyncContext = SynchronizationContext.Current;
+        Console.WriteLine($"SynchronizationContext: {_uiSyncContext} from {_currentForm?.GetType().Name}");
+    }
     /// <summary>
     /// Hiển thị form theo loại (FormType).
     /// </summary>
     public static void Show(FormType formType, bool closeCurrent = true)
     {
+        // Đảm bảo thực thi trên UI thread
+        if (SynchronizationContext.Current != _uiSyncContext)
+        {
+            _uiSyncContext?.Send(_ => Show(formType, closeCurrent), null);
+            return;
+        }
+
         // Lấy form từ danh sách đã mở hoặc tạo mới nếu chưa có
         if (!OpenForms.TryGetValue(formType, out var newForm))
         {
@@ -30,41 +42,24 @@ public static class FormController
 
         if (newForm != null)
         {
-            // Nếu form mới được gọi từ luồng không phải UI, chuyển qua UI thread
-            if (newForm.InvokeRequired)
-            {
-                newForm.Invoke(new Action(() =>
-                {
-                    newForm.Show();
-                    newForm.BringToFront();
-                }));
-            }
-            else
-            {
-                newForm.Show();
-                newForm.BringToFront();
-            }
+            newForm.Show();
+            newForm.BringToFront();
         }
 
-        // Nếu có form hiện tại, ẩn hoặc đóng tùy thuộc vào tham số closeCurrent
-        if (oldForm != null)
+        // Xử lý form cũ
+        if (oldForm != null && oldForm != newForm)
         {
             if (closeCurrent)
             {
-                if (oldForm.InvokeRequired)
-                    oldForm.Invoke(new Action(() => oldForm.Hide()));
-                else
-                    oldForm.Hide();
+                oldForm.Close();
             }
             else
             {
-                if (oldForm.InvokeRequired)
-                    oldForm.Invoke(new Action(() => oldForm.Hide()));
-                else
-                    oldForm.Hide();
+                oldForm.Hide();
             }
         }
     }
+
 
 
     private static Form? CreateForm(FormType formType)

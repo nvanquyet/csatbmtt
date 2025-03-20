@@ -91,6 +91,10 @@
             btnCancel.Width = 100;
             btnCancel.Click += new EventHandler(this.BtnCancel_Click);
             panelContainer.Controls.Add(btnCancel);
+            
+            this.ResumeLayout(false);
+            this.PerformLayout();
+            FormController.InitializeUiContext();
         }
     }
 }

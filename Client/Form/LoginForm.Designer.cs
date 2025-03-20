@@ -85,6 +85,10 @@
             btnRegister.Width = 100;
             btnRegister.Click += new EventHandler(this.BtnRegister_Click);
             panelContainer.Controls.Add(btnRegister);
+            
+            this.ResumeLayout(false);
+            this.PerformLayout();
+            FormController.InitializeUiContext();
         }
     }
 }

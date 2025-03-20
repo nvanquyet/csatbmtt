@@ -89,10 +89,9 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
                 while (true)
                 {
                     var endIndex = messageBuilder.ToString().IndexOf('\n');
-                    if (endIndex == -1) break;
 
-                    var completeJson = messageBuilder.ToString(0, endIndex);
-                    messageBuilder.Remove(0, endIndex + 1);
+                    var completeJson = messageBuilder.ToString(0, Math.Min(endIndex, 0));
+                    messageBuilder.Remove(0, Math.Min(endIndex + 1, 0));
 
                     var data = ByteUtils.GetBytesFromString(completeJson.Trim());
                     DataHandler?.OnDataReceived(data, "");

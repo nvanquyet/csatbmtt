@@ -133,7 +133,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                 if (user.Id == null) return;
                 var data = await UserInteractionRepository.GetConversationRecord(user.Id);
                 var response = new MessageNetwork<ConversationRecord?>(
-                    type: CommandType.GetAvailableClients,
+                    type: CommandType.GetUserShake,
                     code: StatusCode.Success,
                     data: data
                 ).ToJson();

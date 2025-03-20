@@ -11,17 +11,7 @@ namespace Client.Form
         // Giả sử danh sách toàn bộ người dùng
         private List<UserDto> _allUsers = [];
 
-        public void SetAllUsers(List<UserDto> users)
-        {
-            if (this.InvokeRequired)
-            {
-                this.Invoke(new Action(() => { _allUsers = users; }));
-            }
-            else
-            {
-                _allUsers = users;
-            }
-        }
+        public void SetAllUsers(List<UserDto> users) => _allUsers = users;
 
         private readonly Form _waitingForm;
 
@@ -143,52 +133,24 @@ namespace Client.Form
 
         public void LoadHandshake(ConversationRecord conversationRecord)
         {
-            if (this.InvokeRequired)
+            lstChatHistory.Items.Clear();
+
+            var sortedInteractions = conversationRecord.Interactions
+                .OrderByDescending(i => i.LastInteractionTime);
+
+            foreach (var interaction in sortedInteractions)
             {
-                this.Invoke(new Action(() =>
-                {
-                    lstChatHistory.Items.Clear();
+                // Tìm kiếm user từ danh sách _allUsers dựa trên ParticipantId
+                var user = _allUsers.FirstOrDefault(u => u.Id == interaction.ParticipantId);
+                if (user == null) continue;
 
-                    var sortedInteractions = conversationRecord.Interactions
-                        .OrderByDescending(i => i.LastInteractionTime);
+                // Sử dụng tên người dùng (UserName) làm hiển thị chính
+                var listItem = new ListViewItem(user.UserName);
+                listItem.SubItems.Add(interaction.LastInteractionTime.ToString("g"));
 
-                    foreach (var interaction in sortedInteractions)
-                    {
-                        // Tìm kiếm user từ danh sách _allUsers dựa trên ParticipantId
-                        var user = _allUsers.FirstOrDefault(u => u.Id == interaction.ParticipantId);
-                        if (user == null) continue;
-
-                        // Sử dụng tên người dùng (UserName) làm hiển thị chính
-                        var listItem = new ListViewItem(user.UserName);
-                        listItem.SubItems.Add(interaction.LastInteractionTime.ToString("g"));
-
-                        // Lưu đối tượng user vào Tag để dễ truy xuất sau này
-                        listItem.Tag = user;
-                        lstChatHistory.Items.Add(listItem);
-                    }
-                }));
-            }
-            else
-            {
-                lstChatHistory.Items.Clear();
-
-                var sortedInteractions = conversationRecord.Interactions
-                    .OrderByDescending(i => i.LastInteractionTime);
-
-                foreach (var interaction in sortedInteractions)
-                {
-                    // Tìm kiếm user từ danh sách _allUsers dựa trên ParticipantId
-                    var user = _allUsers.FirstOrDefault(u => u.Id == interaction.ParticipantId);
-                    if (user == null) continue;
-
-                    // Sử dụng tên người dùng (UserName) làm hiển thị chính
-                    var listItem = new ListViewItem(user.UserName);
-                    listItem.SubItems.Add(interaction.LastInteractionTime.ToString("g"));
-
-                    // Lưu đối tượng user vào Tag để dễ truy xuất sau này
-                    listItem.Tag = user;
-                    lstChatHistory.Items.Add(listItem);
-                }
+                // Lưu đối tượng user vào Tag để dễ truy xuất sau này
+                listItem.Tag = user;
+                lstChatHistory.Items.Add(listItem);
             }
         }
 

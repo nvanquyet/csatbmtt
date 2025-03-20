@@ -64,6 +64,7 @@ public class TcpHandler : INetworkHandler
                 }
                 break;
             case CommandType.GetAvailableClients:
+                Console.WriteLine($"Get Available Clients {message}");
                 if (msg.TryParseData(out List<UserDto>? allUsers) && allUsers != null)
                 {
                     //ChatMenu.ChatWith(allUsers, NetworkManager.Instance.TcpService);

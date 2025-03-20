@@ -210,7 +210,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                         }
                         else
                         {
-                            MsgService.SendTcpMessage(toClient, message.ToJson());
+                            MsgService.SendTcpMessage(client, message.ToJson());
                             MsgService.SendTcpMessage(toClient, message.ToJson());
                         }
                     }

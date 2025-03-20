@@ -33,10 +33,10 @@ namespace Client.Form
             AddMessage(
                 new TransferData(TransferType.Text, ByteUtils.GetBytesFromString("I'm good, thanks! What about you?")),
                 true);
-            AddMessage(
-                new TransferData(TransferType.Image,
-                    File.ReadAllBytes("C:/Users/nvanq/OneDrive/Pictures/Screenshots/Screenshot 2025-02-17 231637.png")),
-                true);
+            // AddMessage(
+            //     new TransferData(TransferType.Image,
+            //         File.ReadAllBytes("C:/Users/nvanq/OneDrive/Pictures/Screenshots/Screenshot 2025-02-17 231637.png")),
+            //     true);
             AddMessage(new TransferData(TransferType.Text, ByteUtils.GetBytesFromString("I'm doing well too!")), false);
         }
 

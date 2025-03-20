@@ -37,18 +37,18 @@ public class TcpHandler : INetworkHandler
                         SessionManager.SetUser(user);
                         //Show Home Form and Dialog Login Success
                         MessageBox.Show("Login Success.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        FormController.ShowDialog(FormType.Home);
+                        FormController.Show(FormType.Home);
                     }
                     else
                     {
                         AuthService.Logout();
-                        FormController.ShowDialog(FormType.Login);
+                        FormController.Show(FormType.Login);
                     }
                 }
                 else
                 {
                     AuthService.Logout();
-                    FormController.ShowDialog(FormType.Login);
+                    FormController.Show(FormType.Login);
                     MessageBox.Show("Login Failed Try Again", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 break;
@@ -92,7 +92,7 @@ public class TcpHandler : INetworkHandler
                         if (dtoResponse.Accepted)
                         {
                             FormController.GetForm<HomeForm>(FormType.Home)?.HandShakeSuccess(dtoResponse.Description);
-                            FormController.ShowDialog(FormType.Chat);
+                            FormController.Show(FormType.Chat);
                             FormController.GetForm<ChatForm>(FormType.Chat)?.SetUserTarget(dtoResponse.FromUser?.Id == SessionManager.GetUserId() ? dtoResponse.ToUser : dtoResponse.FromUser);
                         }
                         else
@@ -121,7 +121,7 @@ public class TcpHandler : INetworkHandler
                     if (msg.Code == StatusCode.Success)
                     {
                         MessageBox.Show("Handshake Cancelled", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        FormController.ShowDialog(FormType.Home);
+                        FormController.Show(FormType.Home);
                     }
                     else
                     {

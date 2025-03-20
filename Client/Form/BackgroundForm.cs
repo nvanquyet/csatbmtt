@@ -11,7 +11,7 @@ public partial class BackgroundForm : Form
     {
         InitializeComponent();
         this.Load += BackgroundForm_Load;
-        FormController.ShowDialog(FormType.Login);
+        FormController.Show(FormType.Login);
         MonitorDialogsAndExit();
     }
 

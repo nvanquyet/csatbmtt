@@ -16,46 +16,57 @@ public static class FormController
     /// <summary>
     /// Hiển thị form theo loại (FormType).
     /// </summary>
-    public static void ShowDialog(FormType formType, bool closeCurrent = true)
+    public static void Show(FormType formType, bool closeCurrent = true)
     {
-        Console.WriteLine($"Showing form {formType}");
-        if (!OpenForms.TryGetValue(formType, out var value))
+        // Lấy form từ danh sách đã mở hoặc tạo mới nếu chưa có
+        if (!OpenForms.TryGetValue(formType, out var newForm))
         {
-            value = CreatForm(formType);
-            OpenForms.Add(formType, value);
+            newForm = CreateForm(formType);
+            OpenForms.Add(formType, newForm);
         }
 
-        // Đóng form hiện tại nếu có, đảm bảo đóng trên UI thread
+        // Nếu có form hiện tại, ẩn hoặc đóng tùy thuộc vào tham số closeCurrent
         if (_currentForm != null)
         {
-            if (_currentForm.InvokeRequired)
+            if (closeCurrent)
             {
-                _currentForm.Invoke(new Action(() => _currentForm.Close()));
+                if (_currentForm.InvokeRequired)
+                    _currentForm.Invoke(new Action(() => _currentForm.Hide()));
+                else
+                    _currentForm.Hide();
             }
             else
             {
-                _currentForm.Close();
+                if (_currentForm.InvokeRequired)
+                    _currentForm.Invoke(new Action(() => _currentForm.Hide()));
+                else
+                    _currentForm.Hide();
             }
         }
 
-        _currentForm = value;
+        _currentForm = newForm;
 
-        // Gọi ShowDialog trên UI thread
-        if (value != null)
+        if (newForm != null)
         {
-            if (value.InvokeRequired)
+            // Nếu form mới được gọi từ luồng không phải UI, chuyển qua UI thread
+            if (newForm.InvokeRequired)
             {
-                value.Invoke(new Action(() => value.ShowDialog()));
+                newForm.Invoke(new Action(() =>
+                {
+                    newForm.Show();
+                    newForm.BringToFront();
+                }));
             }
             else
             {
-                value.ShowDialog();
+                newForm.Show();
+                newForm.BringToFront();
             }
         }
     }
 
 
-    private static Form? CreatForm(FormType formType)
+    private static Form? CreateForm(FormType formType)
     {
         return formType switch
         {

@@ -18,6 +18,9 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     private NetworkStream? _stream;
     private CancellationTokenSource? _cts;
 
+    
+    private Thread? _listenThread;
+    
     public override async Task Start(int port)
     {
         IsRunning = true;
@@ -45,7 +48,8 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
             //     }
             // }, null, 500, System.Threading.Timeout.Infinite);
             //
-            _ = Task.Run(() => ListenForTcpMessagesAsync(_cts.Token)); // Khởi chạy lắng nghe
+            _listenThread = new Thread(ListenForTcpMessagesAsync);
+            _listenThread.Start(); // Khởi chạy lắng nghe
 
             // if (AuthService.TryAutoLogin(this)) Console.WriteLine("Đang thử đăng nhập với tài khoản đã lưu...");
             // else MainMenu.ShowMenu(this);
@@ -57,7 +61,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
     }
 
-    private async Task ListenForTcpMessagesAsync(CancellationToken token)
+    private void ListenForTcpMessagesAsync()
     {
         var buffer = new byte[1024];
         var messageBuilder = new StringBuilder();
@@ -70,15 +74,10 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
         try
         {
-            while (IsRunning && _tcpClient.Connected && !token.IsCancellationRequested)
+            while (IsRunning && _tcpClient.Connected)
             {
-                if (!_stream.DataAvailable)
-                {
-                    await Task.Delay(10, token);
-                    continue;
-                }
-
-                var bytesRead = await _stream.ReadAsync(buffer, token);
+                if (!_stream.DataAvailable) continue;
+                var bytesRead = _stream.Read(buffer);
                 if (bytesRead <= 0)
                 {
                     Console.WriteLine("Kết nối bị đóng bởi server!");
@@ -119,6 +118,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     private void CloseConnection()
     {
         IsRunning = false;
+        _listenThread?.Join();
         _cts?.Cancel();
         _stream?.Close();
         _tcpClient?.Close();

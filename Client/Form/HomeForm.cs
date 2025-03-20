@@ -11,7 +11,20 @@ namespace Client.Form
         // Giả sử danh sách toàn bộ người dùng
         private List<UserDto> _allUsers = [];
 
-        public void SetAllUsers(List<UserDto> users) => _allUsers = users;
+        public void SetAllUsers(List<UserDto> users)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() =>
+                {
+                    _allUsers = users;
+                }));
+            }
+            else
+            {
+                _allUsers = users;
+            }
+        }
 
         private readonly Form _waitingForm;
 
@@ -96,7 +109,7 @@ namespace Client.Form
         private void BtnLogout_Click(object sender, EventArgs e)
         {
             AuthService.Logout();
-            FormController.ShowDialog(FormType.Login);
+            FormController.Show(FormType.Login);
         }
 
         public void ShowHandshakeConfirm(HandshakeDto dtoRequest)

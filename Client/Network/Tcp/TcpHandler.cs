@@ -127,10 +127,21 @@ public class TcpHandler : INetworkHandler
             case CommandType.ReceiveMessage:
                 if (msg.TryParseData(out MessageDto? md) && md?.Data != null)
                 {
-                    FormController.GetForm<ChatForm>(FormType.Chat)?.AddMessage(md.Data, false);
+                    var chatForm = FormController.GetForm<ChatForm>(FormType.Chat);
+                    if (chatForm != null)
+                    {
+                        if (chatForm.InvokeRequired)
+                        {
+                            chatForm.Invoke(new Action(() => chatForm.AddMessage(md.Data, false)));
+                        }
+                        else
+                        {
+                            chatForm.AddMessage(md.Data, false);
+                        }
+                    }
                 }
-            
                 break;
+
             // case CommandType.LoadMessage:
             //     if (msg.TryParseData(out ChatMessage[]? allMessages))
             //     {

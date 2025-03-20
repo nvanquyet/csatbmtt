@@ -21,45 +21,31 @@ public static class FormController
     /// <summary>
     /// Hiển thị form theo loại (FormType).
     /// </summary>
-    public static void Show(FormType formType, bool closeCurrent = true)
+    public static void Show(FormType formType)
     {
-        // Đảm bảo thực thi trên UI thread
         if (SynchronizationContext.Current != _uiSyncContext)
         {
-            _uiSyncContext?.Send(_ => Show(formType, closeCurrent), null);
+            _uiSyncContext?.Send(_ => Show(formType), null);
             return;
         }
 
-        // Lấy form từ danh sách đã mở hoặc tạo mới nếu chưa có
-        if (!OpenForms.TryGetValue(formType, out var newForm))
+        // Nếu có form hiện tại, đóng và xóa nó trước khi mở form mới
+        if (_currentForm != null)
         {
-            newForm = CreateForm(formType);
-            OpenForms.Add(formType, newForm);
+            _currentForm.Close();
+            _currentForm.Dispose();
+            _currentForm = null;
         }
 
-        var oldForm = _currentForm;
+        // Luôn tạo một form mới thay vì kiểm tra danh sách OpenForms
+        var newForm = CreateForm(formType);
         _currentForm = newForm;
 
-        if (newForm != null)
-        {
-            newForm.Show();
-            newForm.BringToFront();
-        }
+        OpenForms[formType] = newForm; // Lưu lại form mới
 
-        // Xử lý form cũ
-        if (oldForm != null && oldForm != newForm)
-        {
-            if (closeCurrent)
-            {
-                oldForm.Close();
-            }
-            else
-            {
-                oldForm.Hide();
-            }
-        }
+        newForm.Show();
+        newForm.BringToFront();
     }
-
 
 
     private static Form? CreateForm(FormType formType)

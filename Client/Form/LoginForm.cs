@@ -28,7 +28,9 @@ public partial class LoginForm : Form
 
     private void BtnRegister_Click(object sender, EventArgs e)
     {
-        var registerForm = FormController.GetForm(FormType.Register);
-        registerForm?.ShowDialog();
+        Console.WriteLine($"Register Form:");
+        FormController.Show(FormType.Register);
+        
+      
     }
 }

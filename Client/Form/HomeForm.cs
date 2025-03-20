@@ -10,7 +10,18 @@ namespace Client.Form
     {
         // Giả sử danh sách toàn bộ người dùng
         private List<UserDto> _allUsers = [];
-        public void SetAllUsers(List<UserDto> users) => _allUsers = users;
+
+        public void SetAllUsers(List<UserDto> users)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => { _allUsers = users; }));
+            }
+            else
+            {
+                _allUsers = users;
+            }
+        }
 
         private readonly Form _waitingForm;
 
@@ -34,8 +45,6 @@ namespace Client.Form
                 _waitingForm.Controls.Add(lblWait);
             }
 
-            InitializeComponent();
-
             //Send GetAvailable User
             var getAllAvailableUser = new MessageNetwork<UserDto>(type: CommandType.GetAvailableClients,
                 code: StatusCode.Success,
@@ -44,6 +53,9 @@ namespace Client.Form
             var getUserShake = new MessageNetwork<UserDto>(type: CommandType.GetUserShake, code: StatusCode.Success,
                 data: SessionManager.GetUserDto()).ToJson();
             NetworkManager.Instance.TcpService.Send(getUserShake);
+            
+            
+            InitializeComponent();
         }
 
         #region UserSuggestion
@@ -52,6 +64,7 @@ namespace Client.Form
         private void TxtSearch_TextChanged(object sender, EventArgs e)
         {
             var query = txtSearch.Text.Trim();
+            Console.WriteLine($"Query {query}");
             if (string.IsNullOrEmpty(query))
             {
                 lstUserSuggestions.Visible = false;
@@ -95,21 +108,23 @@ namespace Client.Form
             AuthService.Logout();
             FormController.ShowDialog(FormType.Login);
         }
-        
+
         public void ShowHandshakeConfirm(HandshakeDto dtoRequest)
         {
             _waitingForm?.Close();
             // Xây dựng thông điệp hiển thị cho người dùng
             string message = $"Do you want to start a handshake with {dtoRequest.FromUser}?";
             string caption = "Handshake Confirmation";
-    
+
             // Hiển thị dialog xác nhận với nút Yes/No
             var result = MessageBox.Show(message, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            
+
             dtoRequest.Accepted = result.Equals(DialogResult.Yes);
-            
-            var response = new MessageNetwork<HandshakeDto>(type: CommandType.HandshakeResponse, code: StatusCode.Success, dtoRequest).ToJson();
-           
+
+            var response =
+                new MessageNetwork<HandshakeDto>(type: CommandType.HandshakeResponse, code: StatusCode.Success,
+                    dtoRequest).ToJson();
+
             NetworkManager.Instance.TcpService.Send(response);
         }
 
@@ -128,24 +143,52 @@ namespace Client.Form
 
         public void LoadHandshake(ConversationRecord conversationRecord)
         {
-            lstChatHistory.Items.Clear();
-
-            var sortedInteractions = conversationRecord.Interactions
-                .OrderByDescending(i => i.LastInteractionTime);
-
-            foreach (var interaction in sortedInteractions)
+            if (this.InvokeRequired)
             {
-                // Tìm kiếm user từ danh sách _allUsers dựa trên ParticipantId
-                var user = _allUsers.FirstOrDefault(u => u.Id == interaction.ParticipantId);
-                if (user == null) continue;
+                this.Invoke(new Action(() =>
+                {
+                    lstChatHistory.Items.Clear();
 
-                // Sử dụng tên người dùng (UserName) làm hiển thị chính
-                var listItem = new ListViewItem(user.UserName);
-                listItem.SubItems.Add(interaction.LastInteractionTime.ToString("g"));
+                    var sortedInteractions = conversationRecord.Interactions
+                        .OrderByDescending(i => i.LastInteractionTime);
 
-                // Lưu đối tượng user vào Tag để dễ truy xuất sau này
-                listItem.Tag = user;
-                lstChatHistory.Items.Add(listItem);
+                    foreach (var interaction in sortedInteractions)
+                    {
+                        // Tìm kiếm user từ danh sách _allUsers dựa trên ParticipantId
+                        var user = _allUsers.FirstOrDefault(u => u.Id == interaction.ParticipantId);
+                        if (user == null) continue;
+
+                        // Sử dụng tên người dùng (UserName) làm hiển thị chính
+                        var listItem = new ListViewItem(user.UserName);
+                        listItem.SubItems.Add(interaction.LastInteractionTime.ToString("g"));
+
+                        // Lưu đối tượng user vào Tag để dễ truy xuất sau này
+                        listItem.Tag = user;
+                        lstChatHistory.Items.Add(listItem);
+                    }
+                }));
+            }
+            else
+            {
+                lstChatHistory.Items.Clear();
+
+                var sortedInteractions = conversationRecord.Interactions
+                    .OrderByDescending(i => i.LastInteractionTime);
+
+                foreach (var interaction in sortedInteractions)
+                {
+                    // Tìm kiếm user từ danh sách _allUsers dựa trên ParticipantId
+                    var user = _allUsers.FirstOrDefault(u => u.Id == interaction.ParticipantId);
+                    if (user == null) continue;
+
+                    // Sử dụng tên người dùng (UserName) làm hiển thị chính
+                    var listItem = new ListViewItem(user.UserName);
+                    listItem.SubItems.Add(interaction.LastInteractionTime.ToString("g"));
+
+                    // Lưu đối tượng user vào Tag để dễ truy xuất sau này
+                    listItem.Tag = user;
+                    lstChatHistory.Items.Add(listItem);
+                }
             }
         }
 
@@ -185,7 +228,5 @@ namespace Client.Form
         }
 
         #endregion
-
-        
     }
 }

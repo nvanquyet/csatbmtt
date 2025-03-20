@@ -24,10 +24,36 @@ public static class FormController
             value = CreatForm(formType);
             OpenForms.Add(formType, value);
         }
-        _currentForm?.Close();
+
+        // Đóng form hiện tại nếu có, đảm bảo đóng trên UI thread
+        if (_currentForm != null)
+        {
+            if (_currentForm.InvokeRequired)
+            {
+                _currentForm.Invoke(new Action(() => _currentForm.Close()));
+            }
+            else
+            {
+                _currentForm.Close();
+            }
+        }
+
         _currentForm = value;
-        value?.ShowDialog();
+
+        // Gọi ShowDialog trên UI thread
+        if (value != null)
+        {
+            if (value.InvokeRequired)
+            {
+                value.Invoke(new Action(() => value.ShowDialog()));
+            }
+            else
+            {
+                value.ShowDialog();
+            }
+        }
     }
+
 
     private static Form? CreatForm(FormType formType)
     {
@@ -64,5 +90,4 @@ public static class FormController
 
 public class Form : System.Windows.Forms.Form
 {
-    
 }

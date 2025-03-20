@@ -148,13 +148,13 @@ public class TcpHandler : INetworkHandler, IDisposable
     {
         if (message is { Code: StatusCode.Success } && client != null)
         {
-            if (message.TryParseData(out string? userId) && userId != null)
+            if (message.TryParseData(out UserDto? user) && user != null)
             {
                 var data = UserRepository.GetAllUsers().Select(u =>
                         u is { Id: not null, UserName: not null } ? new UserDto(id: u.Id, userName: u.UserName) : null)
                     .ToList();
                 //filter List without userId
-                data = data.Where(us => us?.Id != userId).ToList();
+                data = data.Where(us => us?.Id != user.Id).ToList();
                 Console.WriteLine($"Found {data.Count} users.");
                 var response = new MessageNetwork<List<UserDto?>>(
                     type: CommandType.GetAvailableClients,

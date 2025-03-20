@@ -14,7 +14,7 @@ public class TcpHandler : INetworkHandler, IDisposable
     private static readonly ConcurrentDictionary<string, TcpClient?> Clients = new();
     private static readonly ConcurrentDictionary<string, string?> MapUserIdToIp = new();
 
-    private static void MapIpToUserId(string? ip, string? userId)
+    private static void MappingIdToIp(string? ip, string? userId)
     {
         if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(userId)) return;
         if (!MapUserIdToIp.TryAdd(ip, userId)) MapUserIdToIp[userId] = ip;
@@ -43,9 +43,17 @@ public class TcpHandler : INetworkHandler, IDisposable
     {
         if (client is not TcpClient c) return;
         var endPoint = c?.Client.RemoteEndPoint?.ToString();
-        if (endPoint != null && Clients.TryRemove(endPoint, out var cl))
+        if (endPoint == null) return;
+        if (Clients.TryRemove(endPoint, out var cl))
         {
             cl?.Dispose();
+        }
+
+        foreach (var (key, value) in MapUserIdToIp)
+        {
+            if(value == null) continue;
+            if (value != endPoint) continue;
+            MapUserIdToIp.TryRemove(endPoint, out _);
         }
     }
 
@@ -234,8 +242,9 @@ public class TcpHandler : INetworkHandler, IDisposable
                 {
                     if (string.IsNullOrEmpty(dto.ToUser?.Id)) throw new InvalidOperationException("Invalid user id");
                     //Get TcpClient from target
-                    if (!MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var toUserId) || toUserId == null)
+                    if (!MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var ip) || ip == null)
                     {
+                        Console.WriteLine($"Ip: {ip}");
                         message.Code = StatusCode.Error;
                         dto.Description = "Target client not online.";
                         message.Data = dto;
@@ -243,7 +252,8 @@ public class TcpHandler : INetworkHandler, IDisposable
                     }
                     else
                     {
-                        if (!Clients.TryGetValue(toUserId, out var toClient))
+                        Console.WriteLine($"Ip: {ip}");
+                        if (!Clients.TryGetValue(ip, out var toClient))
                         {
                             //Todo: Send error handshake cant get ip target
                             message.Code = StatusCode.Error;
@@ -451,7 +461,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                             data: user
                         ).ToJson();
                         //Add to map
-                        MapIpToUserId(client.GetStream().Socket.RemoteEndPoint?.ToString(), user.Id);
+                        MappingIdToIp(client.GetStream().Socket.RemoteEndPoint?.ToString(), user.Id);
                         MsgService.SendTcpMessage(client, response);
                     }
                     else MsgService.SendErrorMessage(client, "Login failed");

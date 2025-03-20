@@ -90,7 +90,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                 //     await HandleRegisterClientKey(client, message);
                 //     break;
                 case CommandType.ClientDisconnect:
-                    await HandleClientDisconnect(client, message);
+                    OnClientDisconnect(client);
                     break;
                 case CommandType.HandshakeRequest:
                     await HandleHandshakeRequest(client, message);
@@ -102,7 +102,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                     await HandleHandGetUserShake(client, message);
                     break;
                 case CommandType.CancelHandshake:
-                    OnClientDisconnect(client);
+                    await HandleCancelHandShake(client, message);
                     break;
                 case CommandType.None:
                 case CommandType.ReceiveMessage:

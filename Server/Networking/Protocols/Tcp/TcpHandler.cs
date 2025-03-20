@@ -17,7 +17,7 @@ public class TcpHandler : INetworkHandler, IDisposable
     private static void MappingIdToIp(string? ip, string? userId)
     {
         if (string.IsNullOrEmpty(ip) || string.IsNullOrEmpty(userId)) return;
-        if (!MapUserIdToIp.TryAdd(ip, userId)) MapUserIdToIp[userId] = ip;
+        if (!MapUserIdToIp.TryAdd(userId, ip)) MapUserIdToIp[userId] = ip;
         foreach (var (key, value) in MapUserIdToIp)
         {
             Console.WriteLine($"Connect {key} to {value} ");

@@ -15,6 +15,4 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     {
         throw new NotImplementedException();
     }
-    
-    
 }

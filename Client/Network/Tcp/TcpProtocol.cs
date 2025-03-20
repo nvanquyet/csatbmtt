@@ -6,6 +6,7 @@ using Client.Services;
 using Shared.AppSettings;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
+using Shared.Services;
 using Shared.Utils;
 using Timer = System.Windows.Forms.Timer;
 
@@ -45,7 +46,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
             // }, null, 500, System.Threading.Timeout.Infinite);
             //
             _ = Task.Run(() => ListenForTcpMessagesAsync(_cts.Token)); // Khởi chạy lắng nghe
-            
+
             // if (AuthService.TryAutoLogin(this)) Console.WriteLine("Đang thử đăng nhập với tài khoản đã lưu...");
             // else MainMenu.ShowMenu(this);
         }
@@ -87,15 +88,14 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
                 messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
                 while (true)
                 {
-                    var endIndex = messageBuilder.ToString().IndexOf('\n'); 
-                    if (endIndex == -1) break; 
+                    var endIndex = messageBuilder.ToString().IndexOf('\n');
+                    if (endIndex == -1) break;
 
-                    var completeJson = messageBuilder.ToString(0, endIndex); 
-                    messageBuilder.Remove(0, endIndex + 1); 
-                    
+                    var completeJson = messageBuilder.ToString(0, endIndex);
+                    messageBuilder.Remove(0, endIndex + 1);
+
                     var data = ByteUtils.GetBytesFromString(completeJson.Trim());
                     DataHandler?.OnDataReceived(data, "");
-                    
                 }
             }
         }
@@ -110,34 +110,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     }
 
 
-    public override async void Send(string data, string endpoint = "")
-    {
-        try
-        {
-            if (_tcpClient is not { Connected: true } || _stream == null)
-            {
-                Console.WriteLine("❌ Không có kết nối TCP để gửi dữ liệu!");
-                return;
-            }
-
-            try
-            {
-                var bytes = ByteUtils.GetBytesFromString(data);
-                await _stream.WriteAsync(bytes, 0, bytes.Length);
-                await _stream.FlushAsync();
-
-                Console.WriteLine($"📤 Gửi dữ liệu ({bytes.Length} bytes) thành công!");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Lỗi khi gửi dữ liệu: {ex.Message}");
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine($"❌ Lỗi: {e.Message}");
-        }
-    }
+    public override void Send(string data, string endpoint = "") => MsgService.SendTcpMessage(_tcpClient, data);
 
     public override void Stop()
     {

@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using Shared.Models;
 using Shared.Utils;
 
-namespace Server.Services;
+namespace Shared.Services;
 
 public static class MsgService
 {

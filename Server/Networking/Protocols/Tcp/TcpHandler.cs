@@ -449,7 +449,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                             data: user
                         ).ToJson();
                         //Add to map
-                        MapIpToUserId(client.GetStream().Socket.RemoteEndPoint?.ToString(), user.Id);
+                        MapIpToUserId(user.Id, client.GetStream().Socket.RemoteEndPoint?.ToString());
                         MsgService.SendTcpMessage(client, response);
                     }
                     else MsgService.SendErrorMessage(client, "Login failed");

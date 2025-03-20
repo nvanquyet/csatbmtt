@@ -87,14 +87,14 @@ namespace Client.Form
         }
 
         // Hàm lọc danh sách người dùng dựa trên từ khóa tìm kiếm
-        private List<string> GetUserSuggestions(string query)
+        private List<string?> GetUserSuggestions(string query)
         {
             return string.IsNullOrWhiteSpace(query)
-                ? new List<string>()
+                ? []
                 : _allUsers.Where(u =>
-                    u.UserName != null && u.UserName.Contains(query, StringComparison.OrdinalIgnoreCase))
+                        u.UserName != null && u.UserName.Contains(query, StringComparison.OrdinalIgnoreCase))
                     .Select(u => u.UserName)
-                    .ToList();
+                    .ToList()!;
         }
 
         // Sự kiện khi người dùng bấm vào một mục trong danh sách gợi ý
@@ -195,7 +195,7 @@ namespace Client.Form
                 data: new HandshakeDto(fromUser, toUser));
 
             NetworkManager.Instance.TcpService.Send(request.ToJson());
-            _waitingForm.Show();
+            _waitingForm.ShowDialog();
         }
 
         public void HandShakeSuccess(string description)

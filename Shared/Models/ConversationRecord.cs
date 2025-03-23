@@ -10,7 +10,7 @@ public class ConversationRecord
     public string Id { get; set; } = string.Empty;
 
     [BsonElement("ownerId")]
-    public string OwnerId { get; set; } = string.Empty;
+    public string OwnerId { get; init; } = string.Empty;
 
     [BsonElement("interactions")]
     public List<InteractionDetail> Interactions { get; set; } = [];
@@ -19,8 +19,8 @@ public class ConversationRecord
 public class InteractionDetail()
 {
     [BsonElement("participantId")]
-    public string ParticipantId { get; set; } = string.Empty;
+    public string ParticipantId { get; init; } = string.Empty;
 
     [BsonElement("lastInteractionTime")]
-    public DateTime LastInteractionTime { get; set; }
+    public DateTime LastInteractionTime { get; init; }
 }

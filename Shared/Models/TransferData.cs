@@ -1,9 +1,8 @@
-﻿
-using Shared.Utils;
+﻿using Shared.Utils;
 
 namespace Shared.Models;
 
-public class ErrorData(string message)
+public class ErrorMessage(string message)
 {
     public string Message { get; set; } = message;
 }

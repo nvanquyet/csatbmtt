@@ -43,7 +43,6 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
     }
     
-    
     private void HandleClient(TcpClient client)
     {
         var stream = client.GetStream();

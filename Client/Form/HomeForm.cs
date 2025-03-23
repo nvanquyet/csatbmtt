@@ -54,7 +54,7 @@ namespace Client.Form
                 data: SessionManager.GetUserDto()).ToJson();
             NetworkManager.Instance.TcpService.Send(getAllAvailableUser);
 
-            var getUserShake = new MessageNetwork<UserDto>(type: CommandType.GetUserShake, code: StatusCode.Success,
+            var getUserShake = new MessageNetwork<UserDto>(type: CommandType.GetUserShaked, code: StatusCode.Success,
                 data: SessionManager.GetUserDto()).ToJson();
             NetworkManager.Instance.TcpService.Send(getUserShake);
 

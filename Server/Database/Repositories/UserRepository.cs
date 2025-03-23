@@ -37,5 +37,15 @@ public abstract class UserRepository : DatabaseContext
 
     public static List<User> GetAllUsers() => Users.Find(u => u != null).ToList();
 
-    public static string? GetUserNameById(string? id) => Users.Find(u => u.Id == id).FirstOrDefault().UserName;
+
+    public static (bool, string) LoginUser(string? username, string? password, out User? user)
+    {
+        user = null;
+        if (username == null || password == null)
+            return (false, "Username or password must not empty");
+            
+        user = UserRepository.Login(username, password);
+            
+        return user != null ? (true, "Login Successful!") : (false, "Invalid username or password.");
+    }
 }

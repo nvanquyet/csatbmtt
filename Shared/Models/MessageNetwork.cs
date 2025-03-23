@@ -7,6 +7,9 @@ public enum CommandType
 {
     None,
     Login,
+    LoginBroadcast,
+    Logout,
+    LogoutBroadcast,
     Registration,
     GetAvailableClients,
     SendMessage,
@@ -14,8 +17,21 @@ public enum CommandType
     ClientDisconnect,
     HandshakeRequest,
     HandshakeResponse,
-    GetUserShake,
+    GetUserShaked,
     CancelHandshake
+}
+
+public enum EventType
+{
+    None,
+    UserLoggedIn,
+    UserRegistered,
+    UserDisconnected,
+    MessageSent,
+    MessageReceived,
+    HandshakeStarted,
+    HandshakeCompleted,
+    HandshakeCancelled
 }
 
 public enum StatusCode
@@ -41,9 +57,9 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data)
     
     public static MessageNetwork<T>? FromJson(string json) => JsonConvert.DeserializeObject<MessageNetwork<T>>(json);
     
-    public bool TryParseData<TV>(out TV? newData) where TV : class
+    public bool TryParseData<TV>(out TV? newData)
     {
-        newData = null;
+        newData = default(TV);
         try
         {
             if (Data is JObject jObject)

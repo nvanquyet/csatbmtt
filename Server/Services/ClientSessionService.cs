@@ -15,8 +15,11 @@ namespace Server.Services
                 return (false, "Username already exists.");
             }
 
-            UserRepository.RegisterUser(username, password);
-            return (true, "User registered successfully!");
+            if(UserRepository.RegisterUser(username, password))
+            {
+                return (true, "User registered successfully!");
+            }
+            return (false, "Failed to register user.");
         }
 
         public static (bool, string) LoginUser(string? username, string? password, out User? user)

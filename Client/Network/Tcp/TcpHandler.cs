@@ -103,7 +103,7 @@ public class TcpHandler : INetworkHandler
                     }
                 }
                 break;
-            case CommandType.GetUserShake:
+            case CommandType.GetUserShaked:
                 if (msg.TryParseData(out ConversationRecord? c) && c != null)
                 {
                     FormController.GetForm<HomeForm>(FormType.Home)?.LoadHandshake(c);
@@ -154,5 +154,15 @@ public class TcpHandler : INetworkHandler
 
     public void OnClientConnected<T>(T? client) where T : class
     {
+    }
+
+    public void BroadcastMessage(string message)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void BroadcastMessageExcept<T>(T? excludedClient, string message) where T : class
+    {
+        throw new NotImplementedException();
     }
 }

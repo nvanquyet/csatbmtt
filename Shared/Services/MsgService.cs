@@ -159,11 +159,11 @@ public static class MsgService
 
     public static void SendErrorMessage(TcpClient? client, string error)
     {
-        var errorMessage = new MessageNetwork<ErrorData>
+        var errorMessage = new MessageNetwork<ErrorMessage>
         (
             type: CommandType.None,
             code:  StatusCode.Error,
-            data: new ErrorData($"Error: {error}")
+            data: new ErrorMessage($"Error: {error}")
         ).ToJson();
 
         SendTcpMessage(client, errorMessage);

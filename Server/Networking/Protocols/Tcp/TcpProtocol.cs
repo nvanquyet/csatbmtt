@@ -1,7 +1,10 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using System.Text;
+using Shared;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
+using Shared.Utils;
 
 namespace Server.Networking.Protocols.Tcp;
 
@@ -19,7 +22,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         _listenerThread = new Thread(ListenForClients);
         _listenerThread.Start();
 
-        Logs.Logger.Log($"TCP server started on port {port}");
+        Logger.LogInfo($"TCP server started on port {port}");
         return Task.CompletedTask;
     }
 
@@ -36,7 +39,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
         catch (SocketException ex)
         {
-            Logs.Logger.Log($"TCP listener error: {ex.Message}");
+            Logger.LogError($"TCP listener error: {ex.Message}");
         }
     }
     
@@ -45,6 +48,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     {
         var stream = client.GetStream();
         var endPoint = client?.Client.RemoteEndPoint?.ToString();
+        var messageBuilder = new StringBuilder();
         DataHandler.OnClientConnected(client);
         try
         {
@@ -53,22 +57,29 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
             {
                 var bytesRead = stream.Read(buffer, 0, buffer.Length);
                 if (bytesRead == 0) continue;
-    
-                var receivedData = new byte[bytesRead];
-                Array.Copy(buffer, receivedData, bytesRead);
-                if (endPoint != null) DataHandler.OnDataReceived(receivedData, endPoint);
+                messageBuilder.Append(Encoding.UTF8.GetString(buffer, 0, bytesRead));
+                while (true)
+                {
+                    var temp = messageBuilder.ToString();
+                    var endIndex = temp.IndexOf('\n');
+                    if (endIndex == -1) break; 
+                    var completeJson = temp[..endIndex].Trim();
+                    messageBuilder.Remove(0, endIndex + 1);
+
+                    if (string.IsNullOrEmpty(completeJson)) continue;
+                    if (endPoint != null)
+                        DataHandler.OnDataReceived(completeJson, endPoint);
+                }
             }
         }
         catch (Exception ex)
         {
-            Logs.Logger.Log($"Client {client?.Client.RemoteEndPoint} error: {ex.Message}");
+            Logger.LogError($"Client {client?.Client.RemoteEndPoint} error: {ex.Message}");
             DataHandler?.OnClientDisconnect(client);
         }
     }
 
-    public override void Send(string data, string endpoint = "")
-    {
-    }
+    public override void Send(string data, string endpoint = "") { }
 
     public override void Stop()
     {

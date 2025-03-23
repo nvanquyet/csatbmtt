@@ -1,14 +1,12 @@
 ﻿using System.Net.Sockets;
 using System.Text;
 using Client.Form;
-using Client.Menu;
-using Client.Services;
+using Shared;
 using Shared.AppSettings;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
 using Shared.Services;
 using Shared.Utils;
-using Timer = System.Windows.Forms.Timer;
 
 namespace Client.Network.Tcp;
 
@@ -29,34 +27,18 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         try
         {
             await _tcpClient.ConnectAsync(Config.ServerIp, Config.ServerTcpPort);
-            Console.WriteLine("Connected to TCP Server!");
+            Logger.LogInfo("Connected to TCP Server!");
             _stream = _tcpClient.GetStream();
             _cts = new CancellationTokenSource();
 
-            Console.WriteLine($"✅ Kết nối đến server: {_tcpClient.Client.RemoteEndPoint}");
-            (FormController.GetForm(FormType.Login) as LoginForm)?.TryLogin();
-            // _ = new System.Threading.Timer((state) =>
-            // {
-            //     if (FormController.GetForm(FormType.Login) is LoginForm login)
-            //     {
-            //         Console.WriteLine("Try Login (ThreadingTimer)");
-            //         login.TryLogin();
-            //     }
-            //     else
-            //     {
-            //         Console.WriteLine("Login Failed (ThreadingTimer)");
-            //     }
-            // }, null, 500, System.Threading.Timeout.Infinite);
-            //
+            Logger.LogInfo($"✅ Kết nối đến server: {_tcpClient.Client.RemoteEndPoint}");
+            LoginForm.TryLogin();
             _listenThread = new Thread(ListenForTcpMessagesAsync);
-            _listenThread.Start(); // Khởi chạy lắng nghe
-
-            // if (AuthService.TryAutoLogin(this)) Console.WriteLine("Đang thử đăng nhập với tài khoản đã lưu...");
-            // else MainMenu.ShowMenu(this);
+            _listenThread.Start(); 
         }
         catch (Exception e)
         {
-            Console.WriteLine($"❌ Lỗi kết nối TCP: {e.Message}");
+            Logger.LogError($"❌ Lỗi kết nối TCP: {e.Message}");
             throw;
         }
     }
@@ -68,7 +50,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
         if (_tcpClient is null || _stream is null)
         {
-            Console.WriteLine("Client chưa được kết nối!");
+            Logger.LogError("Client chưa được kết nối!");
             return;
         }
 
@@ -80,7 +62,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
                 var bytesRead = _stream.Read(buffer);
                 if (bytesRead <= 0)
                 {
-                    Console.WriteLine("Kết nối bị đóng bởi server!");
+                    Logger.LogWarning("Kết nối bị đóng bởi server!");
                     break;
                 }
 
@@ -99,7 +81,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi đọc TCP: {ex.Message}");
+            Logger.LogError($"Lỗi khi đọc TCP: {ex.Message}");
         }
         finally
         {
@@ -122,6 +104,6 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         _cts?.Cancel();
         _stream?.Close();
         _tcpClient?.Close();
-        Console.WriteLine("🛑 Kết nối TCP đã đóng.");
+        Logger.LogError("🛑 Kết nối TCP đã đóng.");
     }
 }

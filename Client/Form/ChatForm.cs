@@ -10,21 +10,13 @@ namespace Client.Form
         private string _selectedFilePath = "";
         private UserDto? _targetDto;
 
-        public ChatForm(UserDto targetDto)
-        {
-            this._targetDto = targetDto;
-            InitializeComponent();
-            messageContainer.AutoScroll = true;
-            LoadSampleMessages();
-        }
-
         public ChatForm()
         {
             InitializeComponent();
             messageContainer.AutoScroll = true;
             LoadSampleMessages();
         }
-
+        
         public void SetUserTarget(UserDto? userDto) => _targetDto = userDto;
 
         private void LoadSampleMessages()
@@ -33,10 +25,10 @@ namespace Client.Form
             AddMessage(
                 new TransferData(TransferType.Text, ByteUtils.GetBytesFromString("I'm good, thanks! What about you?")),
                 true);
-            // AddMessage(
-            //     new TransferData(TransferType.Image,
-            //         File.ReadAllBytes("C:/Users/nvanq/OneDrive/Pictures/Screenshots/Screenshot 2025-02-17 231637.png")),
-            //     true);
+            AddMessage(
+                new TransferData(TransferType.Image,
+                    File.ReadAllBytes("C:/Users/nvanq/OneDrive/Pictures/Screenshots/Screenshot 2025-02-17 231637.png")),
+                true);
             AddMessage(new TransferData(TransferType.Text, ByteUtils.GetBytesFromString("I'm doing well too!")), false);
         }
 
@@ -44,7 +36,6 @@ namespace Client.Form
 
         public void AddMessage(TransferData? data, bool isMe)
         {
-            if(!isMe) Console.WriteLine($"Received message: {data}");
             if (data == null) return;
             var rowPanel = CreateRowPanel(isMe);
 

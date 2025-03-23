@@ -1,4 +1,5 @@
 ﻿using Server.Networking;
+using Shared;
 using Shared.AppSettings;
 
 namespace Server
@@ -12,18 +13,18 @@ namespace Server
             
             AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
             {
-                Console.WriteLine("🚪 Ứng dụng sắp thoát, giải phóng tài nguyên...");
+                Logger.LogInfo("🚪 Ứng dụng sắp thoát, giải phóng tài nguyên...");
                 Cleanup();
             };
 
-            Console.WriteLine("Server is running.... press Ctrl + C to exit...");
+            Logger.LogInfo("Server is running.... press Ctrl + C to exit...");
             while (true) { } // Giả lập ứng dụng chạy liên tục
         }
 
         static void Cleanup()
         {
-            Console.WriteLine("🧹 Dọn dẹp tài nguyên...");
-            _networkManager?.Dispose(); 
+            Logger.LogInfo("🧹 Dọn dẹp tài nguyên...");
+            _networkManager?.Stop(); 
         }
         
     }

@@ -1,11 +1,10 @@
-﻿using Server.Logs;
-using Server.Networking.Protocols.Tcp;
+﻿using Server.Networking.Protocols.Tcp;
 using Server.Networking.Protocols.Udp;
+using Shared;
 using Shared.Networking.Interfaces;
-
 namespace Server.Networking
 {
-    public class NetworkManager : IDisposable
+    public class NetworkManager
     {
         private readonly List<INetworkProtocol> _protocols = new();
 
@@ -20,20 +19,21 @@ namespace Server.Networking
 
             tcpProtocol.Start(tcpPort);
             udpProtocol.Start(udpPort);
-
-            Logger.Log("Network services started...");
         }
 
-        private void Stop()
+        public void Stop()
         {
             foreach (var protocol in _protocols)
             {
                 protocol.Stop();
             }
 
-            Logger.Log("Network services stopped.");
-        }
+            foreach (var protocol in _protocols)
+            {
+                protocol.Stop();
+            }
 
-        public void Dispose() => Stop();
+            Logger.LogWarning("Network services stopped.");
+        }
     }
 }

@@ -67,7 +67,7 @@ namespace Client.Form
             this.lstChatHistory.FullRowSelect = true;
             this.lstChatHistory.Columns.Add("Username", 120);
             this.lstChatHistory.Columns.Add("Last Message", 220);
-            this.lstChatHistory.ItemActivate += new System.EventHandler(this.OnHandshakedUserActivated);
+            this.lstChatHistory.ItemActivate += new System.EventHandler(this.OnHandshakeUserActivated);
             this.Controls.Add(this.lstChatHistory);
             // 
             // HomeForm

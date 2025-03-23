@@ -1,5 +1,6 @@
 ﻿using Client.Models;
 using Client.Network;
+using Shared;
 using Shared.Models;
 using Timer = System.Windows.Forms.Timer;
 
@@ -43,7 +44,7 @@ public partial class BackgroundForm : Form
                 NetworkManager.Instance.TcpService.Stop();
                 NetworkManager.Instance.UdpService.Stop();
             });
-            Console.WriteLine($"Exit");
+            Logger.LogWarning($"Exit");
             Application.Exit();
             Environment.Exit(0);
         };

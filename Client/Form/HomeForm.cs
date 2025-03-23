@@ -67,7 +67,6 @@ namespace Client.Form
         private void TxtSearch_TextChanged(object sender, EventArgs e)
         {
             var query = txtSearch.Text.Trim();
-            Console.WriteLine($"Query {query}");
             if (string.IsNullOrEmpty(query))
             {
                 lstUserSuggestions.Visible = false;
@@ -173,7 +172,7 @@ namespace Client.Form
         }
 
         // Sự kiện khi kích hoạt (double-click hoặc nhấn Enter) vào một item trong lstChatHistory
-        private void OnHandshakedUserActivated(object sender, EventArgs e)
+        private void OnHandshakeUserActivated(object sender, EventArgs e)
         {
             if (lstChatHistory.SelectedItems.Count == 0)
                 return;

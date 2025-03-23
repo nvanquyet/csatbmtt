@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using Server.Database.Repositories;
 using Server.Services;
+using Shared;
 using Shared.Models;
 using Shared.Networking.Interfaces;
 using Shared.Services;
@@ -40,10 +41,7 @@ public class TcpHandler : INetworkHandler, IDisposable
         if (client is not TcpClient c) return;
         var endPoint = c?.Client.RemoteEndPoint?.ToString();
         if (endPoint == null) return;
-        if (Clients.TryRemove(endPoint, out var cl))
-        {
-            cl?.Dispose();
-        }
+        if (Clients.TryRemove(endPoint, out var cl)) cl?.Dispose();
 
         foreach (var (key, value) in MapUserIdToIp)
         {
@@ -66,10 +64,9 @@ public class TcpHandler : INetworkHandler, IDisposable
 
         try
         {
-            Console.WriteLine($"Message receive from {client.Client.RemoteEndPoint}: {jsonMessage}");
+            Logger.LogInfo($"Message receive from {client.Client.RemoteEndPoint}: {jsonMessage}");
             var message = MessageNetwork<dynamic>.FromJson(jsonMessage);
             if (message == null) throw new InvalidOperationException("Invalid message format");
-
             switch (message.Type)
             {
                 case CommandType.Login:
@@ -81,18 +78,9 @@ public class TcpHandler : INetworkHandler, IDisposable
                 case CommandType.GetAvailableClients:
                     await HandleGetAvailableClient(client, message);
                     break;
-                // case CommandType.GetClientRsaKey:
-                //     await HandleGetClientRsaKey(client, message);
-                //     break;
-                // case CommandType.LoadMessage:
-                //     await HandleLoadMessage(client, message);
-                //     break;
                 case CommandType.SendMessage:
                     await HandleSendMessage(client, message);
                     break;
-                // case CommandType.RegisterClientRsaKey:
-                //     await HandleRegisterClientKey(client, message);
-                //     break;
                 case CommandType.ClientDisconnect:
                     OnClientDisconnect(client);
                     break;
@@ -153,7 +141,6 @@ public class TcpHandler : INetworkHandler, IDisposable
                     .ToList();
                 //filter List without userId
                 data = data.Where(us => us?.Id != user.Id).ToList();
-                Console.WriteLine($"Found {data.Count} users.");
                 var response = new MessageNetwork<List<UserDto?>>(
                     type: CommandType.GetAvailableClients,
                     code: StatusCode.Success,
@@ -211,7 +198,7 @@ public class TcpHandler : INetworkHandler, IDisposable
         catch (Exception ex)
         {
             MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-            Console.WriteLine($"Error: {ex.StackTrace}");
+            Logger.LogError($"Error: {ex.StackTrace}");
         }
 
         return Task.CompletedTask;
@@ -257,7 +244,7 @@ public class TcpHandler : INetworkHandler, IDisposable
         catch (Exception ex)
         {
             MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-            Console.WriteLine($"Error: {ex.StackTrace}");
+            Logger.LogError($"Error: {ex.StackTrace}");
         }
 
         return Task.CompletedTask;
@@ -304,7 +291,7 @@ public class TcpHandler : INetworkHandler, IDisposable
         catch (Exception ex)
         {
             MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-            Console.WriteLine($"Error: {ex.StackTrace}");
+            Logger.LogError($"Error: {ex.StackTrace}");
         }
 
         return Task.CompletedTask;
@@ -357,73 +344,6 @@ public class TcpHandler : INetworkHandler, IDisposable
 
     #endregion
 
-    #region Client Key
-
-    // private static Task HandleRegisterClientKey(TcpClient? client, MessageNetwork<dynamic> message)
-    // {
-    //     try
-    //     {
-    //         if (message is { Code: StatusCode.Success } && client != null)
-    //         {
-    //             if (message.TryParseData(out ClientInfo? info) && info != null)
-    //             {
-    //                 if (ClientKeyStore.Instance.RegisterClient(info.Id, info.PublicKey))
-    //                 {
-    //                     var response = new MessageNetwork<string>(
-    //                         type: CommandType.RegisterClientRsaKey,
-    //                         code: StatusCode.Success,
-    //                         data: "Register Public Key Success"
-    //                     ).ToJson();
-    //                     MsgService.SendTcpMessage(client, response);
-    //                 }
-    //                 else throw new InvalidOperationException("PublicKey not found for client.");
-    //             }
-    //             else throw new KeyNotFoundException("Target client not found.");
-    //         }
-    //         else throw new ArgumentException("Invalid message or client is null.");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-    //         Console.WriteLine($"Error: {ex.StackTrace}");
-    //     }
-    //
-    //     return Task.CompletedTask;
-    // }
-    //
-    // private static Task HandleGetClientRsaKey(TcpClient? client, MessageNetwork<dynamic> message)
-    // {
-    //     try
-    //     {
-    //         if (message is { Code: StatusCode.Success } && client != null)
-    //         {
-    //             if (message.TryParseData(out ClientInfo? info) && info != null)
-    //             {
-    //                 var data = ClientKeyStore.Instance.GetClientById(info.Id)?.PublicKey;
-    //
-    //                 if (data == null) throw new InvalidOperationException("PublicKey not found for client.");
-    //
-    //                 var response = new MessageNetwork<object>(
-    //                     type: CommandType.GetClientRsaKey,
-    //                     code: StatusCode.Success,
-    //                     data: data
-    //                 ).ToJson();
-    //                 MsgService.SendTcpMessage(client, response);
-    //             }
-    //             else throw new KeyNotFoundException("Target client not found.");
-    //         }
-    //         else throw new ArgumentException("Invalid message or client is null.");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         MsgService.SendErrorMessage(client, $"An error occurred: {ex.Message}");
-    //         Console.WriteLine($"Error: {ex.StackTrace}");
-    //     }
-    //
-    //     return Task.CompletedTask;
-    // }
-
-    #endregion
 
     #region Login and Registration
 
@@ -433,7 +353,7 @@ public class TcpHandler : INetworkHandler, IDisposable
         {
             if (message.TryParseData(out User? u) && u != null)
             {
-                var lR = ClientSessionService.Instance.LoginUser(u.UserName, u.Password, out var user);
+                var lR = ClientSessionService.LoginUser(u.UserName, u.Password, out var user);
                 if (lR.Item1)
                 {
                     if (user != null)
@@ -464,7 +384,7 @@ public class TcpHandler : INetworkHandler, IDisposable
         {
             if (messageNetwork.TryParseData(out User? user) && user != null)
             {
-                var result = ClientSessionService.Instance.RegisterUser(
+                var result = ClientSessionService.RegisterUser(
                     user.UserName,
                     user.Password
                 );

@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shared\Shared.csproj" />
-    <ProjectReference Include="D:\Nam4\2\ATTT_BM\Dự án\csatbmtt\Shared\Shared.csproj" />
+    <ProjectReference Include="W:\Fourth_Years\Csat_Bmtt\DoAnCuoiKy\Shared\Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

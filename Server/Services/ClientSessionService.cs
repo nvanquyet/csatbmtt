@@ -4,9 +4,9 @@ using Shared.Utils.Patterns;
 
 namespace Server.Services
 {
-    public class ClientSessionService : Singleton<ClientSessionService>
+    public static class ClientSessionService
     {
-        public (bool, string) RegisterUser(string? username, string? password)
+        public static (bool, string) RegisterUser(string? username, string? password)
         {
             if (username == null || password == null)
                 return (false, "Username or password must not empty");
@@ -19,7 +19,7 @@ namespace Server.Services
             return (true, "User registered successfully!");
         }
 
-        public (bool, string) LoginUser(string? username, string? password, out User? user)
+        public static (bool, string) LoginUser(string? username, string? password, out User? user)
         {
             user = null;
             if (username == null || password == null)

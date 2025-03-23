@@ -8,7 +8,6 @@ public static class Config
     private static string _serverIp = "20.5.131.240";
     private static int _serverTcpPort = 8000;
     private static int _serverUdpPort = 9000;
-    private static bool _logToConsole = true;
     private static string _defaultPassword = "123456";
     private static int _keyEncryptionLength = 256;
 
@@ -45,11 +44,7 @@ public static class Config
         }
     }
 
-    public static bool LogToConsole
-    {
-        get => _logToConsole;
-        set => _logToConsole = value;
-    }
+    public static bool LogToConsole { get; } = true;
 
     public static string DefaultPassword
     {

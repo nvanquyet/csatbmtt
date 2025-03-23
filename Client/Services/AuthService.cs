@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
-using Client.Menu;
 using Client.Models;
 using Client.Network;
+using Shared;
 using Shared.Models;
 using Shared.Networking.Interfaces;
 
@@ -29,57 +29,7 @@ public static class AuthService
             
         NetworkManager.Instance.TcpService.Send(message.ToJson(), "");
     }
-
-    #region  Console Test
-    public static void Register(INetworkProtocol protocol)
-    {
-        Console.Clear();
-        Console.WriteLine("=== Đăng ký ===");
-
-        Console.Write("Nhập tên người dùng: ");
-        var username = Console.ReadLine();
-        Console.Write("Nhập mật khẩu: ");
-        var password = Console.ReadLine();
-        Console.Write("Xác nhận mật khẩu: ");
-        var confirmPassword = Console.ReadLine();
-
-        if (password != confirmPassword)
-        {
-            Console.WriteLine("Mật khẩu không khớp.");
-            MainMenu.ShowMenu(protocol);
-            return;
-        }
-
-        if (username == null || password == null) return;
-        var message = new MessageNetwork<User>(
-            type: CommandType.Registration, 
-            code: StatusCode.Success,
-            data: new User(username, password)
-        );
-            
-        protocol.Send(message.ToJson(),"");
-    }
-
-    public static void Login(INetworkProtocol protocol)
-    {
-        Console.Clear();
-        Console.WriteLine("=== Đăng nhập ===");
-
-        Console.Write("Nhập tên người dùng: ");
-        var username = Console.ReadLine();
-        Console.Write("Nhập mật khẩu: ");
-        var password = Console.ReadLine();
-
-        if (username == null || password == null) return;
-        var message = new MessageNetwork<User>(
-            type: CommandType.Login, 
-            code: StatusCode.Success,
-            data: new User(username, password)
-        );
-        protocol.Send(message.ToJson(), "");
-    }
-
-    #endregion
+    
     #region Cache Data
 
     private const string AuthFile = "auth.txt";
@@ -94,7 +44,7 @@ public static class AuthService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi lưu thông tin người dùng: {ex.Message}");
+            Logger.LogError($"Lỗi khi lưu thông tin người dùng: {ex.Message}");
         }
     }
 
@@ -114,13 +64,13 @@ public static class AuthService
                 code: StatusCode.Success,
                 data: new User(user.UserName, user.Password)
             );
-            Console.WriteLine($"User {message.ToJson()}");
+            Logger.LogInfo($"User {message.ToJson()}");
             protocol?.Send(message.ToJson(), "");
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi đọc thông tin đăng nhập: {ex.Message}");
+            Logger.LogError($"Lỗi khi đọc thông tin đăng nhập: {ex.Message}");
             return false;
         }
     }
@@ -134,7 +84,7 @@ public static class AuthService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Lỗi khi đăng xuất: {ex.Message}");
+            Logger.LogError($"Lỗi khi đăng xuất: {ex.Message}");
         }
     }
 

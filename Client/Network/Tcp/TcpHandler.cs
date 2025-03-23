@@ -1,6 +1,7 @@
 ﻿using Client.Form;
 using Client.Models;
 using Client.Services;
+using Shared;
 using Shared.Models;
 using Shared.Networking.Interfaces;
 using Shared.Utils;
@@ -59,10 +60,8 @@ public class TcpHandler : INetworkHandler
                 }
                 break;
             case CommandType.GetAvailableClients:
-                Console.WriteLine($"Get Available Clients {message}");
                 if (msg.TryParseData(out List<UserDto>? allUsers) && allUsers != null)
                 {
-                    //ChatMenu.ChatWith(allUsers, NetworkManager.Instance.TcpService);
                     FormController.GetForm<HomeForm>(FormType.Home)?.SetAllUsers(allUsers);
                 }
                 break;
@@ -141,20 +140,12 @@ public class TcpHandler : INetworkHandler
                     }
                 }
                 break;
-
-            // case CommandType.LoadMessage:
-            //     if (msg.TryParseData(out ChatMessage[]? allMessages))
-            //     {
-            //         ChatMenu.LoadAllMessage(allMessages);
-            //     }
-            //     else
-            //     {
-            //         Console.WriteLine("Load All Messages Failed");
-            //     }
-            //
-            //     break;
+            case null:
+            case CommandType.None:
+            case CommandType.SendMessage:
+            case CommandType.ClientDisconnect:
             default:
-                Console.WriteLine("Unknown Command");
+                Logger.LogWarning("Unknown Command");
                 break;
         }
 

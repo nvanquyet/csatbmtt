@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using Shared;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
 using Shared.Utils;
@@ -13,7 +14,7 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     {
         IsRunning = true;
         _udpClient = new UdpClient(port);
-        Logs.Logger.Log($"UDP server started on port {port}");
+        Logger.LogInfo($"UDP server started on port {port}");
 
         var receiveThread = new Thread(ReceiveData);
         receiveThread.Start();
@@ -34,7 +35,7 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
         catch (SocketException ex)
         {
-            Logs.Logger.Log($"UDP receive error: {ex.Message}");
+            Logger.LogWarning($"UDP receive error: {ex.Message}");
         }
     }
     
@@ -52,7 +53,7 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
         catch (Exception ex)
         {
-            Logs.Logger.Log($"Failed to send to {endpoint}: {ex.Message}");
+            Logger.LogWarning($"Failed to send to {endpoint}: {ex.Message}");
         }
     }
 }

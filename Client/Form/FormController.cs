@@ -13,11 +13,8 @@ public static class FormController
     private static readonly Dictionary<FormType, Form?> OpenForms = new();
     private static Form? _currentForm;
     private static SynchronizationContext? _uiSyncContext = SynchronizationContext.Current;
-    public static void InitializeUiContext()
-    {
-        _uiSyncContext = SynchronizationContext.Current;
-        Console.WriteLine($"SynchronizationContext: {_uiSyncContext} from {_currentForm?.GetType().Name}");
-    }
+    public static void InitializeUiContext() =>  _uiSyncContext = SynchronizationContext.Current;
+    
     /// <summary>
     /// Hiển thị form theo loại (FormType).
     /// </summary>
@@ -43,8 +40,8 @@ public static class FormController
 
         OpenForms[formType] = newForm; // Lưu lại form mới
 
-        newForm.Show();
-        newForm.BringToFront();
+        newForm?.Show();
+        newForm?.BringToFront();
     }
 
 

@@ -1,7 +1,6 @@
-﻿using Client.Menu;
-using Client.Network.Tcp;
+﻿using Client.Network.Tcp;
 using Client.Network.Udp;
-using Client.Services;
+using Shared;
 using Shared.Networking.Interfaces;
 using Shared.Utils.Patterns;
 
@@ -14,7 +13,7 @@ public class NetworkManager : Singleton<NetworkManager>
 
     public NetworkManager()
     {
-        Console.WriteLine("Connecting to server...");
+        Logger.LogInfo("Connecting to server...");
         TcpService.Start(0);
     }
 }

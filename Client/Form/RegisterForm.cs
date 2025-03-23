@@ -1,4 +1,5 @@
 ﻿using Client.Services;
+using Shared;
 
 namespace Client.Form
 {
@@ -28,7 +29,7 @@ namespace Client.Form
             }
 
             // Log event (in a real application, you'd send data to a server or database)
-            Console.WriteLine($"Register with {username} {password}");
+            Logger.LogInfo($"Register with {username} {password}");
             AuthService.Register(username, password);
         }
 

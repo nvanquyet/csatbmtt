@@ -61,8 +61,43 @@ namespace Client.Form
         }
 
         #region UserSuggestion
+        private void lstUserSuggestions_DrawItem(object sender, DrawItemEventArgs e)
+        {
+            e.DrawBackground();
+    
+            if (e.Index < 0 || e.Index >= lstUserSuggestions.Items.Count)
+                return;
 
-        // Sự kiện TextChanged của ô tìm kiếm
+            // Giả sử Items chứa đối tượng UserDto
+            if (lstUserSuggestions.Items[e.Index] is UserDto user)
+            {
+                // Xác định màu sắc cho trạng thái
+                Color statusColor = user.Status switch
+                {
+                    UserStatus.Available => Color.Green,
+                    UserStatus.Busy => Color.Orange,
+                    UserStatus.Inactive => Color.Gray,
+                    _ => Color.Black
+                };
+
+                // Vẽ tên người dùng
+                string displayText = user.UserName;
+                using (var textBrush = new SolidBrush(e.ForeColor))
+                {
+                    e.Graphics.DrawString(displayText, e.Font, textBrush, e.Bounds.Left + 30, e.Bounds.Top);
+                }
+
+                // Vẽ biểu tượng trạng thái (ví dụ, một hình tròn màu) bên trái text
+                using (var brush = new SolidBrush(statusColor))
+                {
+                    // Vẽ hình tròn với đường kính 15px
+                    e.Graphics.FillEllipse(brush, e.Bounds.Left + 5, e.Bounds.Top + 5, 15, 15);
+                }
+            }
+    
+            e.DrawFocusRectangle();
+        }
+
         private void TxtSearch_TextChanged(object sender, EventArgs e)
         {
             var query = txtSearch.Text.Trim();
@@ -80,21 +115,22 @@ namespace Client.Form
             else
             {
                 lstUserSuggestions.DataSource = suggestions;
+                lstUserSuggestions.DisplayMember = "UserName"; // Dù sử dụng OwnerDraw, giá trị này vẫn cần
                 lstUserSuggestions.Visible = true;
             }
         }
 
+
         // Hàm lọc danh sách người dùng dựa trên từ khóa tìm kiếm
-        private List<string?> GetUserSuggestions(string query)
+        private List<UserDto> GetUserSuggestions(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
-                return new List<string?>();
+                return new List<UserDto>();
 
             return _allUsers
                 .Where(u => u.UserName != null && u.UserName.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(u => GetStatusPriority(u.Status))
-                .Select(u => u.UserName)
-                .ToList()!;
+                .ToList();
         }
 
         // Sự kiện khi người dùng bấm vào một mục trong danh sách gợi ý
@@ -264,26 +300,56 @@ namespace Client.Form
 
         public void UpdateStatus(UserDto newData)
         {
-            foreach (var user in _allUsers.Where(user => user.Id == newData.Id))
+            var user = _allUsers.FirstOrDefault(u => u.Id == newData.Id);
+            if (user != null)
             {
                 user.UserName = newData.UserName;
                 user.Status = newData.Status;
-                break;
             }
 
-            UpdateSearchForm();
-            UpdateShakeForm();
+            UpdateSearchForm(newData);
+            UpdateShakeForm(newData);
         }
 
-        private void UpdateSearchForm()
+
+        private void UpdateSearchForm(UserDto newData)
         {
-            
+            if (!lstUserSuggestions.Visible) return;
+    
+            var query = txtSearch.Text.Trim();
+            var suggestions = GetUserSuggestions(query);
+
+            lstUserSuggestions.Visible = suggestions.Count > 0;
+            if (!lstUserSuggestions.Visible) return;
+            lstUserSuggestions.DataSource = suggestions;
+            lstUserSuggestions.DisplayMember = "UserName";
         }
 
-        private void UpdateShakeForm()
+        private void UpdateShakeForm(UserDto newData)
         {
-            
+            foreach (ListViewItem item in lstChatHistory.Items)
+            {
+                if (item.Tag is not UserDto user || user.Id != newData.Id) continue;
+        
+                item.Text = newData.UserName;
+                item.SubItems[2].Text = newData.Status switch
+                {
+                    UserStatus.Available => "Online",
+                    UserStatus.Busy => "Busy",
+                    UserStatus.Inactive => "Offline",
+                    _ => ""
+                };
+
+                item.ForeColor = newData.Status switch
+                {
+                    UserStatus.Available => Color.Green,
+                    UserStatus.Busy => Color.Orange,
+                    UserStatus.Inactive => Color.Gray,
+                    _ => Color.Black
+                };
+            }
         }
+
         
         private int GetStatusPriority(UserStatus status)
         {

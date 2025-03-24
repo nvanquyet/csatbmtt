@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using Shared.Utils;
 
 namespace Shared.AppSettings;
 
@@ -9,7 +10,7 @@ public static class Config
     private static int _serverTcpPort = 8000;
     private static int _serverUdpPort = 9000;
     private static string _defaultPassword = "123456";
-    private static int _keyEncryptionLength = 256;
+    private static int _keyEncryptionLength = (int)KeySize.KMin;
 
     public static string ServerIp
     {

@@ -56,6 +56,8 @@ namespace Client.Form
             this.lstUserSuggestions.Location = new Point(20, 65);
             this.lstUserSuggestions.Size = new Size(340, 60);
             this.lstUserSuggestions.Visible = false; // Ẩn ban đầu, sẽ hiển thị khi có dữ liệu gợi ý
+            lstUserSuggestions.DrawMode = DrawMode.OwnerDrawFixed;
+            lstUserSuggestions.DrawItem += lstUserSuggestions_DrawItem;
             this.lstUserSuggestions.Click += new System.EventHandler(this.LstUserSuggestions_Click);
             this.Controls.Add(this.lstUserSuggestions);
             // 

@@ -4,7 +4,7 @@ using Shared.Utils.Patterns;
 
 namespace Shared.Services;
 
-public class EncryptionService : Singleton<EncryptionService>, IEncryptionService
+public class EncryptionService : Singleton<EncryptionService>
 {
     private readonly Dictionary<EncryptionType, IEncryptionAlgorithm> _algorithms;
 
@@ -20,20 +20,4 @@ public class EncryptionService : Singleton<EncryptionService>, IEncryptionServic
 
 
     public IEncryptionAlgorithm GetAlgorithm(EncryptionType encryptionType) => _algorithms[encryptionType];
-    
-    public byte[] EncryptData(EncryptionType type, byte[] data)
-    {
-        if (!_algorithms.TryGetValue(type, out var algorithm))
-            throw new ArgumentException($"Algorithm {type} is not supported");
-
-        return algorithm.Encrypt(data, algorithm.EncryptKey);
-    }
-
-    public byte[] DecryptData(EncryptionType type, byte[] encryptedData)
-    {
-        if (!_algorithms.TryGetValue(type, out var algorithm))
-            throw new ArgumentException($"Algorithm {type} is not supported");
-
-        return algorithm.Decrypt(encryptedData, algorithm.DecryptKey);
-    }
 }

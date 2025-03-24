@@ -2,6 +2,8 @@
 using Client.Network;
 using Client.Services;
 using Shared.Models;
+using Shared.Security.Interface;
+using Shared.Services;
 
 namespace Client.Form
 {
@@ -173,13 +175,18 @@ namespace Client.Form
         {
             _waitingForm?.Close();
             // Xây dựng thông điệp hiển thị cho người dùng
-            string message = $"Do you want to start a handshake with {dtoRequest.FromUser?.UserName}?";
-            string caption = "Handshake Confirmation";
+            var message = $"Do you want to start a handshake with {dtoRequest.FromUser?.UserName}?";
+            var caption = "Handshake Confirmation";
 
             // Hiển thị dialog xác nhận với nút Yes/No
             var result = MessageBox.Show(message, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
             dtoRequest.Accepted = result.Equals(DialogResult.Yes);
+
+            if (dtoRequest is { Accepted: true, ToUser: not null })
+            {
+                dtoRequest.ToUser.EncryptKey = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa).EncryptKey;
+            }
 
             var response =
                 new MessageNetwork<HandshakeDto>(type: CommandType.HandshakeResponse, code: StatusCode.Success,
@@ -283,6 +290,7 @@ namespace Client.Form
 
         private void SendHandshakeRequest(UserDto fromUser, UserDto toUser)
         {
+            fromUser.EncryptKey = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa).EncryptKey;
             var request = new MessageNetwork<HandshakeDto>(type: CommandType.HandshakeRequest, StatusCode.Success,
                 data: new HandshakeDto(fromUser, toUser));
 

@@ -10,4 +10,6 @@ public class TransferData(TransferType transferType, byte[]? rawData)
 {
     public TransferType TransferType { get; set; } = transferType;
     public byte[]? RawData { get; set; } = rawData;
+    
+    public byte[]? KeyDecrypt { get; set; }
 }

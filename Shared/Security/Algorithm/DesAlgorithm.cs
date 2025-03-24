@@ -471,7 +471,18 @@ public class DesAlgorithm : IEncryptionAlgorithm
 
     private static byte[] GenerateKey(int length)
     {
-        return ByteUtils.GetBytesFromString("testDesAlgorithm");
+        length /= 8;
+        if (length != 8)
+            throw new ArgumentException("DES key length must be exactly 8 bytes (64 bits).");
+
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+
+        string randomKey = new string(Enumerable.Range(0, 8)
+            .Select(_ => chars[random.Next(chars.Length)])
+            .ToArray());
+
+        return ByteUtils.GetBytesFromString(randomKey);
     }
     #endregion
 }

@@ -1,6 +1,8 @@
 ﻿using Client.Models;
 using Client.Network;
 using Shared.Models;
+using Shared.Security.Interface;
+using Shared.Services;
 using Shared.Utils;
 
 namespace Client.Form
@@ -16,7 +18,7 @@ namespace Client.Form
             messageContainer.AutoScroll = true;
             LoadSampleMessages();
         }
-        
+
         public void SetUserTarget(UserDto? userDto) => _targetDto = userDto;
 
         private void LoadSampleMessages()
@@ -37,7 +39,10 @@ namespace Client.Form
         public void AddMessage(TransferData? data, bool isMe)
         {
             if (data == null) return;
+            
             var rowPanel = CreateRowPanel(isMe);
+
+            if (!isMe) data = DecryptTransferData(data);
 
             if (data.TransferType == TransferType.Text)
             {
@@ -208,13 +213,10 @@ namespace Client.Form
             if (!string.IsNullOrWhiteSpace(txtMessage.Text))
             {
                 var transferData = new TransferData(TransferType.Text, ByteUtils.GetBytesFromString(txtMessage.Text));
+
                 AddMessage(transferData, true);
-                var response =
-                    new MessageNetwork<MessageDto>(type: CommandType.DispatchMessage, StatusCode.Success,
-                        data: new MessageDto(receiverId: _targetDto?.Id, transferData)).ToJson();
-                //Send to Server
-                NetworkManager.Instance.TcpService.Send(response);
                 txtMessage.Clear();
+                SendToServer(transferData: transferData);
             }
 
             if (_selectedFilePath.Length > 0)
@@ -225,13 +227,10 @@ namespace Client.Form
                 _selectedFilePath = "";
                 lblSelectedFile.Visible = false;
                 btnRemoveFile.Visible = false;
-                var response =
-                    new MessageNetwork<MessageDto>(type: CommandType.DispatchMessage, StatusCode.Success,
-                        data: new MessageDto(receiverId: _targetDto?.Id, transferData)).ToJson();
-                //Send to Server
-                NetworkManager.Instance.TcpService.Send(response);
+                SendToServer(transferData: transferData);
             }
         }
+
 
         private void BtnSendFile_Click(object sender, EventArgs e)
         {
@@ -332,5 +331,36 @@ namespace Client.Form
             NetworkManager.Instance.TcpService.Send(response);
             base.Dispose(disposing);
         }
+
+        #region Encryption
+
+        private void SendToServer(TransferData transferData)
+        {
+            var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
+            var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
+            if (_targetDto == null || transferData.RawData == null) return;
+            transferData.RawData = desEncrypt.Encrypt(transferData.RawData, desEncrypt.EncryptKey);
+            transferData.KeyDecrypt =
+                rsaEncrypt.Encrypt(desEncrypt.DecryptKey, _targetDto.EncryptKey);
+            var response =
+                new MessageNetwork<MessageDto>(type: CommandType.DispatchMessage, StatusCode.Success,
+                    data: new MessageDto(receiverId: _targetDto?.Id, transferData)).ToJson();
+            //Send to Server
+            NetworkManager.Instance.TcpService.Send(response);
+        }
+
+        private TransferData DecryptTransferData(TransferData transferData)
+        {
+            var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
+            var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
+
+            if (transferData.KeyDecrypt == null || transferData.RawData == null) return transferData;
+            transferData.KeyDecrypt =
+                rsaEncrypt.Encrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
+            transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
+            return transferData;
+        }
+
+        #endregion
     }
 }

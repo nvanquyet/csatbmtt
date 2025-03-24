@@ -23,5 +23,7 @@ public class UserDto(string? id, string? userName, UserStatus status = UserStatu
     public string? Id { get; set; } = id;
     public string? UserName { get; set; } = userName;
     public UserStatus Status { get; set; } = status;
+
+    public byte[] EncryptKey { get; set; } = [];
 }
 

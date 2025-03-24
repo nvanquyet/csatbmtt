@@ -11,6 +11,13 @@ namespace Server.Database.Repositories
         private static readonly IMongoCollection<ConversationRecord> InteractionCollection =
             DatabaseService.GetCollection<ConversationRecord>(ServerConfig.UserInteractionCollection);
 
+        
+        public static async Task UpsertInteraction(string firstUser, string secondUser)
+        {
+            await UpsertInteraction(firstUser, secondUser, DateTime.Now);
+            await UpsertInteraction(secondUser, firstUser, DateTime.Now);
+        }
+        
         /// <summary>
         /// Cập nhật hoặc thêm mới InteractionDetail cho một owner.
         /// Nếu record của owner chưa tồn tại thì tạo mới record với interaction.
@@ -21,7 +28,7 @@ namespace Server.Database.Repositories
         /// <param name="ownerId">ID của user sở hữu bản ghi</param>
         /// <param name="partnerId">ID của user đã chat cùng</param>
         /// <param name="interactionTime">Thời gian tương tác</param>
-        public static async Task UpsertInteraction(string ownerId, string partnerId, DateTime interactionTime)
+        private static async Task UpsertInteraction(string ownerId, string partnerId, DateTime interactionTime)
         {
             if (string.IsNullOrWhiteSpace(ownerId) || string.IsNullOrWhiteSpace(partnerId))
                 return;

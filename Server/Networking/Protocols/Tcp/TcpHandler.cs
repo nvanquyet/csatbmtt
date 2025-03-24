@@ -249,7 +249,7 @@ public class TcpHandler : INetworkHandler, IDisposable
         return Task.CompletedTask;
     }
 
-    private Task HandleHandshakeResponse(TcpClient? client, MessageNetwork<dynamic> message)
+    private async Task HandleHandshakeResponse(TcpClient? client, MessageNetwork<dynamic> message)
     {
         try
         {
@@ -264,10 +264,11 @@ public class TcpHandler : INetworkHandler, IDisposable
                     message.Data = dto;
                     MsgService.SendTcpMessage(client, message.ToJson());
                     MsgService.SendTcpMessage(toClient, message.ToJson());
-
+                    
                     //Todo: Broadcast status
                     if (dto.ToUser != null) dto.ToUser.Status = UserStatus.Busy;
                     if (dto.FromUser != null) dto.FromUser.Status = UserStatus.Busy;
+                    
                     //Todo: Broadcast to all client online
                     if (client != null && toClient != null)
                     {
@@ -280,6 +281,9 @@ public class TcpHandler : INetworkHandler, IDisposable
                         // Broadcast the cancellation to all online clients excluding the two involved.
                         BroadcastMessageExcept<TcpClient>([client, toClient], broadcastMsg);
                     }
+                    
+                    //Save to db
+                    if (dto is { ToUser: { Id: not null }, FromUser.Id: not null })  await UserInteractionRepository.UpsertInteraction(dto.FromUser.Id, dto.ToUser.Id);
                 }
             }
             else throw new KeyNotFoundException("Target client not found.");
@@ -289,8 +293,6 @@ public class TcpHandler : INetworkHandler, IDisposable
             SendError(client, $"An error occurred: {ex.Message}");
             Logger.LogError($"Error: {ex.StackTrace}");
         }
-
-        return Task.CompletedTask;
     }
 
     private static bool IsUserAvailableForHandshake(string userId) =>

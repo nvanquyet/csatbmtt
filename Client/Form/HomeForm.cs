@@ -1,6 +1,8 @@
 ﻿using Client.Models;
 using Client.Network;
 using Client.Services;
+using MongoDB.Bson;
+using Shared;
 using Shared.Models;
 using Shared.Security.Interface;
 using Shared.Services;
@@ -25,6 +27,8 @@ namespace Client.Form
             {
                 _allUsers = users;
             }
+
+            //TestLoadHandshake();
         }
 
         private readonly Form _waitingForm;
@@ -66,14 +70,13 @@ namespace Client.Form
         private void lstUserSuggestions_DrawItem(object sender, DrawItemEventArgs e)
         {
             e.DrawBackground();
-    
+
             if (e.Index < 0 || e.Index >= lstUserSuggestions.Items.Count)
                 return;
 
-            // Giả sử Items chứa đối tượng UserDto
             if (lstUserSuggestions.Items[e.Index] is UserDto user)
             {
-                // Xác định màu sắc cho trạng thái
+                // Màu trạng thái
                 Color statusColor = user.Status switch
                 {
                     UserStatus.Available => Color.Green,
@@ -82,23 +85,27 @@ namespace Client.Form
                     _ => Color.Black
                 };
 
-                // Vẽ tên người dùng
-                string displayText = user.UserName;
-                using (var textBrush = new SolidBrush(e.ForeColor))
-                {
-                    e.Graphics.DrawString(displayText, e.Font, textBrush, e.Bounds.Left + 30, e.Bounds.Top);
-                }
+                // Tính toán vị trí để căn giữa hình tròn với text
+                int iconSize = 15;
+                int centerY = e.Bounds.Top + (e.Bounds.Height - iconSize) / 2;
 
-                // Vẽ biểu tượng trạng thái (ví dụ, một hình tròn màu) bên trái text
+                // Vẽ hình tròn
                 using (var brush = new SolidBrush(statusColor))
                 {
-                    // Vẽ hình tròn với đường kính 15px
-                    e.Graphics.FillEllipse(brush, e.Bounds.Left + 5, e.Bounds.Top + 5, 15, 15);
+                    e.Graphics.FillEllipse(brush, e.Bounds.Left + 5, centerY, iconSize, iconSize);
+                }
+
+                // Vẽ tên người dùng, căn chỉnh ngang cách hình tròn 10px
+                var displayText = user.UserName;
+                using (var textBrush = new SolidBrush(e.ForeColor))
+                {
+                    e.Graphics.DrawString(displayText, e.Font, textBrush, e.Bounds.Left + 25, e.Bounds.Top + (e.Bounds.Height - e.Font.Height) / 2);
                 }
             }
-    
+
             e.DrawFocusRectangle();
         }
+
 
         private void TxtSearch_TextChanged(object sender, EventArgs e)
         {
@@ -138,10 +145,9 @@ namespace Client.Form
         // Sự kiện khi người dùng bấm vào một mục trong danh sách gợi ý
         private void LstUserSuggestions_Click(object sender, EventArgs e)
         {
-            if (lstUserSuggestions.SelectedItem is not string selectedUserName)
+            if (lstUserSuggestions.SelectedItem is not UserDto selectedItem)
                 return;
-
-            var selectedUser = _allUsers.FirstOrDefault(u => u.UserName == selectedUserName);
+            var selectedUser = _allUsers.FirstOrDefault(u => u == selectedItem);
             if (selectedUser == null)
                 return;
 
@@ -232,7 +238,7 @@ namespace Client.Form
                 listItem.SubItems.Add(interaction.LastInteractionTime.ToString("g"));
         
                 // Hiển thị trạng thái dạng text, bạn có thể hiển thị "Online", "Busy", "Offline"
-                string statusText = user.Status switch
+                var statusText = user.Status switch
                 {
                     UserStatus.Available => "Online",
                     UserStatus.Busy => "Busy",
@@ -370,6 +376,45 @@ namespace Client.Form
                 _ => 4,
             };
         }
+        
+        private void TestLoadHandshake()
+        {
+            // Tạo fake ConversationRecord cho owner "owner1"
+            var conversationRecord = new ConversationRecord
+            {
+                Id = ObjectId.GenerateNewId().ToString(),
+                OwnerId = SessionManager.GetUserDto().Id,
+                Interactions =
+                [
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[1].Id, LastInteractionTime = DateTime.Now.AddMinutes(-5) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[3].Id, LastInteractionTime = DateTime.Now.AddMinutes(-2) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[5].Id, LastInteractionTime = DateTime.Now.AddMinutes(-10) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[1].Id, LastInteractionTime = DateTime.Now.AddMinutes(-5) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[3].Id, LastInteractionTime = DateTime.Now.AddMinutes(-2) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[5].Id, LastInteractionTime = DateTime.Now.AddMinutes(-10) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[1].Id, LastInteractionTime = DateTime.Now.AddMinutes(-5) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[3].Id, LastInteractionTime = DateTime.Now.AddMinutes(-2) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[5].Id, LastInteractionTime = DateTime.Now.AddMinutes(-10) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[1].Id, LastInteractionTime = DateTime.Now.AddMinutes(-5) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[3].Id, LastInteractionTime = DateTime.Now.AddMinutes(-2) },
+                    new InteractionDetail
+                        { ParticipantId = _allUsers[5].Id, LastInteractionTime = DateTime.Now.AddMinutes(-10) }
+                ]
+            };
 
+            // Gọi hàm LoadHandshake với fake data
+            LoadHandshake(conversationRecord);
+        }
     }
 }

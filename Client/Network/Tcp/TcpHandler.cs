@@ -103,13 +103,14 @@ public class TcpHandler : INetworkHandler
                     }
                 }
                 break;
-            case CommandType.GetUserShaked:
+            case CommandType.GetHandshakeUsers:
                 if (msg.TryParseData(out ConversationRecord? c) && c != null)
                 {
+                    Logger.LogInfo($"Handshake with {c.Interactions.Count} Interactions");
                     FormController.GetForm<HomeForm>(FormType.Home)?.LoadHandshake(c);
                 }
                 break;
-            case CommandType.CancelHandshake:
+            case CommandType.HandshakeCancel:
                 if (msg.TryParseData(out HandshakeDto? cancel) && cancel != null)
                 {
                     if (msg.Code == StatusCode.Success)
@@ -123,7 +124,7 @@ public class TcpHandler : INetworkHandler
                     }
                 }
                 break;
-            case CommandType.ReceiveMessage:
+            case CommandType.DispatchMessage:
                 if (msg.TryParseData(out MessageDto? md) && md?.Data != null)
                 {
                     var chatForm = FormController.GetForm<ChatForm>(FormType.Chat);
@@ -140,10 +141,12 @@ public class TcpHandler : INetworkHandler
                     }
                 }
                 break;
-            case null:
-            case CommandType.None:
-            case CommandType.SendMessage:
-            case CommandType.ClientDisconnect:
+            case CommandType.UpdateStatusUsers:
+                if (msg.TryParseData(out UserDto? ud) && ud != null)
+                {
+                    FormController.GetForm<HomeForm>(FormType.Home)?.UpdateStatus(ud);
+                }
+                break;
             default:
                 Logger.LogWarning("Unknown Command");
                 break;
@@ -162,6 +165,11 @@ public class TcpHandler : INetworkHandler
     }
 
     public void BroadcastMessageExcept<T>(T? excludedClient, string message) where T : class
+    {
+        throw new NotImplementedException();
+    }
+
+    public void BroadcastMessageExcept<T>(T[] excludedClient, string message) where T : class
     {
         throw new NotImplementedException();
     }

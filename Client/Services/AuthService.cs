@@ -79,6 +79,13 @@ public static class AuthService
     {
         try
         {
+            var message = new MessageNetwork<UserDto>(
+                type: CommandType.ClientDisconnect,
+                code: StatusCode.Success,
+                data: SessionManager.GetUserDto()
+            );
+            Logger.LogInfo($"User {message.ToJson()}");
+            NetworkManager.Instance.TcpService.Send(message.ToJson(), "");
             if (File.Exists(AuthFile)) File.Delete(AuthFile);
             SessionManager.Clear();
         }

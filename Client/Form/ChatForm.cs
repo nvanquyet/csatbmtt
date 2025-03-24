@@ -210,7 +210,7 @@ namespace Client.Form
                 var transferData = new TransferData(TransferType.Text, ByteUtils.GetBytesFromString(txtMessage.Text));
                 AddMessage(transferData, true);
                 var response =
-                    new MessageNetwork<MessageDto>(type: CommandType.SendMessage, StatusCode.Success,
+                    new MessageNetwork<MessageDto>(type: CommandType.DispatchMessage, StatusCode.Success,
                         data: new MessageDto(receiverId: _targetDto?.Id, transferData)).ToJson();
                 //Send to Server
                 NetworkManager.Instance.TcpService.Send(response);
@@ -226,7 +226,7 @@ namespace Client.Form
                 lblSelectedFile.Visible = false;
                 btnRemoveFile.Visible = false;
                 var response =
-                    new MessageNetwork<MessageDto>(type: CommandType.SendMessage, StatusCode.Success,
+                    new MessageNetwork<MessageDto>(type: CommandType.DispatchMessage, StatusCode.Success,
                         data: new MessageDto(receiverId: _targetDto?.Id, transferData)).ToJson();
                 //Send to Server
                 NetworkManager.Instance.TcpService.Send(response);
@@ -270,7 +270,7 @@ namespace Client.Form
             // Hiển thị dialog xác nhận với nút Yes/No
             var result = MessageBox.Show(message, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (!result.Equals(DialogResult.Yes)) return;
-            var response = new MessageNetwork<HandshakeDto>(type: CommandType.CancelHandshake, StatusCode.Success,
+            var response = new MessageNetwork<HandshakeDto>(type: CommandType.HandshakeCancel, StatusCode.Success,
                 new HandshakeDto(SessionManager.GetUserDto(), _targetDto)).ToJson();
             NetworkManager.Instance.TcpService.Send(response);
         }
@@ -327,7 +327,7 @@ namespace Client.Form
 
         protected override void Dispose(bool disposing)
         {
-            var response = new MessageNetwork<HandshakeDto>(type: CommandType.CancelHandshake, StatusCode.Success,
+            var response = new MessageNetwork<HandshakeDto>(type: CommandType.HandshakeCancel, StatusCode.Success,
                 new HandshakeDto(SessionManager.GetUserDto(), _targetDto)).ToJson();
             NetworkManager.Instance.TcpService.Send(response);
             base.Dispose(disposing);

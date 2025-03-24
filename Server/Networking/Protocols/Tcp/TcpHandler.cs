@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using System.Collections.Concurrent;
+using Server.Controller;
 using Server.Database.Repositories;
 using Server.Services;
 using Shared;
@@ -13,7 +14,7 @@ namespace Server.Networking.Protocols.Tcp;
 public class TcpHandler : INetworkHandler, IDisposable
 {
     private static readonly ConcurrentDictionary<string, TcpClient?> Clients = new();
-    private static readonly ConcurrentDictionary<string, string?> MapUserIdToIp = new();    
+    private static readonly ConcurrentDictionary<string, string?> MapUserIdToIp = new();
 
     #region Helpers
 
@@ -35,11 +36,13 @@ public class TcpHandler : INetworkHandler, IDisposable
             error = "Client is null.";
             return false;
         }
+
         if (message.Code != StatusCode.Success)
         {
             error = "Server Error";
             return false;
         }
+
         error = string.Empty;
         return true;
     }
@@ -69,11 +72,6 @@ public class TcpHandler : INetworkHandler, IDisposable
         _ = HandleClientComm(client, message);
     }
 
-    private Task HandleClientDisconnect(TcpClient? client)
-    {
-        OnClientDisconnect(client);
-        return Task.CompletedTask;
-    }
 
     public void OnClientDisconnect<T>(T? client) where T : class
     {
@@ -117,9 +115,24 @@ public class TcpHandler : INetworkHandler, IDisposable
     public void BroadcastMessageExcept<T>(T? excludedClient, string message) where T : class
     {
         var targetClients = Clients.Values
-                                   .Where(c => c != excludedClient && c != null)
-                                   .OfType<TcpClient>()
-                                   .ToList();
+            .Where(c => c != excludedClient && c != null)
+            .OfType<TcpClient>()
+            .ToList();
+        foreach (var client in targetClients)
+        {
+            MsgService.SendTcpMessage(client, message);
+        }
+    }
+
+    public void BroadcastMessageExcept<T>(T[] excludedClients, string message) where T : class
+    {
+        var excludedSet = new HashSet<T>(excludedClients);
+
+        var targetClients = Clients.Values
+            .Where(c => c != null && !(c is T clientT && excludedSet.Contains(clientT)))
+            .OfType<TcpClient>()
+            .ToList();
+
         foreach (var client in targetClients)
         {
             MsgService.SendTcpMessage(client, message);
@@ -144,15 +157,14 @@ public class TcpHandler : INetworkHandler, IDisposable
             await (message.Type switch
             {
                 CommandType.Login => HandleLogin(client, message),
-                CommandType.Logout => HandleLogout(client, message),
                 CommandType.Registration => HandleRegistration(client, message),
                 CommandType.GetAvailableClients => HandleGetAvailableClient(client, message),
-                CommandType.SendMessage => HandleSendMessage(client, message),
+                CommandType.DispatchMessage => HandleSendMessage(client, message),
                 CommandType.HandshakeRequest => HandleHandshakeRequest(client, message),
                 CommandType.HandshakeResponse => HandleHandshakeResponse(client, message),
-                CommandType.GetUserShaked => HandleHandGetUserShaked(client, message),
-                CommandType.CancelHandshake => HandleCancelHandShake(client, message),
-                CommandType.ClientDisconnect => HandleClientDisconnect(client),
+                CommandType.GetHandshakeUsers => HandleHandshakeUsers(client, message),
+                CommandType.HandshakeCancel => HandleHandShakeCancel(client, message),
+                CommandType.ClientDisconnect => HandleClientDisconnect(client, message),
                 _ => throw new InvalidOperationException("Unsupported command type")
             });
         }
@@ -166,7 +178,7 @@ public class TcpHandler : INetworkHandler, IDisposable
 
     #region Handshake Handlers
 
-    private static async Task HandleHandGetUserShaked(TcpClient? client, MessageNetwork<dynamic> message)
+    private static async Task HandleHandshakeUsers(TcpClient? client, MessageNetwork<dynamic> message)
     {
         if (!ValidateMessage(client, message, out var error))
         {
@@ -178,7 +190,7 @@ public class TcpHandler : INetworkHandler, IDisposable
         {
             var data = await UserInteractionRepository.GetConversationRecord(user.Id);
             var response = new MessageNetwork<ConversationRecord?>(
-                type: CommandType.GetUserShaked,
+                type: CommandType.GetHandshakeUsers,
                 code: StatusCode.Success,
                 data: data
             ).ToJson();
@@ -201,18 +213,28 @@ public class TcpHandler : INetworkHandler, IDisposable
         if (message.TryParseData(out UserDto? user) && user != null)
         {
             var data = UserRepository.GetAllUsers()
-                .Where(u => u.Id != null && u.UserName != null)
+                .Where(u => u is { Id: not null, UserName: not null })
                 .Select(u => new UserDto(id: u.Id, userName: u.UserName))
                 .Where(us => us.Id != user.Id)
                 .ToList();
 
-            // Cập nhật trạng thái online
             foreach (var d in data)
             {
-                d.IsOnline = UserIsOnline(d.Id);
+                if (string.IsNullOrEmpty(d.Id) || !UserIsOnline(d.Id))
+                {
+                    d.Status = UserStatus.Inactive;
+                }
+                else if (!IsUserAvailableForHandshake(d.Id))
+                {
+                    d.Status = UserStatus.Busy;
+                }
+                else
+                {
+                    d.Status = UserStatus.Available;
+                }
             }
 
-            var response = new MessageNetwork<List<UserDto?>>(
+            var response = new MessageNetwork<List<UserDto>>(
                 type: CommandType.GetAvailableClients,
                 code: StatusCode.Success,
                 data: data
@@ -227,38 +249,37 @@ public class TcpHandler : INetworkHandler, IDisposable
         return Task.CompletedTask;
     }
 
-    private static Task HandleHandshakeResponse(TcpClient? client, MessageNetwork<dynamic> message)
+    private Task HandleHandshakeResponse(TcpClient? client, MessageNetwork<dynamic> message)
     {
         try
         {
             if (!ValidateMessage(client, message, out var error))
                 throw new ArgumentException(error);
 
-            if (message.TryParseData(out HandshakeDto? dto) && dto != null)
+            if (message.TryParseData(out HandshakeDto? dto) && dto != null && !string.IsNullOrEmpty(dto.FromUser?.Id))
             {
-                if (string.IsNullOrEmpty(dto.FromUser?.Id))
-                    throw new InvalidOperationException("Invalid user id");
-
-                if (!MapUserIdToIp.TryGetValue(dto.FromUser.Id, out var fromUserIp) || string.IsNullOrEmpty(fromUserIp))
-                {
-                    message.Code = StatusCode.Error;
-                    dto.Description = "Target client not online.";
-                    message.Data = dto;
-                    MsgService.SendTcpMessage(client, message.ToJson());
-                }
-                else if (!Clients.TryGetValue(fromUserIp, out var toClient))
-                {
-                    message.Code = StatusCode.Error;
-                    dto.Description = "Can't connect to target client.";
-                    message.Data = dto;
-                    MsgService.SendTcpMessage(client, message.ToJson());
-                }
-                else
+                if (Clients.TryGetValue(dto.FromUser.Id, out var toClient))
                 {
                     dto.Description = "Successfully connected to target client.";
                     message.Data = dto;
                     MsgService.SendTcpMessage(client, message.ToJson());
                     MsgService.SendTcpMessage(toClient, message.ToJson());
+
+                    //Todo: Broadcast status
+                    if (dto.ToUser != null) dto.ToUser.Status = UserStatus.Busy;
+                    if (dto.FromUser != null) dto.FromUser.Status = UserStatus.Busy;
+                    //Todo: Broadcast to all client online
+                    if (client != null && toClient != null)
+                    {
+                        var broadcastMsg = new MessageNetwork<HandshakeDto>(
+                            type: CommandType.UpdateStatusUsers,
+                            code: StatusCode.Success,
+                            data: dto
+                        ).ToJson();
+
+                        // Broadcast the cancellation to all online clients excluding the two involved.
+                        BroadcastMessageExcept<TcpClient>([client, toClient], broadcastMsg);
+                    }
                 }
             }
             else throw new KeyNotFoundException("Target client not found.");
@@ -272,7 +293,8 @@ public class TcpHandler : INetworkHandler, IDisposable
         return Task.CompletedTask;
     }
 
-    private static bool IsUserAvailableForHandshake(string userId) => true;
+    private static bool IsUserAvailableForHandshake(string userId) =>
+        HandshakeController.IsUserAvailableForHandshake(userId);
 
     private static Task HandleHandshakeRequest(TcpClient? client, MessageNetwork<dynamic> message)
     {
@@ -281,27 +303,9 @@ public class TcpHandler : INetworkHandler, IDisposable
             if (!ValidateMessage(client, message, out var error))
                 throw new ArgumentException(error);
 
-            if (message.TryParseData(out HandshakeDto? dto) && dto != null)
+            if (message.TryParseData(out HandshakeDto? dto) && dto != null && !string.IsNullOrEmpty(dto.ToUser?.Id))
             {
-                if (string.IsNullOrEmpty(dto.ToUser?.Id))
-                    throw new InvalidOperationException("Invalid user id");
-
-                if (!dto.ToUser.IsOnline ||
-                    !MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var ip) || string.IsNullOrEmpty(ip))
-                {
-                    message.Code = StatusCode.Error;
-                    dto.Description = "Target client not online.";
-                    message.Data = dto;
-                    MsgService.SendTcpMessage(client, message.ToJson());
-                }
-                else if (!Clients.TryGetValue(ip, out var toClient) || !IsUserAvailableForHandshake(dto.ToUser.Id))
-                {
-                    message.Code = StatusCode.Error;
-                    dto.Description = "Can't connect to target client.";
-                    message.Data = dto;
-                    MsgService.SendTcpMessage(client, message.ToJson());
-                }
-                else
+                if (Clients.TryGetValue(dto.ToUser.Id, out var toClient))
                 {
                     MsgService.SendTcpMessage(toClient, message.ToJson());
                 }
@@ -317,38 +321,37 @@ public class TcpHandler : INetworkHandler, IDisposable
         return Task.CompletedTask;
     }
 
-    private static Task HandleCancelHandShake(TcpClient? client, MessageNetwork<dynamic> message)
+    private Task HandleHandShakeCancel(TcpClient? client, MessageNetwork<dynamic> message)
     {
         try
         {
             if (!ValidateMessage(client, message, out var error))
                 throw new ArgumentException(error);
 
-            if (message.TryParseData(out HandshakeDto? dto) && dto != null)
+            if (message.TryParseData(out HandshakeDto? dto) && dto is { ToUser.Id: not null })
             {
-                if (string.IsNullOrEmpty(dto.ToUser?.Id))
-                    throw new InvalidOperationException("Invalid user id");
-
-                if (!dto.ToUser.IsOnline ||
-                    !MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var toUserIp) || string.IsNullOrEmpty(toUserIp))
-                {
-                    message.Code = StatusCode.Error;
-                    dto.Description = "Target client not online.";
-                    message.Data = dto;
-                    MsgService.SendTcpMessage(client, message.ToJson());
-                }
-                else if (!Clients.TryGetValue(toUserIp, out var toClient) || !IsUserAvailableForHandshake(dto.ToUser.Id))
-                {
-                    message.Code = StatusCode.Error;
-                    dto.Description = "Can't connect to target client.";
-                    message.Data = dto;
-                    MsgService.SendTcpMessage(client, message.ToJson());
-                }
-                else
+                if (Clients.TryGetValue(dto.ToUser.Id, out var toClient))
                 {
                     // Gửi thông báo hủy handshake cho cả hai client
                     MsgService.SendTcpMessage(toClient, message.ToJson());
                     MsgService.SendTcpMessage(client, message.ToJson());
+
+                    //EndHandshake
+                    HandshakeController.EndHandshake(dto.ToUser.Id);
+                    dto.ToUser.Status = UserStatus.Available;
+                    if (dto.FromUser != null) dto.FromUser.Status = UserStatus.Available;
+                    //Todo: Broadcast to all client online
+                    if (client != null && toClient != null)
+                    {
+                        var broadcastMsg = new MessageNetwork<HandshakeDto>(
+                            type: CommandType.UpdateStatusUsers,
+                            code: StatusCode.Success,
+                            data: dto
+                        ).ToJson();
+
+                        // Broadcast the cancellation to all online clients excluding the two involved.
+                        BroadcastMessageExcept<TcpClient>([client, toClient], broadcastMsg);
+                    }
                 }
             }
             else throw new KeyNotFoundException("Target client not found.");
@@ -376,12 +379,13 @@ public class TcpHandler : INetworkHandler, IDisposable
 
         if (message.TryParseData(out MessageDto? messageDto) && messageDto is { ReceiverId: not null })
         {
-            if (!MapUserIdToIp.TryGetValue(messageDto.ReceiverId, out var receiverIp) || string.IsNullOrEmpty(receiverIp))
+            if (!MapUserIdToIp.TryGetValue(messageDto.ReceiverId, out var receiverIp) ||
+                string.IsNullOrEmpty(receiverIp))
                 return Task.CompletedTask;
             if (!Clients.TryGetValue(receiverIp, out var toClient))
                 return Task.CompletedTask;
 
-            message.Type = CommandType.ReceiveMessage;
+            message.Type = CommandType.DispatchMessage;
             MsgService.SendTcpMessage(toClient, message.ToJson());
         }
         else
@@ -389,6 +393,22 @@ public class TcpHandler : INetworkHandler, IDisposable
             SendError(client, "Target not found");
         }
 
+        return Task.CompletedTask;
+    }
+
+    private Task HandleClientDisconnect(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        OnClientDisconnect(client);
+        //Todo: Broadcast
+
+        if (!message.TryParseData(out UserDto? u) || u == null) return Task.CompletedTask;
+        u.Status = UserStatus.Inactive;
+        var broadcastMessage = new MessageNetwork<object>(
+            type: CommandType.UpdateStatusUsers,
+            code: StatusCode.Success,
+            data: u
+        ).ToJson();
+        BroadcastMessageExcept(client, broadcastMessage);
         return Task.CompletedTask;
     }
 
@@ -423,9 +443,9 @@ public class TcpHandler : INetworkHandler, IDisposable
 
                 // Broadcast thông báo cho các client khác
                 var broadcastMessage = new MessageNetwork<object>(
-                    type: CommandType.LoginBroadcast,
+                    type: CommandType.UpdateStatusUsers,
                     code: StatusCode.Success,
-                    data: new UserDto(user.Id, user.UserName, true)
+                    data: new UserDto(user.Id, user.UserName, UserStatus.Available)
                 ).ToJson();
                 BroadcastMessageExcept(client, broadcastMessage);
             }
@@ -433,32 +453,6 @@ public class TcpHandler : INetworkHandler, IDisposable
             {
                 SendError(client, resultMsg);
             }
-        }
-        else
-        {
-            SendError(client, "Target not found");
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private Task HandleLogout(TcpClient? client, MessageNetwork<dynamic> message)
-    {
-        if (!ValidateMessage(client, message, out var error))
-        {
-            SendError(client, error);
-            return Task.CompletedTask;
-        }
-
-        if (message.TryParseData(out UserDto? u) && u != null)
-        {
-            u.IsOnline = false;
-            var broadcastMessage = new MessageNetwork<object>(
-                type: CommandType.LogoutBroadcast,
-                code: StatusCode.Success,
-                data: u
-            ).ToJson();
-            BroadcastMessageExcept(client, broadcastMessage);
         }
         else
         {

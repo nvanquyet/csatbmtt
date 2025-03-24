@@ -36,8 +36,8 @@ public partial class BackgroundForm : Form
         {
             if (Application.OpenForms.Count > 1) return;
             timer.Stop();
-            var response = new MessageNetwork<string?>(type: CommandType.ClientDisconnect, code: StatusCode.Success,
-                data: SessionManager.GetUserId()).ToJson();
+            var response = new MessageNetwork<UserDto>(type: CommandType.ClientDisconnect, code: StatusCode.Success,
+                data: SessionManager.GetUserDto()).ToJson();
             _ = Task.Run(() =>
             {
                 NetworkManager.Instance.TcpService.Send(response);

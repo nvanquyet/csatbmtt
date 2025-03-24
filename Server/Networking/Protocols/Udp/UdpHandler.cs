@@ -39,4 +39,8 @@ public class UdpHandler : INetworkHandler
         throw new NotImplementedException();
     }
 
+    public void BroadcastMessageExcept<T>(T[] excludedClient, string message) where T : class
+    {
+        throw new NotImplementedException();
+    }
 }

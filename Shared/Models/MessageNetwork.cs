@@ -7,31 +7,15 @@ public enum CommandType
 {
     None,
     Login,
-    LoginBroadcast,
-    Logout,
-    LogoutBroadcast,
     Registration,
     GetAvailableClients,
-    SendMessage,
-    ReceiveMessage,
+    DispatchMessage,
     ClientDisconnect,
     HandshakeRequest,
     HandshakeResponse,
-    GetUserShaked,
-    CancelHandshake
-}
-
-public enum EventType
-{
-    None,
-    UserLoggedIn,
-    UserRegistered,
-    UserDisconnected,
-    MessageSent,
-    MessageReceived,
-    HandshakeStarted,
-    HandshakeCompleted,
-    HandshakeCancelled
+    HandshakeCancel,
+    GetHandshakeUsers,
+    UpdateStatusUsers,
 }
 
 public enum StatusCode

@@ -10,5 +10,6 @@ public interface INetworkHandler
     void BroadcastMessage(string message);
 
     void BroadcastMessageExcept<T>(T? excludedClient, string message) where T : class;
+    void BroadcastMessageExcept<T>(T[] excludedClient, string message) where T : class;
 
 }

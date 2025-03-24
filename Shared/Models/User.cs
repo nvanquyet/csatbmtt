@@ -12,10 +12,16 @@ public class User(string? userName, string? password)
     public string? Password { get; init; } = password;
 }
 
-public class UserDto(string? id, string? userName, bool isOnline = false)
+public enum UserStatus
+{
+    Available,
+    Inactive,
+    Busy,
+}
+public class UserDto(string? id, string? userName, UserStatus status = UserStatus.Inactive)
 {
     public string? Id { get; set; } = id;
     public string? UserName { get; set; } = userName;
-    public bool IsOnline { get; set; } = isOnline;
+    public UserStatus Status { get; set; } = status;
 }
 

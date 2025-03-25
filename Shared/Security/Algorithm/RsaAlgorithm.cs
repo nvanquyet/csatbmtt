@@ -226,6 +226,7 @@ class RsaAlgorithm : IEncryptionAlgorithm
     {
         //var keyDecrypt = ByteUtils.GetFromBytes<Key>(key);
         var keyDecrypt = Key.FromBytes(key);
+        Logger.LogInfo($"Key length: {key.Length}");
         return DecryptBytes(encryptedData, keyDecrypt);
     }
     #endregion

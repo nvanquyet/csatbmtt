@@ -96,44 +96,34 @@ namespace Shared.Utils.Rsa
         public byte[] GetBytes()
         {
             var nBytes = n.ToByteArray();
-            // Với public key, không có d
             var dBytes = type == KeyType.PRIVATE ? d.ToByteArray() : [];
 
-            // Chuyển độ dài của nBytes thành 4 byte (int)
+            // Lưu độ dài nBytes dưới dạng 4 byte (int)
             var nLengthBytes = BitConverter.GetBytes(nBytes.Length);
+            var combined = new byte[1 + nLengthBytes.Length + nBytes.Length + dBytes.Length];
 
-            // Kết hợp: [1 byte kiểu][4 byte độ dài n][nBytes][dBytes]
-            int totalLength = 1 + nLengthBytes.Length + nBytes.Length + dBytes.Length;
-            var combined = new byte[totalLength];
-
-            combined[0] = (byte)type;
+            combined[0] = (byte)type; // 1 byte cho kiểu key
             Buffer.BlockCopy(nLengthBytes, 0, combined, 1, nLengthBytes.Length);
             Buffer.BlockCopy(nBytes, 0, combined, 1 + nLengthBytes.Length, nBytes.Length);
-            if (dBytes.Length > 0)
-            {
-                Buffer.BlockCopy(dBytes, 0, combined, 1 + nLengthBytes.Length + nBytes.Length, dBytes.Length);
-            }
+            Buffer.BlockCopy(dBytes, 0, combined, 1 + nLengthBytes.Length + nBytes.Length, dBytes.Length);
+
             return combined;
         }
+
         
         public static Key FromBytes(byte[] data)
         {
-            if (data.Length < 5) // 1 byte kiểu + 4 byte độ dài n
+            if (data.Length < 5)
             {
                 throw new ArgumentException("Invalid key data.");
             }
 
-            // Đọc kiểu khóa từ byte đầu tiên
             var type = (KeyType)data[0];
-
-            // Đọc 4 byte tiếp theo để lấy độ dài của n
             int nLength = BitConverter.ToInt32(data, 1);
             if (nLength <= 0 || data.Length < 1 + 4 + nLength)
             {
                 throw new ArgumentException("Invalid key data: incorrect n length.");
             }
-
-            // Đọc nBytes
             var nBytes = new byte[nLength];
             Buffer.BlockCopy(data, 1 + 4, nBytes, 0, nLength);
             var n = new BigInteger(nBytes);
@@ -144,7 +134,6 @@ namespace Shared.Utils.Rsa
             }
             else
             {
-                // Với private key, phần còn lại của mảng là dBytes
                 int dLength = data.Length - (1 + 4 + nLength);
                 if (dLength <= 0)
                 {

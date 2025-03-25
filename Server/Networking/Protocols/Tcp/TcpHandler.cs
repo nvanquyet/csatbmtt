@@ -258,7 +258,7 @@ public class TcpHandler : INetworkHandler, IDisposable
 
             if (message.TryParseData(out HandshakeDto? dto) && dto != null && !string.IsNullOrEmpty(dto.FromUser?.Id))
             {
-                if (Clients.TryGetValue(dto.FromUser.Id, out var toClient))
+                if (MapUserIdToIp.TryGetValue(dto.FromUser.Id, out var fromUserIp) && fromUserIp != null && Clients.TryGetValue(fromUserIp, out var toClient))
                 {
                     dto.Description = "Successfully connected to target client.";
                     message.Data = dto;
@@ -300,20 +300,17 @@ public class TcpHandler : INetworkHandler, IDisposable
 
     private static Task HandleHandshakeRequest(TcpClient? client, MessageNetwork<dynamic> message)
     {
-        Logger.LogInfo($"Handshake request received from {client?.Client.RemoteEndPoint}");
         try
         {
             if (!ValidateMessage(client, message, out var error))
                 throw new ArgumentException(error);
-            Logger.LogInfo($"Try find target from {client?.Client.RemoteEndPoint}");
             if (message.TryParseData(out HandshakeDto? dto) && dto is { ToUser.Id: not null })
             {
-                if (Clients.TryGetValue(dto.ToUser.Id, out var toClient))
+                if (MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var toUserIp) && toUserIp != null && Clients.TryGetValue(toUserIp, out var toClient))
                 {
                     Logger.LogInfo($"Find target success from {client?.Client.RemoteEndPoint}");
                     MsgService.SendTcpMessage(toClient, message.ToJson());
                 }
-                Logger.LogWarning($"Find target FAILED from {client?.Client.RemoteEndPoint}");
             }
             else throw new KeyNotFoundException("Target client not found.");
         }
@@ -335,7 +332,7 @@ public class TcpHandler : INetworkHandler, IDisposable
 
             if (message.TryParseData(out HandshakeDto? dto) && dto is { ToUser.Id: not null })
             {
-                if (Clients.TryGetValue(dto.ToUser.Id, out var toClient))
+                if (MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var toUserIp) && toUserIp != null && Clients.TryGetValue(toUserIp, out var toClient))
                 {
                     // Gửi thông báo hủy handshake cho cả hai client
                     MsgService.SendTcpMessage(toClient, message.ToJson());

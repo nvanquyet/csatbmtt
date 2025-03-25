@@ -16,23 +16,10 @@ namespace Client.Form
         {
             InitializeComponent();
             messageContainer.AutoScroll = true;
-            LoadSampleMessages();
+            //LoadSampleMessages();
         }
 
         public void SetUserTarget(UserDto? userDto) => _targetDto = userDto;
-
-        private void LoadSampleMessages()
-        {
-            AddMessage(new TransferData(TransferType.Text, ByteUtils.GetBytesFromString("Hello! How are you?")), false);
-            AddMessage(
-                new TransferData(TransferType.Text, ByteUtils.GetBytesFromString("I'm good, thanks! What about you?")),
-                true);
-            AddMessage(
-                new TransferData(TransferType.Image,
-                    File.ReadAllBytes("C:/Users/nvanq/OneDrive/Pictures/Screenshots/Screenshot 2025-02-17 231637.png")),
-                true);
-            AddMessage(new TransferData(TransferType.Text, ByteUtils.GetBytesFromString("I'm doing well too!")), false);
-        }
 
         #region Add Message
 

@@ -117,6 +117,7 @@ class RsaAlgorithm : IEncryptionAlgorithm
         //Checking that the size of the bytes is less than n, and greater than 1.
         if (1 > bytes.Length || bytes.Length >= publicKey.n.ToByteArray().Length)
         {
+            Logger.LogInfo($"Key byte {publicKey.n.ToByteArray().Length} ");
             throw new Exception("Bytes given are longer than length of key element n (" + bytes.Length + " bytes).");
         }
 

@@ -37,6 +37,8 @@ namespace Shared.Utils.Rsa
         {
             Key public_ = new Key(n, KeyType.PUBLIC);
             Key private_ = new Key(n, KeyType.PRIVATE, d);
+            Logger.LogInfo($"Generated public key: {public_.n.ToByteArray().Length} bytes");
+            Logger.LogInfo($"Generated private key: {private_.n.ToByteArray().Length} bytes");
             return new KeyPair(private_, public_);
         }
     }
@@ -94,20 +96,29 @@ namespace Shared.Utils.Rsa
         public byte[] GetBytes()
         {
             var nBytes = n.ToByteArray();
+            // Với public key, không có d
             var dBytes = type == KeyType.PRIVATE ? d.ToByteArray() : [];
 
-            // Kết hợp các mảng byte
-            var combined = new byte[nBytes.Length + dBytes.Length + 1];
-            combined[0] = (byte)type;  // Lưu kiểu khóa (PUBLIC / PRIVATE)
-            Buffer.BlockCopy(nBytes, 0, combined, 1, nBytes.Length);
-            Buffer.BlockCopy(dBytes, 0, combined, 1 + nBytes.Length, dBytes.Length);
+            // Chuyển độ dài của nBytes thành 4 byte (int)
+            var nLengthBytes = BitConverter.GetBytes(nBytes.Length);
 
+            // Kết hợp: [1 byte kiểu][4 byte độ dài n][nBytes][dBytes]
+            int totalLength = 1 + nLengthBytes.Length + nBytes.Length + dBytes.Length;
+            var combined = new byte[totalLength];
+
+            combined[0] = (byte)type;
+            Buffer.BlockCopy(nLengthBytes, 0, combined, 1, nLengthBytes.Length);
+            Buffer.BlockCopy(nBytes, 0, combined, 1 + nLengthBytes.Length, nBytes.Length);
+            if (dBytes.Length > 0)
+            {
+                Buffer.BlockCopy(dBytes, 0, combined, 1 + nLengthBytes.Length + nBytes.Length, dBytes.Length);
+            }
             return combined;
         }
         
         public static Key FromBytes(byte[] data)
         {
-            if (data.Length < 2)
+            if (data.Length < 5) // 1 byte kiểu + 4 byte độ dài n
             {
                 throw new ArgumentException("Invalid key data.");
             }
@@ -115,19 +126,37 @@ namespace Shared.Utils.Rsa
             // Đọc kiểu khóa từ byte đầu tiên
             var type = (KeyType)data[0];
 
-            // Tách n từ dữ liệu còn lại
-            var halfLength = (data.Length - 1) / 2;
-            var nBytes = new byte[halfLength];
-            var dBytes = new byte[halfLength];
+            // Đọc 4 byte tiếp theo để lấy độ dài của n
+            int nLength = BitConverter.ToInt32(data, 1);
+            if (nLength <= 0 || data.Length < 1 + 4 + nLength)
+            {
+                throw new ArgumentException("Invalid key data: incorrect n length.");
+            }
 
-            Buffer.BlockCopy(data, 1, nBytes, 0, halfLength);
-            Buffer.BlockCopy(data, 1 + halfLength, dBytes, 0, halfLength);
-
+            // Đọc nBytes
+            var nBytes = new byte[nLength];
+            Buffer.BlockCopy(data, 1 + 4, nBytes, 0, nLength);
             var n = new BigInteger(nBytes);
-            var d = new BigInteger(dBytes);
 
-            return type == KeyType.PUBLIC ? new Key(n, type) : new Key(n, type, d);
+            if (type == KeyType.PUBLIC)
+            {
+                return new Key(n, type);
+            }
+            else
+            {
+                // Với private key, phần còn lại của mảng là dBytes
+                int dLength = data.Length - (1 + 4 + nLength);
+                if (dLength <= 0)
+                {
+                    throw new ArgumentException("Invalid key data: missing d bytes for private key.");
+                }
+                var dBytes = new byte[dLength];
+                Buffer.BlockCopy(data, 1 + 4 + nLength, dBytes, 0, dLength);
+                var d = new BigInteger(dBytes);
+                return new Key(n, type, d);
+            }
         }
+
 
     }
 

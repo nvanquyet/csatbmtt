@@ -300,17 +300,20 @@ public class TcpHandler : INetworkHandler, IDisposable
 
     private static Task HandleHandshakeRequest(TcpClient? client, MessageNetwork<dynamic> message)
     {
+        Logger.LogInfo($"Handshake request received from {client?.Client.RemoteEndPoint}");
         try
         {
             if (!ValidateMessage(client, message, out var error))
                 throw new ArgumentException(error);
-
-            if (message.TryParseData(out HandshakeDto? dto) && dto != null && !string.IsNullOrEmpty(dto.ToUser?.Id))
+            Logger.LogInfo($"Try find target from {client?.Client.RemoteEndPoint}");
+            if (message.TryParseData(out HandshakeDto? dto) && dto is { ToUser.Id: not null })
             {
                 if (Clients.TryGetValue(dto.ToUser.Id, out var toClient))
                 {
+                    Logger.LogInfo($"Find target success from {client?.Client.RemoteEndPoint}");
                     MsgService.SendTcpMessage(toClient, message.ToJson());
                 }
+                Logger.LogWarning($"Find target FAILED from {client?.Client.RemoteEndPoint}");
             }
             else throw new KeyNotFoundException("Target client not found.");
         }

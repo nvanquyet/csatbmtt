@@ -96,20 +96,24 @@ namespace Shared.Utils.Rsa
         public byte[] GetBytes()
         {
             var nBytes = n.ToByteArray();
-            var dBytes = type == KeyType.PRIVATE ? d.ToByteArray() : [];
+            var dBytes = type == KeyType.PRIVATE ? d.ToByteArray() : Array.Empty<byte>();
 
-            // Lưu độ dài nBytes dưới dạng 4 byte (int)
-            var nLengthBytes = BitConverter.GetBytes(nBytes.Length);
+            // Lưu độ dài nBytes dưới dạng 4 byte big-endian
+            int nLength = nBytes.Length;
+            byte[] nLengthBytes = new byte[4];
+            nLengthBytes[0] = (byte)(nLength >> 24);
+            nLengthBytes[1] = (byte)(nLength >> 16);
+            nLengthBytes[2] = (byte)(nLength >> 8);
+            nLengthBytes[3] = (byte)(nLength);
+
             var combined = new byte[1 + nLengthBytes.Length + nBytes.Length + dBytes.Length];
-
-            combined[0] = (byte)type; // 1 byte cho kiểu key
+            combined[0] = (byte)type;
             Buffer.BlockCopy(nLengthBytes, 0, combined, 1, nLengthBytes.Length);
             Buffer.BlockCopy(nBytes, 0, combined, 1 + nLengthBytes.Length, nBytes.Length);
             Buffer.BlockCopy(dBytes, 0, combined, 1 + nLengthBytes.Length + nBytes.Length, dBytes.Length);
 
             return combined;
         }
-
         
         public static Key FromBytes(byte[] data)
         {
@@ -119,11 +123,13 @@ namespace Shared.Utils.Rsa
             }
 
             var type = (KeyType)data[0];
-            int nLength = BitConverter.ToInt32(data, 1);
+            int nLength = (data[1] << 24) | (data[2] << 16) | (data[3] << 8) | data[4];
+
             if (nLength <= 0 || data.Length < 1 + 4 + nLength)
             {
                 throw new ArgumentException("Invalid key data: incorrect n length.");
             }
+
             var nBytes = new byte[nLength];
             Buffer.BlockCopy(data, 1 + 4, nBytes, 0, nLength);
             var n = new BigInteger(nBytes);
@@ -134,13 +140,16 @@ namespace Shared.Utils.Rsa
             }
             else
             {
-                int dLength = data.Length - (1 + 4 + nLength);
+                int dOffset = 1 + 4 + nLength;
+                int dLength = data.Length - dOffset;
+
                 if (dLength <= 0)
                 {
                     throw new ArgumentException("Invalid key data: missing d bytes for private key.");
                 }
+
                 var dBytes = new byte[dLength];
-                Buffer.BlockCopy(data, 1 + 4 + nLength, dBytes, 0, dLength);
+                Buffer.BlockCopy(data, dOffset, dBytes, 0, dLength);
                 var d = new BigInteger(dBytes);
                 return new Key(n, type, d);
             }

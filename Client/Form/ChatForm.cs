@@ -1,5 +1,6 @@
 ﻿using Client.Models;
 using Client.Network;
+using Shared;
 using Shared.Models;
 using Shared.Security.Interface;
 using Shared.Services;
@@ -19,7 +20,11 @@ namespace Client.Form
             //LoadSampleMessages();
         }
 
-        public void SetUserTarget(UserDto? userDto) => _targetDto = userDto;
+        public void SetUserTarget(UserDto? userDto)
+        {
+            _targetDto = userDto;
+            Logger.LogInfo($"Target Encryt Key {_targetDto?.EncryptKey}");
+        }
 
         #region Add Message
 
@@ -326,7 +331,9 @@ namespace Client.Form
             var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
             var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
             if (_targetDto == null || transferData.RawData == null) return;
+            // Encrypt raw data using DES
             transferData.RawData = desEncrypt.Encrypt(transferData.RawData, desEncrypt.EncryptKey);
+            // Encrypt the DES key (to be used for decryption) with target's RSA key
             transferData.KeyDecrypt =
                 rsaEncrypt.Encrypt(desEncrypt.DecryptKey, _targetDto.EncryptKey);
             var response =
@@ -342,8 +349,10 @@ namespace Client.Form
             var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
 
             if (transferData.KeyDecrypt == null || transferData.RawData == null) return transferData;
+            // Decrypt the encrypted DES key using RSA private key
             transferData.KeyDecrypt =
                 rsaEncrypt.Encrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
+            // Decrypt the raw data using the decrypted DES key
             transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
             return transferData;
         }

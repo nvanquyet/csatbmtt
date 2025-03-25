@@ -23,7 +23,8 @@ namespace Client.Form
         public void SetUserTarget(UserDto? userDto)
         {
             _targetDto = userDto;
-            Logger.LogInfo($"Target Encrypt Key: {(_targetDto?.EncryptKey != null ? BitConverter.ToString(_targetDto.EncryptKey) : "null")}");
+            Logger.LogInfo($"Target Encrypt Key: {(_targetDto?.EncryptKey != null ? Convert.ToBase64String(_targetDto.EncryptKey) : "null")}");
+
         }
 
         #region Add Message
@@ -351,7 +352,7 @@ namespace Client.Form
             if (transferData.KeyDecrypt == null || transferData.RawData == null) return transferData;
             // Decrypt the encrypted DES key using RSA private key
             transferData.KeyDecrypt =
-                rsaEncrypt.Encrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
+                rsaEncrypt.Decrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
             // Decrypt the raw data using the decrypted DES key
             transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
             return transferData;

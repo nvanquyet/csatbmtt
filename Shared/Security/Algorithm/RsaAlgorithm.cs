@@ -211,19 +211,21 @@ class RsaAlgorithm : IEncryptionAlgorithm
 
     #region Implements
     private readonly KeyPair _key = GenerateKeyPair(Config.KeyEncryptionLength);
-    public byte[] EncryptKey => ByteUtils.GetBytes(_key.public_);
-    public byte[] DecryptKey => ByteUtils.GetBytes(_key.private_);
+    public byte[] EncryptKey => _key.public_.GetBytes();
+    public byte[] DecryptKey => _key.private_.GetBytes();
     
     public byte[] Encrypt(byte[] data, byte[] key)
     {
-        var keyEncrypt = ByteUtils.GetFromBytes<Key>(key);
-        return keyEncrypt == null ? data : EncryptBytes(data, keyEncrypt);
+        //var keyEncrypt = ByteUtils.GetFromBytes<Key>(key);
+        var keyEncrypt = Key.FromBytes(key);
+        return EncryptBytes(data, keyEncrypt);
     }
 
     public byte[] Decrypt(byte[] encryptedData, byte[] key)
     {
-        var keyDecrypt = ByteUtils.GetFromBytes<Key>(key);
-        return keyDecrypt == null ? encryptedData : DecryptBytes(encryptedData, keyDecrypt);
+        //var keyDecrypt = ByteUtils.GetFromBytes<Key>(key);
+        var keyDecrypt = Key.FromBytes(key);
+        return DecryptBytes(encryptedData, keyDecrypt);
     }
     #endregion
 

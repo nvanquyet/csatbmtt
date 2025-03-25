@@ -46,7 +46,7 @@ namespace Shared.Utils.Rsa
     /// Class to contain RSA key values for public and private keys. All values readonly and protected
     /// after construction, type set on construction.
     /// </summary>
-    [DataContract(Name = "Key", Namespace = "SharpRSA")]
+    [DataContract(Name = "Key", Namespace = "Shared.Utils.Rsa")]
     [Serializable]
     public class Key
     {
@@ -90,6 +90,45 @@ namespace Shared.Utils.Rsa
             n = n_;
             type = type_;
         }
+        
+        public byte[] GetBytes()
+        {
+            var nBytes = n.ToByteArray();
+            var dBytes = type == KeyType.PRIVATE ? d.ToByteArray() : [];
+
+            // Kết hợp các mảng byte
+            var combined = new byte[nBytes.Length + dBytes.Length + 1];
+            combined[0] = (byte)type;  // Lưu kiểu khóa (PUBLIC / PRIVATE)
+            Buffer.BlockCopy(nBytes, 0, combined, 1, nBytes.Length);
+            Buffer.BlockCopy(dBytes, 0, combined, 1 + nBytes.Length, dBytes.Length);
+
+            return combined;
+        }
+        
+        public static Key FromBytes(byte[] data)
+        {
+            if (data.Length < 2)
+            {
+                throw new ArgumentException("Invalid key data.");
+            }
+
+            // Đọc kiểu khóa từ byte đầu tiên
+            var type = (KeyType)data[0];
+
+            // Tách n từ dữ liệu còn lại
+            var halfLength = (data.Length - 1) / 2;
+            var nBytes = new byte[halfLength];
+            var dBytes = new byte[halfLength];
+
+            Buffer.BlockCopy(data, 1, nBytes, 0, halfLength);
+            Buffer.BlockCopy(data, 1 + halfLength, dBytes, 0, halfLength);
+
+            var n = new BigInteger(nBytes);
+            var d = new BigInteger(dBytes);
+
+            return type == KeyType.PUBLIC ? new Key(n, type) : new Key(n, type, d);
+        }
+
     }
 
     public enum KeyType

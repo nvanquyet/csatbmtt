@@ -5,14 +5,9 @@ using Shared.Utils.Rsa;
 
 namespace Shared.Security.Cryptography.Rsa;
 
-public class RsaCrypto
+public static class RsaCrypto
 {
-    //private static readonly Encoding Encoding = Encoding.UTF8;
-
-    //Generates a keypair of the required bit length, and returns it.
-    //public static KeyPair GenerateKeyPair(KeySize size) => GenerateKeyPair((int)size);
-
-    private static KeyPair GenerateKeyPair(int bitLength)
+    public static KeyPair GenerateKeyPair(int bitLength)
     {
         //Generating primes, checking if the GCD of (n-1)(p-1) and e is 1.
         BigInteger q, p;
@@ -90,8 +85,7 @@ public class RsaCrypto
         return new BigInteger(randomBytes);
     }
 
-    //Encrypts a set of bytes when given a public key.
-    private static byte[] EncryptBytes(byte[] bytes, Key publicKey)
+    private static byte[] Encrypt(byte[] bytes, Key publicKey)
     {
         //Checking that the size of the bytes is less than n, and greater than 1.
         if (1 > bytes.Length || bytes.Length >= publicKey.n.ToByteArray().Length)
@@ -117,7 +111,7 @@ public class RsaCrypto
     }
 
     //Decrypts a set of bytes when given a private key.
-    private static byte[] DecryptBytes(byte[] bytes, Key privateKey)
+    private static byte[] Decrypt(byte[] bytes, Key privateKey)
     {
         //Checking that the private key is legitimate, and contains d.
         if (privateKey.type != KeyType.PRIVATE)
@@ -152,62 +146,16 @@ public class RsaCrypto
         return returnArray;
     }
 
-    #region Class Encryption
-    //
-    // //Method to serialize a given class and then encrypt.
-    // [Obsolete("Obsolete")]
-    // public static LockedBytes EncryptClass(object obj, Key public_)
-    // {
-    //     BinaryFormatter bf = new BinaryFormatter();
-    //     byte[] b;
-    //     using (var memstream = new MemoryStream())
-    //     {
-    //         bf.Serialize(memstream, obj);
-    //         b = memstream.ToArray();
-    //     }
-    //
-    //     //Encrypting.
-    //     return new LockedBytes(b, public_);
-    // }
-    //
-    // //Method to deserialize a given class and decrypt.
-    // [Obsolete("Obsolete")]
-    // public static T DecryptClass<T>(LockedBytes encrypted, Key private_)
-    // {
-    //     //Decrypting bytes.
-    //     byte[] decrypted = encrypted.DecryptBytes(private_);
-    //
-    //     //Casting back to object.
-    //     using (var memStream = new MemoryStream())
-    //     {
-    //         var binForm = new BinaryFormatter();
-    //         memStream.Write(decrypted, 0, decrypted.Length);
-    //         memStream.Seek(0, SeekOrigin.Begin);
-    //         var obj = binForm.Deserialize(memStream);
-    //         return (T)obj;
-    //     }
-    // }
-    #endregion
-
-    #region Implements
-    private readonly KeyPair _key = GenerateKeyPair(Config.KeyEncryptionLength);
-    public byte[] EncryptKey => _key.public_.GetBytes();
-    public byte[] DecryptKey => _key.private_.GetBytes();
-    
-    public byte[] Encrypt(byte[] data, byte[] key)
+    public static byte[] Encrypt(byte[] data, byte[] key)
     {
-        //var keyEncrypt = ByteUtils.GetFromBytes<Key>(key);
         var keyEncrypt = Key.FromBytes(key);
-        return EncryptBytes(data, keyEncrypt);
+        return Encrypt(data, keyEncrypt);
     }
 
-    public byte[] Decrypt(byte[] encryptedData, byte[] key)
+    public static byte[] Decrypt(byte[] encryptedData, byte[] key)
     {
-        //var keyDecrypt = ByteUtils.GetFromBytes<Key>(key);
         var keyDecrypt = Key.FromBytes(key);
-        Logger.LogInfo($"Key length: {key.Length}");
-        return DecryptBytes(encryptedData, keyDecrypt);
+        return Decrypt(encryptedData, keyDecrypt);
     }
-    #endregion
 
 }

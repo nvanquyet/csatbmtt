@@ -8,6 +8,7 @@ public enum KeyType
     PUBLIC,
     PRIVATE
 }
+
 public class Constants
 {
     //The "e" value for low compute time RSA encryption.
@@ -47,7 +48,6 @@ public sealed class KeyPair
         return new KeyPair(private_, public_);
     }
 }
-
 
 /// <summary>
 /// Class to contain RSA key values for public and private keys. All values readonly and protected
@@ -97,11 +97,11 @@ public class Key
         n = n_;
         type = type_;
     }
-        
+
     public byte[] GetBytes()
     {
         var nBytes = n.ToByteArray();
-        var dBytes = type == KeyType.PRIVATE ? d.ToByteArray() : Array.Empty<byte>();
+        var dBytes = type == KeyType.PRIVATE ? d.ToByteArray() : [];
 
         // Lưu độ dài nBytes dưới dạng 4 byte big-endian
         int nLength = nBytes.Length;
@@ -119,7 +119,7 @@ public class Key
 
         return combined;
     }
-        
+
     public static Key FromBytes(byte[] data)
     {
         if (data.Length < 5)
@@ -143,22 +143,18 @@ public class Key
         {
             return new Key(n, type);
         }
-        else
+
+        int dOffset = 1 + 4 + nLength;
+        int dLength = data.Length - dOffset;
+
+        if (dLength <= 0)
         {
-            int dOffset = 1 + 4 + nLength;
-            int dLength = data.Length - dOffset;
-
-            if (dLength <= 0)
-            {
-                throw new ArgumentException("Invalid key data: missing d bytes for private key.");
-            }
-
-            var dBytes = new byte[dLength];
-            Buffer.BlockCopy(data, dOffset, dBytes, 0, dLength);
-            var d = new BigInteger(dBytes);
-            return new Key(n, type, d);
+            throw new ArgumentException("Invalid key data: missing d bytes for private key.");
         }
+
+        var dBytes = new byte[dLength];
+        Buffer.BlockCopy(data, dOffset, dBytes, 0, dLength);
+        var d = new BigInteger(dBytes);
+        return new Key(n, type, d);
     }
-
-
 }

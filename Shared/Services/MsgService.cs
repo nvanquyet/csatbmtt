@@ -37,7 +37,7 @@ public static class MsgService
         {
             if (client is null or TcpClient { Connected: false })
             {
-                Console.WriteLine("client không kết nối.");
+                Logger.LogInfo("client không kết nối.");
                 return;
             }
 
@@ -96,7 +96,7 @@ public static class MsgService
             {
                 if (!client.Connected)
                 {
-                    Console.WriteLine("TCP client is not connected.");
+                    Logger.LogInfo("TCP client is not connected.");
                     return;
                 }
     
@@ -104,25 +104,24 @@ public static class MsgService
     
                 if (!stream.CanWrite)
                 {
-                     Console.WriteLine("NetworkStream is not writable.");
+                    Logger.LogInfo("NetworkStream is not writable.");
                     return;
                 }
             
                 await stream.WriteAsync(data);
                 stream.Flush();
-                Console.WriteLine($"Message sent to {client.Client.RemoteEndPoint}: {ByteUtils.GetStringFromBytes(data)}");
             }
             catch (ObjectDisposedException ex)
             {
-                Console.WriteLine("Stream or TcpClient was disposed: " + ex.Message);
+                Logger.LogInfo("Stream or TcpClient was disposed: " + ex.Message);
             }
             catch (IOException ex)
             {
-                Console.WriteLine("I/O Error: " + ex.Message);
+                Logger.LogInfo("I/O Error: " + ex.Message);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error sending message to TCP: " + ex.Message);
+                Logger.LogInfo("Error sending message to TCP: " + ex.Message);
             }
         }
     }
@@ -140,11 +139,11 @@ public static class MsgService
 
                 await client.SendAsync(data, data.Length, endpoint);
 
-                Console.WriteLine($"[UDP] Sent to {endpoint}: {data}");
+                Logger.LogInfo($"[UDP] Sent to {endpoint}: {data}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error sending UDP message: " + ex.Message);
+                Logger.LogInfo("Error sending UDP message: " + ex.Message);
             }
         }
     }

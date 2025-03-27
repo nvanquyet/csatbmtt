@@ -16,7 +16,7 @@ namespace Client
             _ = NetworkManager.Instance;
             ApplicationConfiguration.Initialize();
             //Application.Run(new EncryptionForm());
-            Application.Run(new ChatForm());
+            Application.Run(new LoginForm());
         }
     }
 }

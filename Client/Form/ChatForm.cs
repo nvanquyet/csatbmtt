@@ -335,9 +335,9 @@ namespace Client.Form
             // Encrypt raw data using DES
             transferData.RawData = desEncrypt.Encrypt(transferData.RawData, desEncrypt.EncryptKey);
             // Encrypt the DES key (to be used for decryption) with target's RSA key
-            // transferData.KeyDecrypt = 
-            //     rsaEncrypt.Encrypt(desEncrypt.DecryptKey, _targetDto.EncryptKey);
-            transferData.KeyDecrypt = desEncrypt.DecryptKey;
+            transferData.KeyDecrypt = 
+                rsaEncrypt.Encrypt(desEncrypt.DecryptKey, _targetDto.EncryptKey);
+            //transferData.KeyDecrypt = desEncrypt.DecryptKey;
             var response =
                 new MessageNetwork<MessageDto>(type: CommandType.DispatchMessage, StatusCode.Success,
                     data: new MessageDto(receiverId: _targetDto?.Id, transferData)).ToJson();
@@ -352,8 +352,8 @@ namespace Client.Form
 
             if (transferData.KeyDecrypt == null || transferData.RawData == null) return transferData;
             // Decrypt the encrypted DES key using RSA private key
-            // transferData.KeyDecrypt =
-            //     rsaEncrypt.Decrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
+             transferData.KeyDecrypt =
+                 rsaEncrypt.Decrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
             // Decrypt the raw data using the decrypted DES key
             transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
             return transferData;

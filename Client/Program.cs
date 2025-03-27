@@ -13,10 +13,10 @@ namespace Client
         {
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
-            //_ = NetworkManager.Instance;
+            _ = NetworkManager.Instance;
             ApplicationConfiguration.Initialize();
-            Application.Run(new EncryptionForm());
-            //Application.Run(new ChatForm());
+            //Application.Run(new EncryptionForm());
+            Application.Run(new ChatForm());
         }
     }
 }

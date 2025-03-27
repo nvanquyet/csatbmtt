@@ -333,6 +333,7 @@ namespace Client.Form
             // Encrypt raw data using DES
             transferData.RawData = desEncrypt.Encrypt(transferData.RawData, desEncrypt.EncryptKey);
             // Encrypt the DES key (to be used for decryption) with target's RSA key
+            Logger.LogInfo($"Length {desEncrypt.DecryptKey.Length}, {_targetDto.EncryptKey.Length}");
             transferData.KeyDecrypt = 
                 rsaEncrypt.Encrypt(desEncrypt.DecryptKey, _targetDto.EncryptKey);
             //transferData.KeyDecrypt = desEncrypt.DecryptKey;

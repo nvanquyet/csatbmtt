@@ -90,7 +90,7 @@ public static class RsaCrypto
         //Checking that the size of the bytes is less than n, and greater than 1.
         if (1 > bytes.Length || bytes.Length >= publicKey.n.ToByteArray().Length)
         {
-            throw new Exception("Bytes given are longer than length of key element n (" + bytes.Length + " bytes).");
+            throw new Exception($"Bytes given are longer than length of key element n ({bytes.Length} bytes). Current Length{publicKey.n.ToByteArray().Length}");
         }
 
         //Padding the array to unsign.

@@ -6,7 +6,7 @@ namespace Shared.Security.Algorithm;
 
 public class AesAlgorithm : IEncryptionAlgorithm
 {
-    private readonly byte[] _key = GenerateKey(Config.KeyEncryptionLength);
+    private readonly byte[] _key = GenerateKey(Config.KeyDesEncryptionLength);
     public byte[] EncryptKey => _key;
     public byte[] DecryptKey => _key;
     public byte[] Encrypt(byte[] data, byte[] key)

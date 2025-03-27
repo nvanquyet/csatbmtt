@@ -27,7 +27,8 @@ public class TcpHandler : INetworkHandler
             case CommandType.Login:
                 if (msg.Code == StatusCode.Success && msg.TryParseData(out User? user) && user != null)
                 {
-                    if((bool)(FormController.GetForm(FormType.Login) as LoginForm)?.RememberMe) AuthService.SaveUserInfo(user);
+                    var loginForm = FormController.GetForm<LoginForm>(FormType.Login);
+                    if((bool)loginForm?.RememberMe) AuthService.SaveUserInfo(user);
                     if (user.Id != null)
                     {
                         SessionManager.SetUser(user);

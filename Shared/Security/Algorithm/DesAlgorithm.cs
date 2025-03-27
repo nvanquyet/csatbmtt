@@ -6,7 +6,7 @@ namespace Shared.Security.Algorithm;
 
 public class DesAlgorithm : IEncryptionAlgorithm
 {
-    private readonly byte[] _desKey = GenerateRandomKey(Config.KeyEncryptionLength);
+    private readonly byte[] _desKey = GenerateRandomKey(Config.KeyDesEncryptionLength);
     public byte[] EncryptKey => _desKey;
     public byte[] DecryptKey => _desKey;
     public byte[] Encrypt(byte[] data, byte[] key) => DesCrypto.Encrypt(data, key);

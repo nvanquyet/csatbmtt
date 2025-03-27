@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using Shared;
 using Shared.Security.Interface;
 using Shared.Services;
 using Shared.Utils;
@@ -16,7 +17,11 @@ public partial class EncryptionForm : Form
     {
         string input = inputTextBox.Text;
         var algorithm = algorithmComboBox.SelectedItem?.ToString();
-
+        if (algorithm == "RSA")
+        {
+            input = ByteUtils.GetStringFromBytes(EncryptionService.Instance.GetAlgorithm(EncryptionType.Des).EncryptKey);
+            Logger.LogInfo($"Input length {input.Length}");
+        }
         // Kiểm tra dữ liệu đầu vào
         if (string.IsNullOrEmpty(algorithm) )
         {
@@ -29,7 +34,7 @@ public partial class EncryptionForm : Form
             MessageBox.Show("Vui lòng nhập văn bản!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
-
+    
         try
         {
             // Chuyển text sang byte[] (UTF8)

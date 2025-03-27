@@ -15,8 +15,8 @@ namespace Client
             // see https://aka.ms/applicationconfiguration.
             _ = NetworkManager.Instance;
             ApplicationConfiguration.Initialize();
+            Application.Run(new BackgroundForm());
             //Application.Run(new EncryptionForm());
-            Application.Run(new LoginForm());
         }
     }
 }

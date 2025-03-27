@@ -10,7 +10,8 @@ public static class Config
     private static int _serverTcpPort = 8000;
     private static int _serverUdpPort = 9000;
     private static string _defaultPassword = "123456";
-    private static int _keyEncryptionLength = (int)KeySize.KMin;
+    private static int _keyDesEncryptionLength = (int)KeySize.KMin;
+    private static int _keyRsaEncryptionLength = (int)KeySize.K1024;
 
     public static string ServerIp
     {
@@ -58,16 +59,9 @@ public static class Config
         }
     }
 
-    public static int KeyEncryptionLength
-    {
-        get => _keyEncryptionLength;
-        set
-        {
-            if (value < 64 || value > 512)
-                throw new ArgumentException("Độ dài khóa mã hóa phải nằm trong khoảng 128-512 bits");
-            _keyEncryptionLength = value;
-        }
-    }
+    public static int KeyDesEncryptionLength => _keyDesEncryptionLength;
+
+    public static int KeyRsaEncryptionLength => _keyRsaEncryptionLength;
 
     private static string HashPassword(string password)
     {

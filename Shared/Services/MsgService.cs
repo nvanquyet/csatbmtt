@@ -110,6 +110,7 @@ public static class MsgService
             
                 await stream.WriteAsync(data);
                 stream.Flush();
+                Logger.LogInfo($"Message sent to {client.Client.RemoteEndPoint}: {ByteUtils.GetStringFromBytes(data)}");
             }
             catch (ObjectDisposedException ex)
             {

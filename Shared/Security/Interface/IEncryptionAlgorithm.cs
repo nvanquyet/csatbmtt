@@ -2,7 +2,7 @@
 
 public enum EncryptionType
 {
-    Aes,
+    //Aes,
     Des,
     Rsa
 }

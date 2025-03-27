@@ -12,7 +12,7 @@ public class EncryptionService : Singleton<EncryptionService>
     {
         _algorithms ??= new Dictionary<EncryptionType, IEncryptionAlgorithm>()
         {
-            { EncryptionType.Aes, new AesAlgorithm() },
+            //{ EncryptionType.Aes, new AesAlgorithm() },
             { EncryptionType.Des, new DesAlgorithm() },
             { EncryptionType.Rsa, new RsaAlgorithm() }
         };

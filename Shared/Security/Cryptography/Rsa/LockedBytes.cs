@@ -1,8 +1,7 @@
 ﻿// using System.Runtime.Serialization;
-// using System.Security.Cryptography;
 // using Shared.Security.Algorithm;
 //
-// namespace Shared.Utils.Rsa;
+// namespace Shared.Security.Cryptography.Rsa;
 //
 // [DataContract]
 // [Serializable]

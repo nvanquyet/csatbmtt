@@ -7,44 +7,26 @@ namespace Shared.Utils;
 
 public partial class ByteUtils
 {
-    public static byte[] GetBytesFromString(string s) => Encoding.UTF8.GetBytes(s);
+    public static byte[] GetBytesFromString(string plainText) 
+        => Encoding.ASCII.GetBytes(plainText);
     
-    public static string GetStringFromBytes(byte[] bytes) => Encoding.UTF8.GetString(bytes);
+    public static string GetStringFromBytes(byte[] bytes) 
+        => Encoding.ASCII.GetString(bytes);
     
-    public static byte[] GetBytes<T>(T value) where T : class
+    public static byte[] StringToByteArray(string hex)
     {
-        var size = Marshal.SizeOf(value);
-        var bytes = new byte[size];
-
-        var ptr = Marshal.AllocHGlobal(size);
-        try
-        {
-            Marshal.StructureToPtr(value, ptr, true);
-            Marshal.Copy(ptr, bytes, 0, size);
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(ptr);
-        }
-
-        return bytes;
+        return Enumerable.Range(0, hex.Length)
+            .Where(x => x % 2 == 0)
+            .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
+            .ToArray();
+    }
+    
+    public static string ByteArrayToString(byte[] ba)
+    {
+        StringBuilder hex = new StringBuilder(ba.Length * 2);
+        foreach (byte b in ba)
+            hex.AppendFormat("{0:x2}", b);
+        return hex.ToString();
     }
 
-    public static T? GetFromBytes<T>(byte[] bytes) where T : class
-    {
-        var size = Marshal.SizeOf<T>();
-        if (bytes.Length != size)
-            throw new ArgumentException($"Byte array length does not match size of {typeof(T)}");
-
-        var ptr = Marshal.AllocHGlobal(size);
-        try
-        {
-            Marshal.Copy(bytes, 0, ptr, size);
-            return Marshal.PtrToStructure<T>(ptr);
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(ptr);
-        }
-    }
 }

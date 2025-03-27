@@ -1,13 +1,11 @@
 ﻿using System.Numerics;
 using Shared.AppSettings;
-using Shared.Security.Cryptography.Rsa;
-using Shared.Security.Interface;
 using Shared.Utils;
 using Shared.Utils.Rsa;
 
-namespace Shared.Security.Algorithm;
+namespace Shared.Security.Cryptography.Rsa;
 
-class RsaAlgorithm : IEncryptionAlgorithm
+public class RsaCrypto
 {
     //private static readonly Encoding Encoding = Encoding.UTF8;
 
@@ -91,26 +89,6 @@ class RsaAlgorithm : IEncryptionAlgorithm
         //Returning working BigInt.
         return new BigInteger(randomBytes);
     }
-
-    #region String Encryption
-    //
-    // public static string Encrypt(string text, Key key, Encoding encoding = null)
-    // {
-    //     encoding ??= Encoding;
-    //     byte[] bytes = Encoding.GetBytes(text);
-    //     byte[] ciphed = EncryptBytes(bytes, key);
-    //     return Convert.ToBase64String(ciphed);
-    // }
-    //
-    // public static string Decrypt(string text, Key key, Encoding encoding = null)
-    // {
-    //     encoding ??= Encoding;
-    //     byte[] bytes = Convert.FromBase64String(text);
-    //     byte[] ciphed = DecryptBytes(bytes, key);
-    //     return Encoding.GetString(ciphed);
-    // }
-    
-    #endregion
 
     //Encrypts a set of bytes when given a public key.
     private static byte[] EncryptBytes(byte[] bytes, Key publicKey)

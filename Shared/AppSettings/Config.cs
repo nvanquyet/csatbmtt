@@ -63,7 +63,7 @@ public static class Config
         get => _keyEncryptionLength;
         set
         {
-            if (value < 128 || value > 512)
+            if (value < 64 || value > 512)
                 throw new ArgumentException("Độ dài khóa mã hóa phải nằm trong khoảng 128-512 bits");
             _keyEncryptionLength = value;
         }

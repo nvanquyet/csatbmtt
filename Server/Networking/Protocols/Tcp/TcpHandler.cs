@@ -150,7 +150,6 @@ public class TcpHandler : INetworkHandler, IDisposable
 
         try
         {
-            Logger.LogInfo($"Message received from {client.Client.RemoteEndPoint}: {jsonMessage}");
             var message = MessageNetwork<dynamic>.FromJson(jsonMessage);
             if (message == null)
                 throw new InvalidOperationException("Invalid message format");
@@ -308,7 +307,6 @@ public class TcpHandler : INetworkHandler, IDisposable
             {
                 if (MapUserIdToIp.TryGetValue(dto.ToUser.Id, out var toUserIp) && toUserIp != null && Clients.TryGetValue(toUserIp, out var toClient))
                 {
-                    Logger.LogInfo($"Find target success from {client?.Client.RemoteEndPoint}");
                     MsgService.SendTcpMessage(toClient, message.ToJson());
                 }
             }

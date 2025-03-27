@@ -43,8 +43,6 @@ public sealed class KeyPair
     {
         Key public_ = new Key(n, KeyType.PUBLIC);
         Key private_ = new Key(n, KeyType.PRIVATE, d);
-        Logger.LogInfo($"Generated public key: {public_.n.ToByteArray().Length} bytes");
-        Logger.LogInfo($"Generated private key: {private_.n.ToByteArray().Length} bytes");
         return new KeyPair(private_, public_);
     }
 }

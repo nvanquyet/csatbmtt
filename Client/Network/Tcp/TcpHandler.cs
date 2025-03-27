@@ -106,7 +106,6 @@ public class TcpHandler : INetworkHandler
             case CommandType.GetHandshakeUsers:
                 if (msg.TryParseData(out ConversationRecord? c) && c != null)
                 {
-                    Logger.LogInfo($"Handshake with {c.Interactions.Count} Interactions");
                     FormController.GetForm<HomeForm>(FormType.Home)?.LoadHandshake(c);
                 }
                 break;

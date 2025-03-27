@@ -23,8 +23,6 @@ namespace Client.Form
         public void SetUserTarget(UserDto? userDto)
         {
             _targetDto = userDto;
-            Logger.LogInfo($"Target Encrypt Key: {(_targetDto?.EncryptKey != null ? Convert.ToBase64String(_targetDto.EncryptKey) : "null")}");
-
         }
 
         #region Add Message

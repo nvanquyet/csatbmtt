@@ -23,7 +23,6 @@ public partial class LoginForm : Form
             MessageBox.Show("Username or password are required");
             return;
         }
-        Logger.LogInfo($"[Login Attempt] Username: {username}, Password Length: {password.Length}");
         AuthService.Login(username, password);
     }
 

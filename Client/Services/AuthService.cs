@@ -64,7 +64,6 @@ public static class AuthService
                 code: StatusCode.Success,
                 data: new User(user.UserName, user.Password)
             );
-            Logger.LogInfo($"User {message.ToJson()}");
             protocol?.Send(message.ToJson(), "");
             return true;
         }
@@ -84,7 +83,6 @@ public static class AuthService
                 code: StatusCode.Success,
                 data: SessionManager.GetUserDto()
             );
-            Logger.LogInfo($"User {message.ToJson()}");
             NetworkManager.Instance.TcpService.Send(message.ToJson(), "");
             if (File.Exists(AuthFile)) File.Delete(AuthFile);
             SessionManager.Clear();

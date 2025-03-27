@@ -7,7 +7,6 @@ public static class DesCrypto
 {
     public static byte[] Encrypt(byte[] textBytes, byte[] key)
     {
-        Logger.LogInfo($"Encrypt TextLength: {textBytes.Length}");
         //Todo: padding
         int blockSize = 8;
         int padLength = blockSize - (textBytes.Length % blockSize);
@@ -98,7 +97,6 @@ public static class DesCrypto
     
     public static byte[] Decrypt(byte[] textBytes, byte[] key)
     {
-        Logger.LogInfo($"Decrypt TextLength: {textBytes.Length}");
         //Todo: Decrypt
         byte[] holderL = new byte[4];
         byte[] holderR = new byte[4];

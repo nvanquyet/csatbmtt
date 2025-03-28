@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using Shared.Models;
 using Shared.Utils;
 
 namespace Shared.AppSettings;
@@ -12,6 +13,7 @@ public static class Config
     private static string _defaultPassword = "123456";
     private static int _keyDesEncryptionLength = (int)KeySize.KMin;
     private static int _keyRsaEncryptionLength = (int)KeySize.K1024;
+    private static int _bufferSize = (int)BufferSize.ExtraLarge;
 
     public static string ServerIp
     {
@@ -62,6 +64,7 @@ public static class Config
     public static int KeyDesEncryptionLength => _keyDesEncryptionLength;
 
     public static int KeyRsaEncryptionLength => _keyRsaEncryptionLength;
+    public static int BufferSizeLimit => _bufferSize;
 
     private static string HashPassword(string password)
     {
@@ -70,3 +73,4 @@ public static class Config
         return Convert.ToBase64String(hashedBytes);
     }
 }
+

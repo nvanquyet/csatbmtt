@@ -13,3 +13,11 @@ public class TransferData(TransferType transferType, byte[]? rawData)
     
     public byte[]? KeyDecrypt { get; set; }
 }
+
+public enum BufferSize
+{
+    Small = 1024, 
+    Medium = 4096, 
+    Large = 8192, 
+    ExtraLarge = 16384 
+}

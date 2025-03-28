@@ -45,7 +45,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
     private void ListenForTcpMessagesAsync()
     {
-        var buffer = new byte[1024];
+        var buffer = new byte[Config.BufferSizeLimit];
         var messageBuilder = new StringBuilder();
 
         if (_tcpClient is null || _stream is null)

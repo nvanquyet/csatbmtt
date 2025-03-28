@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 using Shared;
+using Shared.AppSettings;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
 using Shared.Utils;
@@ -51,7 +52,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         DataHandler.OnClientConnected(client);
         try
         {
-            var buffer = new byte[4096];
+            var buffer = new byte[Config.BufferSizeLimit];
             while (IsRunning && client is { Connected: true })
             {
                 var bytesRead = stream.Read(buffer, 0, buffer.Length);

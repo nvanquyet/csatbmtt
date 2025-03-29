@@ -91,7 +91,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
 
     public override void Send(string data, string endpoint = "") => MsgService.SendTcpMessage(_tcpClient, data);
-
+    public void Send(string data, Action<string, int>? progressCallback = null) => MsgService.SendTcpMessage(_tcpClient, data, progressCallback);
     public override void Stop()
     {
         CloseConnection();

@@ -164,6 +164,12 @@ public class TcpHandler : INetworkHandler
                     FormController.GetForm<HomeForm>(FormType.Home)?.UpdateStatus(ud);
                 }
                 break;
+            case CommandType.CancelDispatchMessage:
+                if (msg.TryParseData(out FileChunkMessageDto? f) && f != null)
+                {
+                    FileChunkService.Instance.CancelProcessChunk(f);
+                }
+                break;
             default:
                 Logger.LogWarning("Unknown Command");
                 break;

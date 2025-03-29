@@ -46,7 +46,7 @@ namespace Client.Form
 
             var lblWait = new Label
             {
-                Text = "Please wait, handshake in progress...",
+                Text = @"Please wait, handshake in progress...",
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Font = new Font("Arial", 10, FontStyle.Bold)

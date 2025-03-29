@@ -38,14 +38,14 @@ public partial class EncryptionForm : Form
         try
         {
             // Chuyển text sang byte[] (UTF8)
-            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+            byte[]? inputBytes = Encoding.UTF8.GetBytes(input);
 
             // Mã hóa
-            byte[] encryptedBytes = EncryptText(inputBytes, algorithm);
+            byte[]? encryptedBytes = EncryptText(inputBytes, algorithm);
             string encryptedText = Convert.ToBase64String(encryptedBytes);
 
             // Giải mã
-            byte[] decryptedBytes = DecryptText(encryptedBytes, algorithm);
+            byte[]? decryptedBytes = DecryptText(encryptedBytes, algorithm);
             string decryptedText = Encoding.UTF8.GetString(decryptedBytes);
 
             // Hiển thị kết quả
@@ -64,7 +64,7 @@ public partial class EncryptionForm : Form
         chatBox.Items.Add(new string('-', 50));
         inputTextBox.Clear();
     }
-    private byte[] EncryptText(byte[] input, string algorithm)
+    private byte[]? EncryptText(byte[]? input, string algorithm)
     {
         if (algorithm == "DES")
             return EncryptDes(input);
@@ -73,7 +73,7 @@ public partial class EncryptionForm : Form
         return [];
     }
     
-    private byte[] DecryptText(byte[] input, string algorithm)
+    private byte[]? DecryptText(byte[]? input, string algorithm)
     {
         if (algorithm == "DES")
             return DecryptDes(input);
@@ -82,7 +82,7 @@ public partial class EncryptionForm : Form
         return [];
     }
 
-    private byte[] EncryptDes(byte[] input)
+    private byte[]? EncryptDes(byte[]? input)
     {
         try
         {
@@ -97,7 +97,7 @@ public partial class EncryptionForm : Form
         }
     }
 
-    private byte[] DecryptDes(byte[] input)
+    private byte[]? DecryptDes(byte[]? input)
     {
         try
         {
@@ -111,14 +111,14 @@ public partial class EncryptionForm : Form
         }
     }
 
-    private byte[] EncryptRsa(byte[] input)
+    private byte[]? EncryptRsa(byte[]? input)
     {
         var rsa = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
         return rsa.Encrypt(input, rsa.EncryptKey);
     }
     
 
-    private byte[] DecryptRsa(byte[] input)
+    private byte[]? DecryptRsa(byte[]? input)
     {
         var rsa = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
         return rsa.Decrypt(input, rsa.DecryptKey);

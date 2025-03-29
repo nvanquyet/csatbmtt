@@ -15,103 +15,173 @@ namespace Client.Form
         private Button btnBack;
         private OpenFileDialog openFileDialog;
         
-        private void InitializeComponent()
-        {
-            // Kích thước form: 800x600 (tỷ lệ 4:3)
-            int formWidth = 800;
-            int formHeight = 600;
 
-            this.SuspendLayout();
-            
-            // 1) Tạo các control
-            this.messageContainer = new FlowLayoutPanel();
-            this.txtMessage = new TextBox();
-            this.btnSend = new Button();
-            this.btnSendFile = new Button();
-            this.lblSelectedFile = new Label();
-            this.btnRemoveFile = new Button();
-            this.btnBack = new Button();
-            this.openFileDialog = new OpenFileDialog();
+        private Button btnEncryptFile;       // Nút mã hóa file
+        private TextBox txtDesKey;           // Nhập DES key
+        private Label lblEncryptionStatus;   // Hiển thị thông báo mã hóa thành công và thời gian mã hóa
+        private ProgressBar progressFileSending; // Hiển thị tiến trình gửi file
+        private Button btnCancelSendFile;    // Nút hủy tiến trình gửi file
 
-            // 2) Thuộc tính Form
-            this.ClientSize = new Size(formWidth, formHeight);
-            this.Text = "Chat";
-            this.StartPosition = FormStartPosition.CenterScreen;
-            
-            // 3) Nút Back
-            //    Đặt ở góc trên bên trái, kích thước vừa phải
-            this.btnBack.Text = "Back";
-            this.btnBack.Size = new Size(80, 30);
-            this.btnBack.Location = new Point(10, 10);
-            this.btnBack.Click += new EventHandler(this.BtnBack_Click);
-            this.Controls.Add(this.btnBack);
-            
-            // 4) messageContainer
-            //    Đặt bên dưới nút Back, chiếm phần lớn diện tích chính giữa để hiển thị tin nhắn
-             messageContainer.AutoScroll = true;
-            this.messageContainer.FlowDirection = FlowDirection.TopDown;
-            this.messageContainer.WrapContents = false;
-            messageContainer.HorizontalScroll.Enabled = false;
-            messageContainer.HorizontalScroll.Visible = false;
-            // Vị trí x = 10, y = 50 (dưới nút Back)
-            // Kích thước: rộng 780, cao 400
-            this.messageContainer.Location = new Point(10, 50);
-            this.messageContainer.Size = new Size(formWidth - 20, 400);
-            this.messageContainer.BorderStyle = BorderStyle.FixedSingle;
-            this.messageContainer.Margin = new Padding(0);
-            this.messageContainer.Padding = new Padding(0);
-            
-            this.Controls.Add(this.messageContainer);
-
-            // 5) openFileDialog
-            this.openFileDialog.Multiselect = true;
-            this.openFileDialog.Filter = "All Files|*.*";
-            
-            // 6) lblSelectedFile
-            //    Dùng để hiển thị tên file đã chọn, đặt bên dưới messageContainer
-            this.lblSelectedFile.AutoSize = true;
-            this.lblSelectedFile.Location = new Point(10, this.messageContainer.Bottom + 10);
-            this.lblSelectedFile.Size = new Size(300, 20);
-            this.lblSelectedFile.Visible = false;
-            this.Controls.Add(this.lblSelectedFile);
-            
-            // 7) btnRemoveFile
-            //    Nút xóa file đã chọn, nằm kế bên lblSelectedFile
-            this.btnRemoveFile.Text = "❌";
-            this.btnRemoveFile.Size = new Size(30, 25);
-            this.btnRemoveFile.Location = new Point(300 + 100, this.messageContainer.Bottom + 5);
-            this.btnRemoveFile.Visible = false;
-            this.btnRemoveFile.Click += new EventHandler(this.BtnRemoveFile_Click);
-            this.Controls.Add(this.btnRemoveFile);
-            
-            // 8) txtMessage
-            //    Ô nhập tin nhắn, đặt gần đáy form, phía trái
-            this.txtMessage.Location = new Point(10, formHeight - 60);
-            this.txtMessage.Size = new Size(625, 30);
-            this.txtMessage.KeyDown += new KeyEventHandler(this.TxtMessage_KeyDown);
-            this.Controls.Add(this.txtMessage);
-            // 10) btnSendFile
-            //     Nút gửi file (hoặc chọn file), đặt kế bên nút Send
-            this.btnSendFile.Text = "📎";
-            this.btnSendFile.Size = new Size(50, 30);
-            this.btnSendFile.Location = new Point(this.txtMessage.Right + 10, formHeight - 60);
-            this.btnSendFile.Click += new EventHandler(this.BtnSendFile_Click);
-            this.Controls.Add(this.btnSendFile);
-            
-            // 9) btnSend
-            //    Nút gửi tin nhắn, đặt kế bên txtMessage
-            this.btnSend.Text = "Send";
-            this.btnSend.Size = new Size(80, 30);
-            this.btnSend.Location = new Point(formWidth - 10 - 80, formHeight - 60);
-            this.btnSend.Click += new EventHandler(this.BtnSend_Click);
-            this.Controls.Add(this.btnSend);
-            
-           
-            
-            // Hoàn thiện
-            this.ResumeLayout(false);
-            this.PerformLayout();
-            FormController.InitializeUiContext();
+        private void InitializeComponent() {
+            messageContainer = new FlowLayoutPanel();
+            txtMessage = new TextBox();
+            btnSend = new Button();
+            btnSendFile = new Button();
+            lblSelectedFile = new Label();
+            btnRemoveFile = new Button();
+            btnBack = new Button();
+            openFileDialog = new OpenFileDialog();
+            btnEncryptFile = new Button();
+            txtDesKey = new TextBox();
+            lblEncryptionStatus = new Label();
+            progressFileSending = new ProgressBar();
+            btnCancelSendFile = new Button();
+            btnRandomDesKey = new Button();
+            SuspendLayout();
+            // 
+            // messageContainer
+            // 
+            messageContainer.AutoScroll = true;
+            messageContainer.BorderStyle = BorderStyle.FixedSingle;
+            messageContainer.FlowDirection = FlowDirection.TopDown;
+            messageContainer.Location = new Point(10, 50);
+            messageContainer.Margin = new Padding(0);
+            messageContainer.Name = "messageContainer";
+            messageContainer.Size = new Size(800, 400);
+            messageContainer.TabIndex = 1;
+            messageContainer.WrapContents = false;
+            // 
+            // txtMessage
+            // 
+            txtMessage.Location = new Point(12, 557);
+            txtMessage.Name = "txtMessage";
+            txtMessage.Size = new Size(661, 23);
+            txtMessage.TabIndex = 4;
+            txtMessage.KeyDown += TxtMessage_KeyDown;
+            // 
+            // btnSend
+            // 
+            btnSend.Location = new Point(735, 557);
+            btnSend.Name = "btnSend";
+            btnSend.Size = new Size(80, 30);
+            btnSend.TabIndex = 6;
+            btnSend.Text = "Send";
+            btnSend.Click += BtnSend_Click;
+            // 
+            // btnSendFile
+            // 
+            btnSendFile.Location = new Point(679, 557);
+            btnSendFile.Name = "btnSendFile";
+            btnSendFile.Size = new Size(50, 30);
+            btnSendFile.TabIndex = 5;
+            btnSendFile.Text = "📎";
+            btnSendFile.Click += BtnSendFile_Click;
+            // 
+            // lblSelectedFile
+            // 
+            lblSelectedFile.AutoSize = true;
+            lblSelectedFile.Location = new Point(10, 450);
+            lblSelectedFile.Name = "lblSelectedFile";
+            lblSelectedFile.Size = new Size(0, 15);
+            lblSelectedFile.TabIndex = 2;
+            // 
+            // btnRemoveFile
+            // 
+            btnRemoveFile.Location = new Point(300, 450);
+            btnRemoveFile.Name = "btnRemoveFile";
+            btnRemoveFile.Size = new Size(30, 25);
+            btnRemoveFile.TabIndex = 3;
+            btnRemoveFile.Text = "❌";
+            btnRemoveFile.Click += BtnRemoveFile_Click;
+            // 
+            // btnBack
+            // 
+            btnBack.Location = new Point(10, 10);
+            btnBack.Name = "btnBack";
+            btnBack.Size = new Size(80, 30);
+            btnBack.TabIndex = 0;
+            btnBack.Text = "Back";
+            btnBack.Click += BtnBack_Click;
+            // 
+            // openFileDialog
+            // 
+            openFileDialog.Filter = "All Files|*.*";
+            openFileDialog.Multiselect = true;
+            // 
+            // btnEncryptFile
+            // 
+            btnEncryptFile.Location = new Point(272, 523);
+            btnEncryptFile.Name = "btnEncryptFile";
+            btnEncryptFile.Size = new Size(100, 30);
+            btnEncryptFile.TabIndex = 7;
+            btnEncryptFile.Text = "Encrypt File";
+           // btnEncryptFile.Click += BtnEncryptFile_Click;
+            // 
+            // txtDesKey
+            // 
+            txtDesKey.Location = new Point(10, 528);
+            txtDesKey.Name = "txtDesKey";
+            txtDesKey.PlaceholderText = "Enter DES Key";
+            txtDesKey.Size = new Size(150, 23);
+            txtDesKey.TabIndex = 8;
+            // 
+            // lblEncryptionStatus
+            // 
+            lblEncryptionStatus.AutoSize = true;
+            lblEncryptionStatus.Font = new Font("Arial", 9F, FontStyle.Bold);
+            lblEncryptionStatus.ForeColor = Color.Green;
+            lblEncryptionStatus.Location = new Point(780, 50);
+            lblEncryptionStatus.Name = "lblEncryptionStatus";
+            lblEncryptionStatus.Size = new Size(0, 15);
+            lblEncryptionStatus.TabIndex = 9;
+            // 
+            // progressFileSending
+            // 
+            progressFileSending.Location = new Point(10, 490);
+            progressFileSending.Name = "progressFileSending";
+            progressFileSending.Size = new Size(764, 25);
+            progressFileSending.TabIndex = 10;
+            progressFileSending.Maximum = 100;
+            // 
+            // btnCancelSendFile
+            // 
+            btnCancelSendFile.Location = new Point(780, 490);
+            btnCancelSendFile.Name = "btnCancelSendFile";
+            btnCancelSendFile.Size = new Size(30, 25);
+            btnCancelSendFile.TabIndex = 11;
+            btnCancelSendFile.Text = "❌";
+            btnCancelSendFile.Click += BtnCancelSendFile_Click;
+            // 
+            // btnRandomDesKey
+            // 
+            btnRandomDesKey.Location = new Point(166, 523);
+            btnRandomDesKey.Name = "btnRandomDesKey";
+            btnRandomDesKey.Size = new Size(100, 30);
+            btnRandomDesKey.TabIndex = 12;
+            btnRandomDesKey.Text = "RandomKey";
+            btnRandomDesKey.Click += OnClickRandomKey;
+            // 
+            // ChatForm
+            // 
+            ClientSize = new Size(1033, 701);
+            Controls.Add(btnRandomDesKey);
+            Controls.Add(btnBack);
+            Controls.Add(messageContainer);
+            Controls.Add(lblSelectedFile);
+            Controls.Add(btnRemoveFile);
+            Controls.Add(txtMessage);
+            Controls.Add(btnSendFile);
+            Controls.Add(btnSend);
+            Controls.Add(btnEncryptFile);
+            Controls.Add(txtDesKey);
+            Controls.Add(lblEncryptionStatus);
+            Controls.Add(progressFileSending);
+            Controls.Add(btnCancelSendFile);
+            Name = "ChatForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "Chat";
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         private void TxtMessage_KeyDown(object sender, KeyEventArgs e)
@@ -122,5 +192,6 @@ namespace Client.Form
                 e.SuppressKeyPress = true;
             }
         }
+        private Button btnRandomDesKey;
     }
 }

@@ -18,13 +18,13 @@ namespace Client.Form
 
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword))
             {
-                MessageBox.Show("Please fill in all fields.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(@"Please fill in all fields.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             if (password != confirmPassword)
             {
-                MessageBox.Show("Passwords do not match.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(@"Passwords do not match.", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 

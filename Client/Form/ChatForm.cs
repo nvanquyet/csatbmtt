@@ -1,5 +1,6 @@
 ﻿using Client.Models;
 using Client.Network;
+using Client.Network.Tcp;
 using Client.Services;
 using Shared;
 using Shared.Models;
@@ -13,11 +14,14 @@ namespace Client.Form
     {
         private string _selectedFilePath = "";
         private UserDto? _targetDto;
+        private readonly Dictionary<string, byte[]?> _encryptedFileCache = new Dictionary<string, byte[]?>();
+        private CancellationTokenSource? _sendCts = null;
 
         public ChatForm()
         {
             InitializeComponent();
             messageContainer.AutoScroll = true;
+            OnClickRandomKey(null, null);
             //LoadSampleMessages();
         }
 
@@ -140,7 +144,8 @@ namespace Client.Form
                 var lblFileInfo = new Label
                 {
                     Text =
-                        $"{FileHelper.GetFileTypeText(data.TransferType)}\n{(data.RawData != null ? ByteUtils.GetFileSize(data.RawData.Length) : 10)}",
+                        $@"{FileHelper.GetFileTypeText(data.TransferType)}
+{(data.RawData != null ? ByteUtils.GetFileSize(data.RawData.Length) : 10)}",
                     AutoSize = true,
                     Dock = DockStyle.Fill,
                     TextAlign = ContentAlignment.MiddleLeft,
@@ -216,9 +221,20 @@ namespace Client.Form
                 var transferData = new TransferData(FileHelper.GetTransferType(_selectedFilePath),
                     File.ReadAllBytes(_selectedFilePath));
                 AddMessage(transferData, true);
-                _selectedFilePath = "";
                 lblSelectedFile.Visible = false;
                 btnRemoveFile.Visible = false;
+                var encryptData = _encryptedFileCache[_selectedFilePath];
+                // var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
+                var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
+                if (_targetDto == null || transferData.RawData == null) return;
+
+                // // Encrypt raw data using DES
+                // // Encrypt the DES key (to be used for decryption) with target's RSA key
+                // Logger.LogInfo($"Length {desEncrypt.DecryptKey.Length}, {_targetDto.EncryptKey.Length}");
+                transferData.KeyDecrypt =
+                    rsaEncrypt.Encrypt(ByteUtils.GetBytesFromString(txtDesKey.Text), _targetDto.EncryptKey);
+                // // transferData.KeyDecrypt = desEncrypt.DecryptKey;
+                _selectedFilePath = "";
                 SendToServer(transferData: transferData);
             }
         }
@@ -226,6 +242,22 @@ namespace Client.Form
 
         private void BtnSendFile_Click(object sender, EventArgs e)
         {
+            // Lấy DES key từ txtDesKey
+            string desKey = txtDesKey.Text.Trim();
+            if (string.IsNullOrEmpty(desKey))
+            {
+                MessageBox.Show(@"Please enter DES key.");
+                BtnRemoveFile_Click(null, null);
+                return;
+            }
+
+            if (desKey.Length != 8)
+            {
+                MessageBox.Show(@"Des key must be 8 characters long.");
+                BtnRemoveFile_Click(null, null);
+                return;
+            }
+
             var fileDialog = new OpenFileDialog();
             if (fileDialog.ShowDialog() != DialogResult.OK) return;
             _selectedFilePath = fileDialog.FileName;
@@ -240,13 +272,15 @@ namespace Client.Form
                 ? _selectedFilePath.Substring(index + 1)
                 : _selectedFilePath;
 
-            lblSelectedFile.Text = "Selected File: " + fileName;
+            lblSelectedFile.Text = $@"Selected File: {fileName}";
             lblSelectedFile.Visible = true;
             btnRemoveFile.Visible = true;
+            _ = BtnEncryptFile_Click();
         }
 
-        private void BtnRemoveFile_Click(object sender, EventArgs e)
+        private void BtnRemoveFile_Click(object? sender, EventArgs? e)
         {
+            _encryptedFileCache[_selectedFilePath] = null;
             _selectedFilePath = "";
             lblSelectedFile.Visible = false;
             btnRemoveFile.Visible = false;
@@ -274,7 +308,7 @@ namespace Client.Form
 
             // Tạo dialog lưu file
             using var saveDialog = new SaveFileDialog();
-            saveDialog.Title = "Lưu file";
+            saveDialog.Title = @"Lưu file";
             saveDialog.FileName = FileHelper.GenerateFileName(data.TransferType);
             saveDialog.Filter = FileHelper.GetFileFilter(data.TransferType);
 
@@ -282,12 +316,12 @@ namespace Client.Form
             try
             {
                 if (data.RawData != null) File.WriteAllBytes(saveDialog.FileName, data.RawData);
-                MessageBox.Show("Lưu file thành công!", "Thông báo",
+                MessageBox.Show(@"Lưu file thành công!", @"Thông báo",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi khi lưu file: {ex.Message}", "Lỗi",
+                MessageBox.Show($@"Lỗi khi lưu file: {ex.Message}", @"Lỗi",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -326,21 +360,73 @@ namespace Client.Form
 
         #region Encryption
 
+        private ChunkDto? _currentChunk;
+        private async Task BtnEncryptFile_Click()
+        {
+            if (string.IsNullOrEmpty(_selectedFilePath))
+            {
+                MessageBox.Show(@"Please select a file first.");
+                BtnRemoveFile_Click(null, null);
+                return;
+            }
+
+            // Lấy DES key từ txtDesKey
+            string desKey = txtDesKey.Text.Trim();
+
+            btnEncryptFile.Enabled = false;
+            btnSend.Enabled = false;
+            btnSendFile.Enabled = false;
+            btnRemoveFile.Visible = false;
+            // Bắt đầu quá trình mã hóa file
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                // Giả sử EncryptFile là hàm thực hiện mã hóa file dựa trên desKey
+                byte[]? encryptedData = await Task.Run(() =>
+                {
+                    lblEncryptionStatus.Text = @"Encrypting...";
+                    byte[]? fileData = File.ReadAllBytes(_selectedFilePath);
+                    var desCrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
+                    return desCrypt.Encrypt(fileData, ByteUtils.GetBytesFromString(desKey));
+                });
+
+                _encryptedFileCache[_selectedFilePath] = encryptedData;
+                lblEncryptionStatus.Text = $@"Encryption Successful – Time: {sw.ElapsedMilliseconds} ms";
+                lblEncryptionStatus.Visible = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($@"Encryption failed: {ex.Message}");
+            }
+            finally
+            {
+                sw.Stop();
+                btnEncryptFile.Enabled = true;
+                btnSend.Enabled = true;
+                btnSendFile.Enabled = true;
+                btnRemoveFile.Visible = true;
+            }
+        }
+
+        private void BtnCancelSendFile_Click(object sender, EventArgs e)
+        {
+            // Gọi phương thức hủy gửi file
+            // Ví dụ: NetworkManager.Instance.TcpService.CancelSend();
+            // Sau đó ẩn progress bar và nút cancel
+            progressFileSending.Visible = false;
+            btnCancelSendFile.Visible = false;
+            var message = new MessageNetwork<FileChunkMessageDto>(CommandType.CancelDispatchMessage, StatusCode.Success,
+                new FileChunkMessageDto()
+                {
+                    ReceiverId = _targetDto?.Id,
+                    Chunk = _currentChunk
+                }).ToJson();
+            NetworkManager.Instance.TcpService.Send(message);
+            MessageBox.Show(@"File sending cancelled.");
+        }
+
         private void SendToServer(TransferData transferData)
         {
-            var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
-            var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
-            if (_targetDto == null || transferData.RawData == null) return;
-
-            // Encrypt raw data using DES
-            transferData.RawData = desEncrypt.Encrypt(transferData.RawData, desEncrypt.EncryptKey);
-
-            // Encrypt the DES key (to be used for decryption) with target's RSA key
-            Logger.LogInfo($"Length {desEncrypt.DecryptKey.Length}, {_targetDto.EncryptKey.Length}");
-            transferData.KeyDecrypt = rsaEncrypt.Encrypt(desEncrypt.DecryptKey, _targetDto.EncryptKey);
-            // transferData.KeyDecrypt = desEncrypt.DecryptKey;
-
-            // Giả sử nếu TransferData là kiểu file hoặc dữ liệu lớn, ta sẽ chunk toàn bộ TransferData
             if (transferData.TransferType != TransferType.Text)
             {
                 // Serialize toàn bộ đối tượng TransferData
@@ -350,6 +436,9 @@ namespace Client.Form
                 int totalChunks = (int)Math.Ceiling((double)serializedData.Length / chunkSize);
                 Guid messageId = Guid.NewGuid(); // ID duy nhất cho TransferData
 
+                progressFileSending.Visible = true;
+                btnCancelSendFile.Visible = true;
+                
                 // Gửi các chunk trong Task riêng để không block luồng chính
                 Task.Run(async () =>
                 {
@@ -361,7 +450,7 @@ namespace Client.Form
                         Buffer.BlockCopy(serializedData, offset, chunkPayload, 0, currentChunkSize);
 
                         // Tạo ChunkDto chứa thông tin của chunk
-                        var chunkDto = new ChunkDto
+                        _currentChunk = new ChunkDto
                         {
                             MessageId = messageId,
                             ChunkIndex = i,
@@ -369,34 +458,44 @@ namespace Client.Form
                             Payload = chunkPayload
                         };
 
-                        // Đóng gói thông tin ReceiverId và chunk vào FileChunkMessageDto
                         var fileChunkMessage = new FileChunkMessageDto
                         {
                             ReceiverId = _targetDto?.Id,
-                            Chunk = chunkDto
+                            Chunk = _currentChunk
                         };
 
-                        // Đóng gói vào MessageNetwork với CommandType.DispatchMessage
                         var message = new MessageNetwork<FileChunkMessageDto>(
                             type: CommandType.DispatchMessage,
                             code: StatusCode.Success,
                             data: fileChunkMessage
                         );
 
-                        // Serialize thành JSON (có newline để phân cách tin nhắn)
-                        string messageJson = message.ToJson();
+                        var messageJson = message.ToJson();
 
-                        // Gửi chunk đến Server
-                        NetworkManager.Instance.TcpService.Send(messageJson);
+                        if (NetworkManager.Instance.TcpService is TcpProtocol tcp)
+                        {
+                            tcp.Send(messageJson, (id, value) =>
+                            {
+                                if (value >= 99)
+                                {
+                                    //Todo: hide progress
+                                    progressFileSending.Invoke((MethodInvoker)(() => progressFileSending.Visible = false));
+                                    btnCancelSendFile.Invoke((MethodInvoker)(() => btnCancelSendFile.Visible = false));
+                                }
+                                else
+                                {
+                                    //Todo: Show progress
+                                    progressFileSending.Invoke((MethodInvoker)(() => progressFileSending.Value = value));
+                                }
+                            });
+                        }
 
-                        // Optional: Delay ngắn giữa các chunk để tránh quá tải
                         await Task.Delay(10);
                     }
                 });
             }
             else
             {
-                // Nếu là tin nhắn text, gửi trực tiếp như cũ
                 var response = new MessageNetwork<MessageDto>(
                     type: CommandType.DispatchMessage,
                     code: StatusCode.Success,
@@ -409,6 +508,7 @@ namespace Client.Form
 
         private TransferData DecryptTransferData(TransferData transferData)
         {
+            if (transferData.TransferType == TransferType.Text) return transferData;
             var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
             var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
 
@@ -417,10 +517,18 @@ namespace Client.Form
             transferData.KeyDecrypt =
                 rsaEncrypt.Decrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
             // Decrypt the raw data using the decrypted DES key
-            transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
+            if (transferData.KeyDecrypt != null)
+                transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
             return transferData;
         }
 
         #endregion
+
+        private void OnClickRandomKey(object? sender, EventArgs? e)
+        {
+            var des = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
+            des.GenerateKey();
+            txtDesKey.Text = ByteUtils.GetStringFromBytes(des.EncryptKey);
+        }
     }
 }

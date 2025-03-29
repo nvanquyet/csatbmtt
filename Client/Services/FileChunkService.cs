@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using Shared;
 using Shared.Models;
 using Shared.Utils.Patterns;
 
@@ -6,62 +7,70 @@ namespace Client.Services;
 
 public class FileChunkService : Singleton<FileChunkService>
 {
-    private readonly ConcurrentDictionary<Guid, List<ChunkDto>> _chunks = new ConcurrentDictionary<Guid, List<ChunkDto>>();
+    private ConcurrentDictionary<Guid, ConcurrentBag<ChunkDto>> _chunks = new ConcurrentDictionary<Guid, ConcurrentBag<ChunkDto>>();
+    private SemaphoreSlim _semaphore = new SemaphoreSlim(5); // Giới hạn 5 file xử lý cùng lúc
 
-    /// <summary>
-    /// Process incoming file chunk.
-    /// Được gọi từ client khi nhận được FileChunkMessageDto.
-    /// Xử lý trên một Task riêng để không block luồng chính.
-    /// </summary>
-    /// <param name="fileChunkMsg">FileChunkMessageDto chứa ReceiverId và ChunkDto</param>
     public void ProcessChunk(FileChunkMessageDto fileChunkMsg, Action<Guid, byte[]>? OnFileReceived = null)
     {
-        Task.Run(() =>
+        Task.Run(async () =>
         {
+            await _semaphore.WaitAsync();
             try
             {
                 if (fileChunkMsg.Chunk == null) return;
                 var fileId = fileChunkMsg.Chunk.MessageId;
                 var totalChunks = fileChunkMsg.Chunk.TotalChunks;
 
-                // Lấy hoặc tạo mới danh sách chunk cho file này
-                var chunkList = _chunks.GetOrAdd(fileId, _ => new List<ChunkDto>());
-
-                lock (chunkList)
+                // Kiểm tra nếu file đã bị hủy giữa chừng
+                if (!_chunks.ContainsKey(fileId)) 
                 {
-                    // Thêm chunk mới vào danh sách
-                    chunkList.Add(fileChunkMsg.Chunk);
+                    Logger.LogInfo($"File {fileId} đã bị hủy, dừng xử lý.");
+                    return;
+                }
 
-                    // Nếu đã nhận đủ các chunk
-                    if (chunkList.Count >= totalChunks)
+                var chunkList = _chunks.GetOrAdd(fileId, _ => new ConcurrentBag<ChunkDto>());
+                chunkList.Add(fileChunkMsg.Chunk);
+
+                if (chunkList.Count >= totalChunks)
+                {
+                    if (!_chunks.TryRemove(fileId, out _)) return;
+
+                    var orderedChunks = chunkList.OrderBy(c => c.ChunkIndex).ToList();
+                    int totalSize = orderedChunks.Sum(c => c.Payload.Length);
+                    byte[] fullData = new byte[totalSize];
+                    int offset = 0;
+
+                    foreach (var chunk in orderedChunks)
                     {
-                        // Sắp xếp các chunk theo ChunkIndex
-                        var orderedChunks = chunkList.OrderBy(c => c.ChunkIndex).ToList();
-                        // Tính tổng kích thước payload
-                        int totalSize = orderedChunks.Sum(c => c.Payload.Length);
-                        byte[] fullData = new byte[totalSize];
-                        int offset = 0;
-                        foreach (var chunk in orderedChunks)
-                        {
-                            Buffer.BlockCopy(chunk.Payload, 0, fullData, offset, chunk.Payload.Length);
-                            offset += chunk.Payload.Length;
-                        }
-
-                        // File được nhận đầy đủ, xoá entry khỏi dictionary
-                        _chunks.TryRemove(fileId, out _);
-
-                        // Gọi event hoặc callback để thông báo file đã hoàn thành
-                        OnFileReceived?.Invoke(fileId, fullData);
+                        Buffer.BlockCopy(chunk.Payload, 0, fullData, offset, chunk.Payload.Length);
+                        offset += chunk.Payload.Length;
                     }
+
+                    OnFileReceived?.Invoke(fileId, fullData);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error processing file chunk: {ex.Message}");
+                Logger.LogError($"Error processing file chunk: {ex.Message}");
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         });
     }
-    
+
+
+
+    public void CancelProcessChunk(FileChunkMessageDto fileChunkMsg, Action? OnFileCanceled = null)
+    {
+        if (fileChunkMsg.Chunk == null) return;
+        var fileId = fileChunkMsg.Chunk.MessageId;
+
+        if (!_chunks.TryRemove(fileId, out _)) return;
+        Logger.LogError($"Đã hủy nhận file: {fileId}");
+        OnFileCanceled?.Invoke();
+    }
     
     public static byte[] SerializeTransferData(TransferData transferData)
     {

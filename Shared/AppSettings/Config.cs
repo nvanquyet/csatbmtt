@@ -13,7 +13,7 @@ public static class Config
     private static string _defaultPassword = "123456";
     private static int _keyDesEncryptionLength = (int)KeySize.KMin;
     private static int _keyRsaEncryptionLength = (int)KeySize.K1024;
-    private static int _bufferSize = (int)BufferSize.ExtraLarge;
+    private static int _bufferSize = (int)BufferSize.Medium;
 
     public static string ServerIp
     {

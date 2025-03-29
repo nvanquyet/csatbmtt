@@ -5,12 +5,12 @@ namespace Shared.Security.Cryptography.Des;
 
 public static class DesCrypto
 {
-    public static byte[] Encrypt(byte[] textBytes, byte[] key)
+    public static byte[]? Encrypt(byte[]? textBytes, byte[] key)
     {
         //Todo: padding
         int blockSize = 8;
         int padLength = blockSize - (textBytes.Length % blockSize);
-        byte[] paddedData = new byte[textBytes.Length + padLength];
+        byte[]? paddedData = new byte[textBytes.Length + padLength];
         Array.Copy(textBytes, paddedData, textBytes.Length);
         
         // Gán giá trị padding
@@ -26,7 +26,7 @@ public static class DesCrypto
         //expanding bitarrays to fit (56 bits for key,64 bit blocks for plaintext
         if ((textBytes.Length & 7) != 0)
         {
-            byte[] temp = new byte[textBytes.Length + textBytes.Length % 8];
+            byte[]? temp = new byte[textBytes.Length + textBytes.Length % 8];
             textBytes.CopyTo(temp, 0);
             textBytes = temp;
         }
@@ -95,7 +95,7 @@ public static class DesCrypto
         return textBytes;
     }
     
-    public static byte[] Decrypt(byte[] textBytes, byte[] key)
+    public static byte[]? Decrypt(byte[]? textBytes, byte[] key)
     {
         //Todo: Decrypt
         byte[] holderL = new byte[4];
@@ -104,7 +104,7 @@ public static class DesCrypto
         // Expanding bit arrays to fit (56 bits for the key, 64-bit blocks for plaintext)
         if ((textBytes.Length & 7) != 0)
         {
-            byte[] temp = new byte[textBytes.Length + textBytes.Length % 8];
+            byte[]? temp = new byte[textBytes.Length + textBytes.Length % 8];
             textBytes.CopyTo(temp, 0);
             textBytes = temp;
         }
@@ -193,7 +193,7 @@ public static class DesCrypto
         }
 
         // Loại bỏ padding
-        byte[] result = new byte[textBytes.Length - padLength];
+        byte[]? result = new byte[textBytes.Length - padLength];
         Array.Copy(textBytes, result, result.Length);
         return result;
         //return textBytes;

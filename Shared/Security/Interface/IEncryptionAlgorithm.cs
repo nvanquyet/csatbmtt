@@ -11,6 +11,8 @@ public interface IEncryptionAlgorithm
 {
     byte[] EncryptKey { get; }
     byte[] DecryptKey { get; }
-    byte[] Encrypt(byte[] data, byte[] key);
-    byte[] Decrypt(byte[] encryptedData, byte[] key);
+    byte[]? Encrypt(byte[]? data, byte[] key);
+    byte[]? Decrypt(byte[]? encryptedData, byte[] key);
+    
+    void GenerateKey();
 }

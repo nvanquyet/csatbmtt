@@ -85,7 +85,7 @@ public static class RsaCrypto
         return new BigInteger(randomBytes);
     }
 
-    private static byte[] Encrypt(byte[] bytes, Key publicKey)
+    private static byte[]? Encrypt(byte[]? bytes, Key publicKey)
     {
         //Checking that the size of the bytes is less than n, and greater than 1.
         if (1 > bytes.Length || bytes.Length >= publicKey.n.ToByteArray().Length)
@@ -110,7 +110,7 @@ public static class RsaCrypto
     }
 
     //Decrypts a set of bytes when given a private key.
-    private static byte[] Decrypt(byte[] bytes, Key privateKey)
+    private static byte[]? Decrypt(byte[]? bytes, Key privateKey)
     {
         //Checking that the private key is legitimate, and contains d.
         if (privateKey.type != KeyType.PRIVATE)
@@ -145,13 +145,13 @@ public static class RsaCrypto
         return returnArray;
     }
 
-    public static byte[] Encrypt(byte[] data, byte[] key)
+    public static byte[]? Encrypt(byte[]? data, byte[] key)
     {
         var keyEncrypt = Key.FromBytes(key);
         return Encrypt(data, keyEncrypt);
     }
 
-    public static byte[] Decrypt(byte[] encryptedData, byte[] key)
+    public static byte[]? Decrypt(byte[]? encryptedData, byte[] key)
     {
         var keyDecrypt = Key.FromBytes(key);
         return Decrypt(encryptedData, keyDecrypt);

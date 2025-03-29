@@ -165,6 +165,7 @@ public class TcpHandler : INetworkHandler, IDisposable
                 CommandType.GetHandshakeUsers => HandleHandshakeUsers(client, message),
                 CommandType.HandshakeCancel => HandleHandShakeCancel(client, message),
                 CommandType.ClientDisconnect => HandleClientDisconnect(client, message),
+                CommandType.CancelDispatchMessage => HandleCancelDispatchMessage(client, message),
                 _ => throw new InvalidOperationException("Unsupported command type")
             });
         }
@@ -385,8 +386,6 @@ public class TcpHandler : INetworkHandler, IDisposable
                 return Task.CompletedTask;
             if (!Clients.TryGetValue(receiverIp, out var toClient))
                 return Task.CompletedTask;
-
-            message.Type = CommandType.DispatchMessage;
             MsgService.SendTcpMessage(toClient, message.ToJson());
         }else if (message.TryParseData(out FileChunkMessageDto? chunkDto) && chunkDto is { ReceiverId: not null })
         {
@@ -395,8 +394,6 @@ public class TcpHandler : INetworkHandler, IDisposable
                 return Task.CompletedTask;
             if (!Clients.TryGetValue(receiverIp, out var toClient))
                 return Task.CompletedTask;
-
-            message.Type = CommandType.DispatchMessage;
             MsgService.SendTcpMessage(toClient, message.ToJson());
         }
         else
@@ -423,6 +420,32 @@ public class TcpHandler : INetworkHandler, IDisposable
         return Task.CompletedTask;
     }
 
+    private static Task HandleCancelDispatchMessage(TcpClient? client, MessageNetwork<dynamic> message)
+    {
+        if (!ValidateMessage(client, message, out var error))
+        {
+            SendError(client, error);
+            return Task.CompletedTask;
+        }
+
+        if (message.TryParseData(out FileChunkMessageDto? chunkDto) && chunkDto is { ReceiverId: not null })
+        {
+            if (!MapUserIdToIp.TryGetValue(chunkDto.ReceiverId, out var receiverIp) ||
+                string.IsNullOrEmpty(receiverIp))
+                return Task.CompletedTask;
+            if (!Clients.TryGetValue(receiverIp, out var toClient))
+                return Task.CompletedTask;
+            MsgService.SendTcpMessage(toClient, message.ToJson());
+        }
+        else
+        {
+            SendError(client, "Target not found");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    
     #endregion
 
     #region Login and Registration Handlers

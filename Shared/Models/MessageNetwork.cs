@@ -16,6 +16,7 @@ public enum CommandType
     HandshakeCancel,
     GetHandshakeUsers,
     UpdateStatusUsers,
+    CancelDispatchMessage,
 }
 
 public enum StatusCode

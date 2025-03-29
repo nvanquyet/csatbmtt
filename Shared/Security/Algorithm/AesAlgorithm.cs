@@ -9,7 +9,7 @@ public class AesAlgorithm : IEncryptionAlgorithm
     private readonly byte[] _key = GenerateKey(Config.KeyDesEncryptionLength);
     public byte[] EncryptKey => _key;
     public byte[] DecryptKey => _key;
-    public byte[] Encrypt(byte[] data, byte[] key)
+    public byte[]? Encrypt(byte[]? data, byte[] key)
     {
         throw new NotImplementedException();
     }
@@ -19,7 +19,12 @@ public class AesAlgorithm : IEncryptionAlgorithm
         return ByteUtils.GetBytesFromString("testAesAlgorithm");
     }
 
-    public byte[] Decrypt(byte[] encryptedData, byte[] key)
+    public byte[]? Decrypt(byte[]? encryptedData, byte[] key)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void GenerateKey()
     {
         throw new NotImplementedException();
     }

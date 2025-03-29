@@ -14,9 +14,6 @@ namespace Client.Form
         private Button btnRemoveFile;
         private Button btnBack;
         private OpenFileDialog openFileDialog;
-        
-
-        private Button btnEncryptFile;       // Nút mã hóa file
         private TextBox txtDesKey;           // Nhập DES key
         private Label lblEncryptionStatus;   // Hiển thị thông báo mã hóa thành công và thời gian mã hóa
         private ProgressBar progressFileSending; // Hiển thị tiến trình gửi file
@@ -31,7 +28,6 @@ namespace Client.Form
             btnRemoveFile = new Button();
             btnBack = new Button();
             openFileDialog = new OpenFileDialog();
-            btnEncryptFile = new Button();
             txtDesKey = new TextBox();
             lblEncryptionStatus = new Label();
             progressFileSending = new ProgressBar();
@@ -108,15 +104,6 @@ namespace Client.Form
             openFileDialog.Filter = "All Files|*.*";
             openFileDialog.Multiselect = true;
             // 
-            // btnEncryptFile
-            // 
-            btnEncryptFile.Location = new Point(272, 523);
-            btnEncryptFile.Name = "btnEncryptFile";
-            btnEncryptFile.Size = new Size(100, 30);
-            btnEncryptFile.TabIndex = 7;
-            btnEncryptFile.Text = "Encrypt File";
-           // btnEncryptFile.Click += BtnEncryptFile_Click;
-            // 
             // txtDesKey
             // 
             txtDesKey.Location = new Point(10, 528);
@@ -141,7 +128,6 @@ namespace Client.Form
             progressFileSending.Name = "progressFileSending";
             progressFileSending.Size = new Size(764, 25);
             progressFileSending.TabIndex = 10;
-            progressFileSending.Maximum = 100;
             // 
             // btnCancelSendFile
             // 
@@ -163,7 +149,7 @@ namespace Client.Form
             // 
             // ChatForm
             // 
-            ClientSize = new Size(1033, 701);
+            ClientSize = new Size(819, 593);
             Controls.Add(btnRandomDesKey);
             Controls.Add(btnBack);
             Controls.Add(messageContainer);
@@ -172,7 +158,6 @@ namespace Client.Form
             Controls.Add(txtMessage);
             Controls.Add(btnSendFile);
             Controls.Add(btnSend);
-            Controls.Add(btnEncryptFile);
             Controls.Add(txtDesKey);
             Controls.Add(lblEncryptionStatus);
             Controls.Add(progressFileSending);

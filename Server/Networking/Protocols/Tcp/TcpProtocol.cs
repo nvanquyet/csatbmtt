@@ -5,8 +5,6 @@ using Shared;
 using Shared.AppSettings;
 using Shared.Networking;
 using Shared.Networking.Interfaces;
-using Shared.Utils;
-
 namespace Server.Networking.Protocols.Tcp;
 
 public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHandler)

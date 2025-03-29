@@ -16,24 +16,18 @@ public static class MsgService
     }
     private interface IMessageDispatcher<in T> where T : class
     {
-        /// <summary>
-        /// Enqueue the message to be sent to the given client.
-        /// </summary>
-        /// <param name="client">The client (destination) that will receive the message.</param>
-        /// <param name="message">The content of the message to be sent.</param>
-        void EnqueueMessage(T? client, string message);
+        void EnqueueMessage(T? client, string message, Action<string, int>? progressCallback = null);
     }
     private abstract class MessageDispatcherBase<T> : IMessageDispatcher<T> where T : class
     {
-        // Shared static state across implementations.
         private static readonly ConcurrentDictionary<T, ClientQueue> ClientQueues = new();
 
-        public void EnqueueMessage(T? client, string message)
+        public void EnqueueMessage(T? client, string message, Action<string, int>? progressCallback = null)
         {
-            EnqueueMessage(client, ByteUtils.GetBytesFromString(message));
+            EnqueueMessage(client, ByteUtils.GetBytesFromString(message), progressCallback);
         }
 
-        private void EnqueueMessage(T? client, byte[] data)
+        private void EnqueueMessage(T? client, byte[] data, Action<string, int>? progressCallback = null)
         {
             if (client is null or TcpClient { Connected: false })
             {
@@ -41,37 +35,31 @@ public static class MsgService
                 return;
             }
 
-            // Lấy hoặc tạo mới hàng đợi cho client đó
             var queue = ClientQueues.GetOrAdd(client, _ => new ClientQueue());
             queue.Queue.Enqueue(data);
 
-            // Nếu chưa có tiến trình xử lý hàng đợi cho client này, bắt đầu xử lý
             if (!queue.IsProcessing)
             {
-                _ = ProcessQueue(client, queue);
-            }
-            
-            // Nếu chưa có tiến trình xử lý cho endpoint này, bắt đầu xử lý hàng đợi
-            if (!queue.IsProcessing)
-            {
-                _ = ProcessQueue(client, queue);
+                _ = ProcessQueue(client, queue, progressCallback);
             }
         }
 
-        private async Task ProcessQueue(T client, ClientQueue queue)
+        private async Task ProcessQueue(T client, ClientQueue queue, Action<string, int>? progressCallback = null)
         {
             queue.IsProcessing = true;
             try
             {
-                // Tiếp tục xử lý cho đến khi hàng đợi rỗng
+                int totalMessages = queue.Queue.Count;
+                int sentMessages = 0;
+
                 while (queue.Queue.TryDequeue(out byte[]? data))
                 {
-                    // Sử dụng semaphore để đảm bảo không có hai tác vụ gửi cùng lúc cho cùng một client
                     await queue.Semaphore.WaitAsync();
                     try
                     {
-                        // Gọi hàm gửi tin nhắn bất đồng bộ
                         await SendMessage(client, data);
+                        sentMessages++;
+                        progressCallback?.Invoke("Message sent", (sentMessages * 100) / totalMessages);
                     }
                     finally
                     {
@@ -133,9 +121,6 @@ public static class MsgService
         {
             try
             {
-                // Ví dụ: ta cần địa chỉ IP/Port, 
-                // nhưng UdpClient mặc định không lưu trữ Endpoint đích 
-                // -> Tuỳ vào logic của bạn, có thể cài đặt ở chỗ khác.
                 var endpoint = new IPEndPoint(IPAddress.Loopback, 9999);
 
                 await client.SendAsync(data, data.Length, endpoint);
@@ -149,23 +134,24 @@ public static class MsgService
         }
     }
 
-    
     private static readonly IMessageDispatcher<TcpClient> TcpDispatch = new TcpDispatcher();
     private static readonly IMessageDispatcher<UdpClient> UdpDispatch = new UdpDispatcher();
 
-    public static void SendTcpMessage(TcpClient? tcpClient, string msg) => TcpDispatch.EnqueueMessage(tcpClient, msg);
+    public static void SendTcpMessage(TcpClient? tcpClient, string msg, Action<string, int>? progressCallback = null)
+        => TcpDispatch.EnqueueMessage(tcpClient, msg, progressCallback);
     
-    public static void SendUdpMessage(UdpClient? udpClient, string msg) => UdpDispatch.EnqueueMessage(udpClient, msg);
+    public static void SendUdpMessage(UdpClient? udpClient, string msg, Action<string, int>? progressCallback = null)
+        => UdpDispatch.EnqueueMessage(udpClient, msg, progressCallback);
 
-    public static void SendErrorMessage(TcpClient? client, string error)
+    public static void SendErrorMessage(TcpClient? client, string error, Action<string, int>? progressCallback = null)
     {
         var errorMessage = new MessageNetwork<ErrorMessage>
         (
             type: CommandType.None,
-            code:  StatusCode.Error,
+            code: StatusCode.Error,
             data: new ErrorMessage($"Error: {error}")
         ).ToJson();
 
-        SendTcpMessage(client, errorMessage);
+        SendTcpMessage(client, errorMessage, progressCallback);
     }
 }

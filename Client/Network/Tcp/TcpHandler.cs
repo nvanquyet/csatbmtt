@@ -139,6 +139,23 @@ public class TcpHandler : INetworkHandler
                             chatForm.AddMessage(md.Data, false);
                         }
                     }
+                }else if (msg.TryParseData<FileChunkMessageDto>(out var fileChunkMsg) && fileChunkMsg != null)
+                {
+                    // Xử lý tin nhắn file bằng cách đưa các chunk vào FileChunkReceiver.
+                    FileChunkService.Instance.ProcessChunk(fileChunkMsg, (fileId, fullData) =>
+                    {
+                        var transferData = FileChunkService.ParseTransferData(fullData);
+                        var chatForm = FormController.GetForm<ChatForm>(FormType.Chat);
+                        if (chatForm == null) return;
+                        if (chatForm.InvokeRequired)
+                        {
+                            chatForm.Invoke(() => chatForm.AddMessage(transferData, false));
+                        }
+                        else
+                        {
+                            chatForm.AddMessage(transferData, false);
+                        }
+                    });
                 }
                 break;
             case CommandType.UpdateStatusUsers:
@@ -154,6 +171,7 @@ public class TcpHandler : INetworkHandler
 
         return Task.CompletedTask;
     }
+    
 
     public void OnClientConnected<T>(T? client) where T : class
     {

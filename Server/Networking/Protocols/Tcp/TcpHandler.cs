@@ -388,6 +388,16 @@ public class TcpHandler : INetworkHandler, IDisposable
 
             message.Type = CommandType.DispatchMessage;
             MsgService.SendTcpMessage(toClient, message.ToJson());
+        }else if (message.TryParseData(out FileChunkMessageDto? chunkDto) && chunkDto is { ReceiverId: not null })
+        {
+            if (!MapUserIdToIp.TryGetValue(chunkDto.ReceiverId, out var receiverIp) ||
+                string.IsNullOrEmpty(receiverIp))
+                return Task.CompletedTask;
+            if (!Clients.TryGetValue(receiverIp, out var toClient))
+                return Task.CompletedTask;
+
+            message.Type = CommandType.DispatchMessage;
+            MsgService.SendTcpMessage(toClient, message.ToJson());
         }
         else
         {

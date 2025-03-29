@@ -1,5 +1,6 @@
 ﻿using Client.Models;
 using Client.Network;
+using Client.Services;
 using Shared;
 using Shared.Models;
 using Shared.Security.Interface;
@@ -30,7 +31,7 @@ namespace Client.Form
         public void AddMessage(TransferData? data, bool isMe)
         {
             if (data == null) return;
-            
+
             var rowPanel = CreateRowPanel(isMe);
 
             if (!isMe) data = DecryptTransferData(data);
@@ -330,19 +331,81 @@ namespace Client.Form
             var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
             var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
             if (_targetDto == null || transferData.RawData == null) return;
+
             // Encrypt raw data using DES
             transferData.RawData = desEncrypt.Encrypt(transferData.RawData, desEncrypt.EncryptKey);
+
             // Encrypt the DES key (to be used for decryption) with target's RSA key
             Logger.LogInfo($"Length {desEncrypt.DecryptKey.Length}, {_targetDto.EncryptKey.Length}");
-            transferData.KeyDecrypt = 
-                rsaEncrypt.Encrypt(desEncrypt.DecryptKey, _targetDto.EncryptKey);
-            //transferData.KeyDecrypt = desEncrypt.DecryptKey;
-            var response =
-                new MessageNetwork<MessageDto>(type: CommandType.DispatchMessage, StatusCode.Success,
-                    data: new MessageDto(receiverId: _targetDto?.Id, transferData)).ToJson();
-            //Send to Server
-            NetworkManager.Instance.TcpService.Send(response);
+            transferData.KeyDecrypt = rsaEncrypt.Encrypt(desEncrypt.DecryptKey, _targetDto.EncryptKey);
+            // transferData.KeyDecrypt = desEncrypt.DecryptKey;
+
+            // Giả sử nếu TransferData là kiểu file hoặc dữ liệu lớn, ta sẽ chunk toàn bộ TransferData
+            if (transferData.TransferType != TransferType.Text)
+            {
+                // Serialize toàn bộ đối tượng TransferData
+                byte[] serializedData = FileChunkService.SerializeTransferData(transferData);
+
+                int chunkSize = 8192; // 8KB mỗi chunk
+                int totalChunks = (int)Math.Ceiling((double)serializedData.Length / chunkSize);
+                Guid messageId = Guid.NewGuid(); // ID duy nhất cho TransferData
+
+                // Gửi các chunk trong Task riêng để không block luồng chính
+                Task.Run(async () =>
+                {
+                    for (int i = 0; i < totalChunks; i++)
+                    {
+                        int offset = i * chunkSize;
+                        int currentChunkSize = Math.Min(chunkSize, serializedData.Length - offset);
+                        byte[] chunkPayload = new byte[currentChunkSize];
+                        Buffer.BlockCopy(serializedData, offset, chunkPayload, 0, currentChunkSize);
+
+                        // Tạo ChunkDto chứa thông tin của chunk
+                        var chunkDto = new ChunkDto
+                        {
+                            MessageId = messageId,
+                            ChunkIndex = i,
+                            TotalChunks = totalChunks,
+                            Payload = chunkPayload
+                        };
+
+                        // Đóng gói thông tin ReceiverId và chunk vào FileChunkMessageDto
+                        var fileChunkMessage = new FileChunkMessageDto
+                        {
+                            ReceiverId = _targetDto?.Id,
+                            Chunk = chunkDto
+                        };
+
+                        // Đóng gói vào MessageNetwork với CommandType.DispatchMessage
+                        var message = new MessageNetwork<FileChunkMessageDto>(
+                            type: CommandType.DispatchMessage,
+                            code: StatusCode.Success,
+                            data: fileChunkMessage
+                        );
+
+                        // Serialize thành JSON (có newline để phân cách tin nhắn)
+                        string messageJson = message.ToJson();
+
+                        // Gửi chunk đến Server
+                        NetworkManager.Instance.TcpService.Send(messageJson);
+
+                        // Optional: Delay ngắn giữa các chunk để tránh quá tải
+                        await Task.Delay(10);
+                    }
+                });
+            }
+            else
+            {
+                // Nếu là tin nhắn text, gửi trực tiếp như cũ
+                var response = new MessageNetwork<MessageDto>(
+                    type: CommandType.DispatchMessage,
+                    code: StatusCode.Success,
+                    data: new MessageDto(receiverId: _targetDto?.Id, transferData)
+                ).ToJson();
+                NetworkManager.Instance.TcpService.Send(response);
+            }
         }
+
 
         private TransferData DecryptTransferData(TransferData transferData)
         {
@@ -351,8 +414,8 @@ namespace Client.Form
 
             if (transferData.KeyDecrypt == null || transferData.RawData == null) return transferData;
             // Decrypt the encrypted DES key using RSA private key
-             transferData.KeyDecrypt =
-                 rsaEncrypt.Decrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
+            transferData.KeyDecrypt =
+                rsaEncrypt.Decrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
             // Decrypt the raw data using the decrypted DES key
             transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
             return transferData;

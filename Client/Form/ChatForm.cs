@@ -512,15 +512,17 @@ namespace Client.Form
 
                                 var value = (d.Data.Chunk.ChunkIndex * 100) / totalChunks;
 
-                                progressFileSending.BeginInvoke((MethodInvoker)(() =>
+                                progressFileSending.BeginInvoke((MethodInvoker)(async () =>
                                 {
-                                    if (value >= 99)
+                                    Logger.LogInfo($"Index {_currentChunk.ChunkIndex} {_currentChunk.TotalChunks - 1}");
+                                    if (_currentChunk.ChunkIndex >= _currentChunk.TotalChunks - 1)
                                     {
+                                        await AddMessage(new TransferData(
+                                            FileHelper.GetTransferType(_selectedFilePath),
+                                            await File.ReadAllBytesAsync(_selectedFilePath)), true);
+                                        _selectedFilePath = "";
                                         progressFileSending.Visible = false;
                                         btnCancelSendFile.Visible = false;
-                                        _ = AddMessage(new TransferData(FileHelper.GetTransferType(_selectedFilePath),
-                                            File.ReadAllBytes(_selectedFilePath)), true);
-                                        _selectedFilePath = "";
                                     }
                                     else if (progressFileSending.Value != value) // Chỉ update nếu giá trị thay đổi
                                     {

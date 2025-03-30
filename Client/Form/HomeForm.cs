@@ -46,7 +46,7 @@ namespace Client.Form
 
             var lblWait = new Label
             {
-                Text = @"Please wait, handshake in progress...",
+                Text = @"Please wait, Connect in progress...",
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Font = new Font("Arial", 10, FontStyle.Bold)
@@ -182,7 +182,7 @@ namespace Client.Form
         {
             _waitingForm?.Close();
             // Xây dựng thông điệp hiển thị cho người dùng
-            var message = $"Do you want to start a handshake with {dtoRequest.FromUser?.UserName}?";
+            var message = $"Do you want to connect with {dtoRequest.FromUser?.UserName}?";
             var caption = "Handshake Confirmation";
 
             // Hiển thị dialog xác nhận với nút Yes/No
@@ -210,7 +210,7 @@ namespace Client.Form
         public void ShowHandshakeError(string errorMessage)
         {
             _waitingForm.Close();
-            MessageBox.Show(errorMessage, "Handshake Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(errorMessage, "Connect Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         public void LoadHandshake(ConversationRecord conversationRecord)
@@ -308,7 +308,7 @@ namespace Client.Form
         public void HandShakeSuccess(string description)
         {
             _waitingForm.Close();
-            MessageBox.Show(description, "Handshake Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(description, "Connect Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         #endregion

@@ -46,7 +46,7 @@ namespace Client.Form
             lstChatHistory.UseCompatibleStateImageBehavior = false;
             lstChatHistory.View = View.Details;
             this.lstChatHistory.Columns.Add("Username", 100);
-            this.lstChatHistory.Columns.Add("Last Handshake Time", 159);
+            this.lstChatHistory.Columns.Add("Last Connected Time", 159);
             this.lstChatHistory.Columns.Add("Status", 80);
             lstChatHistory.ItemActivate += OnHandshakeUserActivated;
             // 

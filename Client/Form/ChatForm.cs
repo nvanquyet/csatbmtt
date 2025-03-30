@@ -16,7 +16,7 @@ namespace Client.Form
         private string _selectedFilePath = "";
         private UserDto? _targetDto;
         private readonly Dictionary<string, byte[]?> _encryptedFileCache = new Dictionary<string, byte[]?>();
-        private CancellationTokenSource? _sendCts = null;
+        private CancellationTokenSource? _sendCts;
 
         public ChatForm()
         {
@@ -362,6 +362,7 @@ namespace Client.Form
         #region Encryption
 
         private ChunkDto? _currentChunk;
+
         private async Task BtnEncryptFile_Click()
         {
             if (string.IsNullOrEmpty(_selectedFilePath))
@@ -424,6 +425,7 @@ namespace Client.Form
                 }).ToJson();
             NetworkManager.Instance.TcpService.Send(message);
             MessageBox.Show(@"File sending cancelled.");
+            _sendCts?.Cancel();
         }
 
         private void SendToServer(TransferData transferData)
@@ -439,19 +441,21 @@ namespace Client.Form
 
                 progressFileSending.Visible = true;
                 btnCancelSendFile.Visible = true;
-                
-                
+                _sendCts = new CancellationTokenSource();
+
                 // Gửi các chunk trong Task riêng để không block luồng chính
                 Task.Run(async () =>
                 {
                     for (int i = 0; i < totalChunks; i++)
                     {
+                        _sendCts?.Token.ThrowIfCancellationRequested();
+
                         int offset = i * chunkSize;
                         int currentChunkSize = Math.Min(chunkSize, serializedData.Length - offset);
                         byte[] chunkPayload = new byte[currentChunkSize];
                         Buffer.BlockCopy(serializedData, offset, chunkPayload, 0, currentChunkSize);
 
-                        // Tạo ChunkDto chứa thông tin của chunk
+                        // Tạo ChunkDto cho chunk hiện tại
                         _currentChunk = new ChunkDto
                         {
                             MessageId = messageId,
@@ -460,19 +464,21 @@ namespace Client.Form
                             Payload = chunkPayload
                         };
 
+                        // Đóng gói ReceiverId và ChunkDto vào FileChunkMessageDto
                         var fileChunkMessage = new FileChunkMessageDto
                         {
                             ReceiverId = _targetDto?.Id,
                             Chunk = _currentChunk
                         };
 
+                        // Đóng gói vào MessageNetwork với CommandType.DispatchMessage
                         var message = new MessageNetwork<FileChunkMessageDto>(
                             type: CommandType.DispatchMessage,
                             code: StatusCode.Success,
                             data: fileChunkMessage
                         );
 
-                        var messageJson = message.ToJson();
+                        string messageJson = message.ToJson();
 
                         if (NetworkManager.Instance.TcpService is TcpProtocol tcp)
                         {
@@ -480,21 +486,21 @@ namespace Client.Form
                             {
                                 if (value >= 99)
                                 {
-                                    //Todo: hide progress
-                                    progressFileSending.Invoke((MethodInvoker)(() => progressFileSending.Visible = false));
+                                    progressFileSending.Invoke(
+                                        (MethodInvoker)(() => progressFileSending.Visible = false));
                                     btnCancelSendFile.Invoke((MethodInvoker)(() => btnCancelSendFile.Visible = false));
                                 }
                                 else
                                 {
-                                    //Todo: Show progress
-                                    progressFileSending.Invoke((MethodInvoker)(() => progressFileSending.Value = value));
+                                    progressFileSending.Invoke((MethodInvoker)(() =>
+                                        progressFileSending.Value = value));
                                 }
                             });
                         }
-
-                        await Task.Delay(10);
+                        
+                        await Task.Delay(10, _sendCts.Token);
                     }
-                });
+                }, _sendCts.Token);
             }
             else
             {

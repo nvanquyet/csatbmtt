@@ -8,6 +8,7 @@ namespace Client.Services;
 public class FileChunkService : Singleton<FileChunkService>
 {
     private ConcurrentDictionary<Guid, ConcurrentBag<ChunkDto>> _chunks = new ConcurrentDictionary<Guid, ConcurrentBag<ChunkDto>>();
+    private List<Guid> _chunksStop = new();
     private SemaphoreSlim _semaphore = new SemaphoreSlim(5); // Giới hạn 5 file xử lý cùng lúc
 
     public void ProcessChunk(FileChunkMessageDto fileChunkMsg, Action<Guid, byte[]>? OnFileReceived = null)
@@ -20,16 +21,15 @@ public class FileChunkService : Singleton<FileChunkService>
                 if (fileChunkMsg.Chunk == null) return;
                 var fileId = fileChunkMsg.Chunk.MessageId;
                 var totalChunks = fileChunkMsg.Chunk.TotalChunks;
-
-                // Kiểm tra nếu file đã bị hủy giữa chừng
-                if (!_chunks.ContainsKey(fileId)) 
+                
+                if (_chunksStop.Contains(fileId)) 
                 {
                     Logger.LogInfo($"File {fileId} đã bị hủy, dừng xử lý.");
                     return;
                 }
 
                 var chunkList = _chunks.GetOrAdd(fileId, _ => new ConcurrentBag<ChunkDto>());
-                chunkList.Add(fileChunkMsg.Chunk);
+                
 
                 if (chunkList.Count >= totalChunks)
                 {
@@ -62,14 +62,13 @@ public class FileChunkService : Singleton<FileChunkService>
 
 
 
-    public void CancelProcessChunk(FileChunkMessageDto fileChunkMsg, Action? OnFileCanceled = null)
+    public void CancelProcessChunk(FileChunkMessageDto fileChunkMsg, Action? onFileCanceled = null)
     {
         if (fileChunkMsg.Chunk == null) return;
         var fileId = fileChunkMsg.Chunk.MessageId;
-
-        if (!_chunks.TryRemove(fileId, out _)) return;
+        _chunksStop.Add(fileId);
         Logger.LogError($"Đã hủy nhận file: {fileId}");
-        OnFileCanceled?.Invoke();
+        onFileCanceled?.Invoke();
     }
     
     public static byte[] SerializeTransferData(TransferData transferData)

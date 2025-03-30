@@ -46,7 +46,7 @@ public partial class BackgroundForm : Form
             });
             Logger.LogWarning($"Exit");
             //Delay more 2s to exit
-            await Task.Delay(2000); 
+            await Task.Delay(100); 
             Application.Exit();
             Environment.Exit(0);
         };

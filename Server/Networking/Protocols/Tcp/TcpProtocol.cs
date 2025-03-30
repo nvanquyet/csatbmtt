@@ -69,13 +69,15 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
                         DataHandler.OnDataReceived(completeJson, endPoint);
                 }
             }
+
+            if ((bool)(!client?.Connected)!)  DataHandler?.OnClientDisconnect(client);
         }
         catch (Exception ex)
         {
             if (client is { Client.RemoteEndPoint: not null })
             {
                 DataHandler?.OnClientDisconnect(client);
-                Logger.LogError($"Client {client.Client.RemoteEndPoint} error: {ex.Message}");
+                Logger.LogError($"Client Disconnected: {ex.Message}");
             }
         }
     }

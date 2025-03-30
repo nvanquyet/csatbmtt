@@ -145,7 +145,6 @@ namespace Client.Form
             lblEncryptionStatus.Name = "lblEncryptionStatus";
             lblEncryptionStatus.Size = new Size(0, 15);
             lblEncryptionStatus.TabIndex = 13;
-            lblEncryptionStatus.Visible = false;
             // 
             // ChatForm
             // 

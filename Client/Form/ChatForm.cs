@@ -36,7 +36,7 @@ namespace Client.Form
 
             var rowPanel = CreateRowPanel(isMe);
 
-            if (!isMe) data = await DecryptTransferData(data);
+            if (!isMe) data = await DecryptTransferDataAsync(data);
 
             if (data.TransferType == TransferType.Text) {
                 if (data.RawData != null) AddTextMessage(rowPanel, ByteUtils.GetStringFromBytes(data.RawData), isMe);
@@ -188,7 +188,7 @@ namespace Client.Form
             if (!string.IsNullOrWhiteSpace(txtMessage.Text)) {
                 var transferData = new TransferData(TransferType.Text, ByteUtils.GetBytesFromString(txtMessage.Text));
 
-                AddMessage(transferData, true);
+                _ = AddMessage(transferData, true);
                 txtMessage.Clear();
                 SendToServer(transferData: transferData);
             }
@@ -198,7 +198,7 @@ namespace Client.Form
                     File.ReadAllBytes(_selectedFilePath));
                 SendToServer(transferData: _encryptedFile[_selectedFilePath]!);
                 _selectedFilePath = "";
-                AddMessage(transferData, true);
+                _ = AddMessage(transferData, true);
                 lblSelectedFile.Visible = false;
                 btnRemoveFile.Visible = false;
             }
@@ -245,7 +245,7 @@ namespace Client.Form
             lblSelectedFile.Visible = false;
             btnRemoveFile.Visible = false;
             
-            lblEncryptionStatus.Visible = true;
+            lblEncryptionStatus.Text = "";
         }
 
         private void BtnBack_Click(object sender, EventArgs e) {
@@ -364,7 +364,6 @@ namespace Client.Form
                 }
 
                 lblEncryptionStatus.Text = $@"Encryption Successful – Time: {sw.ElapsedMilliseconds} ms";
-                lblEncryptionStatus.Visible = true;
             }
             catch (Exception ex) {
                 MessageBox.Show($@"Encryption failed: {ex.Message}");
@@ -382,6 +381,7 @@ namespace Client.Form
             btnSendFile.Enabled = !isEncrypt;
             btnRemoveFile.Visible = !isEncrypt;
             btnRandomDesKey.Enabled = !isEncrypt;
+            txtDesKey.ReadOnly = isEncrypt; 
         }
 
         private void BtnCancelSendFile_Click(object sender, EventArgs e) {
@@ -474,27 +474,57 @@ namespace Client.Form
         }
 
 
-        private async Task<TransferData> DecryptTransferData(TransferData transferData) {
-            if (transferData.TransferType == TransferType.Text) return transferData;
+        private async Task<TransferData> DecryptTransferDataAsync(TransferData transferData)
+        {
+            if (transferData.TransferType == TransferType.Text) 
+                return transferData;
+
             var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
             var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
 
-            if (transferData.KeyDecrypt == null || transferData.RawData == null) return transferData;
-            // Decrypt the encrypted DES key using RSA private key
-            transferData.KeyDecrypt =
-                rsaEncrypt.Decrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
-            await Task.Run(() =>
+            if (transferData.KeyDecrypt == null || transferData.RawData == null) 
+                return transferData;
+
+            var sw = System.Diagnostics.Stopwatch.StartNew(); // Bắt đầu đếm thời gian
+
+            try
             {
-                lblEncryptionStatus.Visible = true;
-                lblEncryptionStatus.Text = @"Receiving data. Encrypting ....";
+                // Cập nhật UI trên luồng chính
+                await lblEncryptionStatus.InvokeAsync((Action)(() =>
+                {
+                    lblEncryptionStatus.Visible = true;
+                    lblEncryptionStatus.Text = @"Receiving data. Decrypting...";
+                }));
+
+                // Giải mã khóa DES bằng RSA trên luồng nền
+                transferData.KeyDecrypt = await Task.Run(() =>
+                    rsaEncrypt.Decrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey));
+
+                // Giải mã dữ liệu bằng DES nếu giải mã khóa thành công
                 if (transferData.KeyDecrypt != null)
-                    transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
-                return Task.CompletedTask;
-            });
-            
-            lblEncryptionStatus.Visible = false;
+                {
+                    transferData.RawData = await Task.Run(() =>
+                        desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Decryption error: {ex.Message}");
+            }
+            finally
+            {
+                sw.Stop(); // Dừng đếm thời gian
+
+                // Cập nhật UI trên luồng chính sau khi hoàn thành
+                await lblEncryptionStatus.InvokeAsync((Action)(() =>
+                {
+                    lblEncryptionStatus.Text = $@"Decryption completed in {sw.ElapsedMilliseconds} ms";
+                }));
+            }
+
             return transferData;
         }
+
 
         #endregion
 

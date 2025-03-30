@@ -8,10 +8,10 @@ namespace Client.Services;
 public class FileChunkService : Singleton<FileChunkService>
 {
     private ConcurrentDictionary<Guid, ConcurrentBag<ChunkDto>> _chunks = new ConcurrentDictionary<Guid, ConcurrentBag<ChunkDto>>();
-    private List<Guid> _chunksStop = new();
-    private SemaphoreSlim _semaphore = new SemaphoreSlim(5); // Giới hạn 5 file xử lý cùng lúc
+    private readonly List<Guid> _chunksStop = new();
+    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(5); // Giới hạn 5 file xử lý cùng lúc
 
-    public void ProcessChunk(FileChunkMessageDto fileChunkMsg, Action<Guid, byte[]>? OnFileReceived = null)
+    public void ProcessChunk(FileChunkMessageDto fileChunkMsg, Action<Guid, byte[]>? onFileReceived = null)
     {
         Task.Run(async () =>
         {
@@ -25,6 +25,7 @@ public class FileChunkService : Singleton<FileChunkService>
                 if (_chunksStop.Contains(fileId)) 
                 {
                     Logger.LogInfo($"File {fileId} đã bị hủy, dừng xử lý.");
+                    _chunksStop.Remove(fileId);
                     return;
                 }
 
@@ -46,7 +47,7 @@ public class FileChunkService : Singleton<FileChunkService>
                         offset += chunk.Payload.Length;
                     }
 
-                    OnFileReceived?.Invoke(fileId, fullData);
+                    onFileReceived?.Invoke(fileId, fullData);
                 }
             }
             catch (Exception ex)

@@ -32,7 +32,7 @@ public partial class BackgroundForm : Form
     {
         var timer = new Timer();
         timer.Interval = 500; // kiểm tra mỗi 500ms
-        timer.Tick += (sender, e) =>
+        timer.Tick += async (sender, e) =>
         {
             if (Application.OpenForms.Count > 1) return;
             timer.Stop();
@@ -45,6 +45,8 @@ public partial class BackgroundForm : Form
                 NetworkManager.Instance.UdpService.Stop();
             });
             Logger.LogWarning($"Exit");
+            //Delay more 2s to exit
+            await Task.Delay(2000); 
             Application.Exit();
             Environment.Exit(0);
         };

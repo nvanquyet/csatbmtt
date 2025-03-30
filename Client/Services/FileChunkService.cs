@@ -3,6 +3,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Shared;
 using Shared.Models;
+using Shared.Utils;
 using Shared.Utils.Patterns;
 
 namespace Client.Services;
@@ -88,53 +89,8 @@ public class FileChunkService : Singleton<FileChunkService>
         onFileCanceled?.Invoke();
     }
 
-    public static byte[] SerializeTransferData(TransferData transferData)
-    {
-        try
-        {
-            string json = Newtonsoft.Json.JsonConvert.SerializeObject(transferData, new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.Auto // Đảm bảo giữ nguyên kiểu dữ liệu
-            });
+    public static byte[] SerializeTransferData(TransferData transferData) => JsonUtils.Serialize(transferData);
 
-            byte[] data = Encoding.UTF8.GetBytes(json);
-
-            Logger.LogInfo($"Serialized JSON (length {data.Length}): {json}");
-            return data;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"Error serializing TransferData: {ex.Message}");
-            throw;
-        }
-    }
-
-
-    public static TransferData ParseTransferData(byte[] fullData)
-    {
-        try
-        {
-            if (fullData == null || fullData.Length == 0)
-            {
-                throw new Exception("Received empty data.");
-            }
-
-            string json = Encoding.UTF8.GetString(fullData);
-            Logger.LogInfo($"Received JSON (length {fullData.Length}): {json}");
-
-            TransferData transferData = Newtonsoft.Json.JsonConvert.DeserializeObject<TransferData>(json, new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.Auto
-            }) ?? throw new Exception("Can't parse TransferData from received data.");
-
-            return transferData;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError($"Error parsing TransferData: {ex.Message}");
-            throw;
-        }
-    }
-
+    public static TransferData? ParseTransferData(byte[] fullData) => JsonUtils.Deserialize<TransferData>(fullData);
 
 }

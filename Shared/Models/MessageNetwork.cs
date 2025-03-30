@@ -44,7 +44,7 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data)
     
     public bool TryParseData<TV>(out TV? newData)
     {
-        newData = default(TV);
+        newData = default;
         try
         {
             if (Data is JObject jObject)
@@ -53,7 +53,7 @@ public class MessageNetwork<T>(CommandType type, StatusCode code, T data)
                 return newData != null;
             }
         
-            if (Data is Newtonsoft.Json.Linq.JToken token)
+            if (Data is JToken token)
             {
                 newData = token.ToObject<TV>();
                 return newData != null;

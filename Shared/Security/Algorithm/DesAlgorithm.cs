@@ -20,6 +20,8 @@ public class DesAlgorithm : IEncryptionAlgorithm
     
     public static byte[] GenerateRandomKey(int length)
     {
+        if(length < 8 || length % 8 != 0) return [];
+        length /= 8;
         var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
         var random = new Random();
         var key = new byte[length];

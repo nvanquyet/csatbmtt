@@ -485,7 +485,12 @@ public class TcpHandler : INetworkHandler, IDisposable
             }
             else
             {
-                SendError(client, resultMsg);
+                var response = new MessageNetwork<string>(
+                    type: CommandType.Login,
+                    code: StatusCode.Failed,
+                    data: resultMsg
+                ).ToJson();
+                MsgService.SendTcpMessage(client, response);
             }
         }
         else

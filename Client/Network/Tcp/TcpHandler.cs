@@ -174,6 +174,7 @@ public class TcpHandler : INetworkHandler
                 break;
             default:
                 Logger.LogWarning("Unknown Command");
+                MessageBox.Show(@"Error... Please Try Again", @"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 break;
         }
 

@@ -15,7 +15,6 @@ namespace Client.Form
         private Button btnBack;
         private OpenFileDialog openFileDialog;
         private TextBox txtDesKey;           // Nhập DES key
-        private Label lblEncryptionStatus;   // Hiển thị thông báo mã hóa thành công và thời gian mã hóa
         private ProgressBar progressFileSending; // Hiển thị tiến trình gửi file
         private Button btnCancelSendFile;    // Nút hủy tiến trình gửi file
 
@@ -29,10 +28,10 @@ namespace Client.Form
             btnBack = new Button();
             openFileDialog = new OpenFileDialog();
             txtDesKey = new TextBox();
-            lblEncryptionStatus = new Label();
             progressFileSending = new ProgressBar();
             btnCancelSendFile = new Button();
             btnRandomDesKey = new Button();
+            lblEncryptionStatus = new Label();
             SuspendLayout();
             // 
             // messageContainer
@@ -112,16 +111,6 @@ namespace Client.Form
             txtDesKey.Size = new Size(150, 23);
             txtDesKey.TabIndex = 8;
             // 
-            // lblEncryptionStatus
-            // 
-            lblEncryptionStatus.AutoSize = true;
-            lblEncryptionStatus.Font = new Font("Arial", 9F, FontStyle.Bold);
-            lblEncryptionStatus.ForeColor = Color.Green;
-            lblEncryptionStatus.Location = new Point(780, 50);
-            lblEncryptionStatus.Name = "lblEncryptionStatus";
-            lblEncryptionStatus.Size = new Size(0, 15);
-            lblEncryptionStatus.TabIndex = 9;
-            // 
             // progressFileSending
             // 
             progressFileSending.Location = new Point(10, 490);
@@ -137,8 +126,8 @@ namespace Client.Form
             btnCancelSendFile.Size = new Size(30, 25);
             btnCancelSendFile.TabIndex = 11;
             btnCancelSendFile.Text = "❌";
-            btnCancelSendFile.Click += BtnCancelSendFile_Click;
             btnCancelSendFile.Visible = false;
+            btnCancelSendFile.Click += BtnCancelSendFile_Click;
             // 
             // btnRandomDesKey
             // 
@@ -149,9 +138,19 @@ namespace Client.Form
             btnRandomDesKey.Text = "RandomKey";
             btnRandomDesKey.Click += OnClickRandomKey;
             // 
+            // lblEncryptionStatus
+            // 
+            lblEncryptionStatus.AutoSize = true;
+            lblEncryptionStatus.Location = new Point(300, 531);
+            lblEncryptionStatus.Name = "lblEncryptionStatus";
+            lblEncryptionStatus.Size = new Size(0, 15);
+            lblEncryptionStatus.TabIndex = 13;
+            lblEncryptionStatus.Visible = false;
+            // 
             // ChatForm
             // 
             ClientSize = new Size(819, 593);
+            Controls.Add(lblEncryptionStatus);
             Controls.Add(btnRandomDesKey);
             Controls.Add(btnBack);
             Controls.Add(messageContainer);
@@ -161,7 +160,6 @@ namespace Client.Form
             Controls.Add(btnSendFile);
             Controls.Add(btnSend);
             Controls.Add(txtDesKey);
-            Controls.Add(lblEncryptionStatus);
             Controls.Add(progressFileSending);
             Controls.Add(btnCancelSendFile);
             Name = "ChatForm";
@@ -180,5 +178,6 @@ namespace Client.Form
             }
         }
         private Button btnRandomDesKey;
+        private Label lblEncryptionStatus;
     }
 }

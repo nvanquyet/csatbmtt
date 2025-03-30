@@ -12,42 +12,36 @@ using Shared.Utils;
 
 namespace Client.Form
 {
-    public partial class ChatForm : Form
-    {
+    public partial class ChatForm : Form {
         private string _selectedFilePath = "";
         private UserDto? _targetDto;
         private readonly Dictionary<string, TransferData?> _encryptedFile = new();
         private CancellationTokenSource? _sendCts;
 
-        public ChatForm()
-        {
+        public ChatForm() {
             InitializeComponent();
             messageContainer.AutoScroll = true;
             OnClickRandomKey(null, null);
             //LoadSampleMessages();
         }
 
-        public void SetUserTarget(UserDto? userDto)
-        {
+        public void SetUserTarget(UserDto? userDto) {
             _targetDto = userDto;
         }
 
         #region Add Message
 
-        public void AddMessage(TransferData? data, bool isMe)
-        {
+        public void AddMessage(TransferData? data, bool isMe) {
             if (data == null) return;
 
             var rowPanel = CreateRowPanel(isMe);
 
             if (!isMe) data = DecryptTransferData(data);
 
-            if (data.TransferType == TransferType.Text)
-            {
+            if (data.TransferType == TransferType.Text) {
                 if (data.RawData != null) AddTextMessage(rowPanel, ByteUtils.GetStringFromBytes(data.RawData), isMe);
             }
-            else
-            {
+            else {
                 AddFileMessage(rowPanel, data, isMe);
             }
 
@@ -57,13 +51,11 @@ namespace Client.Form
             messageContainer.PerformLayout();
         }
 
-        private void AddTextMessage(FlowLayoutPanel rowPanel, string text, bool isMe)
-        {
+        private void AddTextMessage(FlowLayoutPanel rowPanel, string text, bool isMe) {
             int maxBubbleWidth = messageContainer.ClientSize.Width - 40;
 
             // Panel chứa tin nhắn
-            var messagePanel = new Panel
-            {
+            var messagePanel = new Panel {
                 AutoSize = true,
                 MaximumSize = new Size(maxBubbleWidth, 0),
                 Padding = new Padding(10),
@@ -72,8 +64,7 @@ namespace Client.Form
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            var messageLabel = new Label
-            {
+            var messageLabel = new Label {
                 Text = text,
                 AutoSize = true,
                 MaximumSize = new Size(maxBubbleWidth - 20, 0),
@@ -83,35 +74,30 @@ namespace Client.Form
             messagePanel.Controls.Add(messageLabel);
 
             // Filler panel giúp đẩy messagePanel sang phải (nếu isMe = true)
-            var filler = new Panel
-            {
+            var filler = new Panel {
                 Height = 1,
                 Margin = Padding.Empty,
                 Width = Math.Max(rowPanel.Width - messagePanel.PreferredSize.Width - 35, 10)
             };
 
             rowPanel.Controls.Clear();
-            if (isMe)
-            {
+            if (isMe) {
                 // Tin nhắn của "mình" nằm bên phải
                 rowPanel.Controls.Add(filler);
                 rowPanel.Controls.Add(messagePanel);
             }
-            else
-            {
+            else {
                 // Tin nhắn của "người khác" nằm bên trái
                 rowPanel.Controls.Add(messagePanel);
                 rowPanel.Controls.Add(filler);
             }
         }
 
-        private void AddFileMessage(FlowLayoutPanel rowPanel, TransferData data, bool isMe)
-        {
+        private void AddFileMessage(FlowLayoutPanel rowPanel, TransferData data, bool isMe) {
             int maxBubbleWidth = messageContainer.ClientSize.Width - 40;
 
             // Tạo TableLayoutPanel với 1 hàng, 2 cột
-            var tablePanel = new TableLayoutPanel
-            {
+            var tablePanel = new TableLayoutPanel {
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 ColumnCount = 2,
@@ -131,20 +117,16 @@ namespace Client.Form
 
             // Tạo control hiển thị nội dung file (nếu ảnh thì PictureBox, nếu khác thì Label)
             Control contentControl;
-            if (isImage && data.RawData != null)
-            {
-                var pictureBox = new PictureBox
-                {
+            if (isImage && data.RawData != null) {
+                var pictureBox = new PictureBox {
                     Image = Image.FromStream(new MemoryStream(data.RawData)),
                     SizeMode = PictureBoxSizeMode.AutoSize,
                     Dock = DockStyle.Fill,
                 };
                 contentControl = pictureBox;
             }
-            else
-            {
-                var lblFileInfo = new Label
-                {
+            else {
+                var lblFileInfo = new Label {
                     Text =
                         $@"{FileHelper.GetFileTypeText(data.TransferType)}
 {(data.RawData != null ? ByteUtils.GetFileSize(data.RawData.Length) : 10)}",
@@ -160,8 +142,7 @@ namespace Client.Form
             tablePanel.Controls.Add(contentControl, 1, 0);
 
             // Tạo nút Save
-            var btnSave = new Button
-            {
+            var btnSave = new Button {
                 Text = "💾 Save",
                 Tag = data,
                 AutoSize = true,
@@ -171,8 +152,7 @@ namespace Client.Form
             btnSave.Click += BtnSaveFile_Click;
 
             // Để nút Save nằm bên dưới, chúng ta tạo 1 Panel chứa btnSave và dock nó xuống dưới
-            var btnPanel = new Panel
-            {
+            var btnPanel = new Panel {
                 Dock = DockStyle.Fill,
                 AutoSize = true
             };
@@ -183,22 +163,19 @@ namespace Client.Form
             tablePanel.Controls.Add(btnPanel, 0, 0);
 
             // Tạo filler panel để căn chỉnh bong bóng theo lề (nếu cần)
-            var filler = new Panel
-            {
+            var filler = new Panel {
                 Height = 1,
                 Margin = Padding.Empty,
                 Width = Math.Max(rowPanel.Width - tablePanel.PreferredSize.Width - 35, 10)
             };
 
             rowPanel.Controls.Clear();
-            if (isMe)
-            {
+            if (isMe) {
                 // Nếu là tin nhắn của "mình", đẩy sang bên phải
                 rowPanel.Controls.Add(filler);
                 rowPanel.Controls.Add(tablePanel);
             }
-            else
-            {
+            else {
                 // Nếu là tin nhắn của "người khác", đặt bên trái
                 rowPanel.Controls.Add(tablePanel);
                 rowPanel.Controls.Add(filler);
@@ -207,10 +184,8 @@ namespace Client.Form
 
         #endregion
 
-        private void BtnSend_Click(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrWhiteSpace(txtMessage.Text))
-            {
+        private void BtnSend_Click(object sender, EventArgs e) {
+            if (!string.IsNullOrWhiteSpace(txtMessage.Text)) {
                 var transferData = new TransferData(TransferType.Text, ByteUtils.GetBytesFromString(txtMessage.Text));
 
                 AddMessage(transferData, true);
@@ -218,8 +193,7 @@ namespace Client.Form
                 SendToServer(transferData: transferData);
             }
 
-            if (_selectedFilePath.Length > 0)
-            {
+            if (_selectedFilePath.Length > 0) {
                 var transferData = new TransferData(FileHelper.GetTransferType(_selectedFilePath),
                     File.ReadAllBytes(_selectedFilePath));
                 SendToServer(transferData: _encryptedFile[_selectedFilePath]!);
@@ -231,19 +205,16 @@ namespace Client.Form
         }
 
 
-        private void BtnSendFile_Click(object sender, EventArgs e)
-        {
+        private void BtnSendFile_Click(object sender, EventArgs e) {
             // Lấy DES key từ txtDesKey
             string desKey = txtDesKey.Text.Trim();
-            if (string.IsNullOrEmpty(desKey))
-            {
+            if (string.IsNullOrEmpty(desKey)) {
                 MessageBox.Show(@"Please enter DES key.");
                 BtnRemoveFile_Click(null, null);
                 return;
             }
 
-            if (desKey.Length != 8)
-            {
+            if (desKey.Length != 8) {
                 MessageBox.Show(@"Des key must be 8 characters long.");
                 BtnRemoveFile_Click(null, null);
                 return;
@@ -255,8 +226,7 @@ namespace Client.Form
             ShowSelectedFile();
         }
 
-        private void ShowSelectedFile()
-        {
+        private void ShowSelectedFile() {
             //Cut with / to get final path
             var index = _selectedFilePath.LastIndexOf('\\');
             var fileName = (index >= 0)
@@ -269,17 +239,16 @@ namespace Client.Form
             _ = BtnEncryptFile_Click();
         }
 
-        private void BtnRemoveFile_Click(object? sender, EventArgs? e)
-        {
+        private void BtnRemoveFile_Click(object? sender, EventArgs? e) {
             _encryptedFile[_selectedFilePath] = null;
             _selectedFilePath = "";
             lblSelectedFile.Visible = false;
             btnRemoveFile.Visible = false;
+            
             lblEncryptionStatus.Visible = true;
         }
 
-        private void BtnBack_Click(object sender, EventArgs e)
-        {
+        private void BtnBack_Click(object sender, EventArgs e) {
             //Show confirm 
             var message = $"Do you want to cancel a handshake with {_targetDto?.UserName}?";
             var caption = "Cancel Handshake Confirmation";
@@ -292,8 +261,7 @@ namespace Client.Form
             NetworkManager.Instance.TcpService.Send(response);
         }
 
-        private void BtnSaveFile_Click(object? sender, EventArgs e)
-        {
+        private void BtnSaveFile_Click(object? sender, EventArgs e) {
             // Kiểm tra dữ liệu hợp lệ
             if (sender is not Button { Tag: TransferData data })
                 return;
@@ -305,23 +273,19 @@ namespace Client.Form
             saveDialog.Filter = FileHelper.GetFileFilter(data.TransferType);
 
             if (saveDialog.ShowDialog() != DialogResult.OK) return;
-            try
-            {
+            try {
                 if (data.RawData != null) File.WriteAllBytes(saveDialog.FileName, data.RawData);
                 MessageBox.Show(@"Lưu file thành công!", @"Thông báo",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 MessageBox.Show($@"Lỗi khi lưu file: {ex.Message}", @"Lỗi",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private FlowLayoutPanel CreateRowPanel(bool isMe)
-        {
-            FlowLayoutPanel rowPanel = new FlowLayoutPanel
-            {
+        private FlowLayoutPanel CreateRowPanel(bool isMe) {
+            FlowLayoutPanel rowPanel = new FlowLayoutPanel {
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
                 AutoSize = true,
@@ -331,8 +295,7 @@ namespace Client.Form
             };
 
             if (!isMe) return rowPanel;
-            var filler = new Panel
-            {
+            var filler = new Panel {
                 AutoSize = false,
                 Margin = new Padding(0),
                 Height = 1,
@@ -342,8 +305,7 @@ namespace Client.Form
             return rowPanel;
         }
 
-        protected override void Dispose(bool disposing)
-        {
+        protected override void Dispose(bool disposing) {
             _sendCts?.Cancel();
             var response = new MessageNetwork<HandshakeDto>(type: CommandType.HandshakeCancel, StatusCode.Success,
                 new HandshakeDto(SessionManager.GetUserDto(), _targetDto)).ToJson();
@@ -355,18 +317,15 @@ namespace Client.Form
 
         private ChunkDto? _currentChunk;
 
-        private async Task BtnEncryptFile_Click()
-        {
-            if (string.IsNullOrEmpty(_selectedFilePath) || !File.Exists(_selectedFilePath))
-            {
+        private async Task BtnEncryptFile_Click() {
+            if (string.IsNullOrEmpty(_selectedFilePath) || !File.Exists(_selectedFilePath)) {
                 MessageBox.Show(@"Please select a valid file first.");
                 BtnRemoveFile_Click(null, null);
                 return;
             }
 
             string desKey = txtDesKey.Text.Trim();
-            if (string.IsNullOrEmpty(desKey))
-            {
+            if (string.IsNullOrEmpty(desKey)) {
                 MessageBox.Show(@"DES key cannot be empty.");
                 return;
             }
@@ -374,35 +333,28 @@ namespace Client.Form
             Encrypting(true);
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            try
-            {
+            try {
                 lblEncryptionStatus.Text = @"Encrypting...";
 
-                byte[]? encryptedData = await Task.Run(() =>
-                {
-                    try
-                    {
+                byte[]? encryptedData = await Task.Run(() => {
+                    try {
                         byte[] fileData = File.ReadAllBytes(_selectedFilePath);
                         var desCrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
                         return desCrypt.Encrypt(fileData, ByteUtils.GetBytesFromString(desKey));
                     }
-                    catch (Exception ex)
-                    {
+                    catch (Exception ex) {
                         Logger.LogError($"File encryption error: {ex.Message}");
                         return null;
                     }
                 });
 
-                if (encryptedData == null)
-                {
+                if (encryptedData == null) {
                     MessageBox.Show(@"Encryption failed.");
                     return;
                 }
 
-                if (_targetDto is { EncryptKey.Length: > 0 })
-                {
-                    var tsData = new TransferData(TransferType.File, encryptedData)
-                    {
+                if (_targetDto is { EncryptKey.Length: > 0 }) {
+                    var tsData = new TransferData(FileHelper.GetTransferType(_selectedFilePath), encryptedData) {
                         KeyDecrypt = EncryptionService.Instance
                             .GetAlgorithm(EncryptionType.Rsa)
                             .Encrypt(ByteUtils.GetBytesFromString(desKey), _targetDto.EncryptKey)
@@ -414,21 +366,18 @@ namespace Client.Form
                 lblEncryptionStatus.Text = $@"Encryption Successful – Time: {sw.ElapsedMilliseconds} ms";
                 lblEncryptionStatus.Visible = true;
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 MessageBox.Show($@"Encryption failed: {ex.Message}");
                 Logger.LogError($"Encryption failed: {ex}");
             }
-            finally
-            {
+            finally {
                 sw.Stop();
                 Encrypting(false);
             }
         }
 
 
-        private void Encrypting(bool isEncrypt)
-        {
+        private void Encrypting(bool isEncrypt) {
             btnSend.Enabled = !isEncrypt;
             btnSendFile.Enabled = !isEncrypt;
             btnRemoveFile.Visible = !isEncrypt;
@@ -436,16 +385,14 @@ namespace Client.Form
             lblEncryptionStatus.Visible = isEncrypt;
         }
 
-        private void BtnCancelSendFile_Click(object sender, EventArgs e)
-        {
+        private void BtnCancelSendFile_Click(object sender, EventArgs e) {
             // Gọi phương thức hủy gửi file
             // Ví dụ: NetworkManager.Instance.TcpService.CancelSend();
             // Sau đó ẩn progress bar và nút cancel
             progressFileSending.Visible = false;
             btnCancelSendFile.Visible = false;
             var message = new MessageNetwork<FileChunkMessageDto>(CommandType.CancelDispatchMessage, StatusCode.Success,
-                new FileChunkMessageDto()
-                {
+                new FileChunkMessageDto() {
                     ReceiverId = _targetDto?.Id,
                     Chunk = _currentChunk
                 }).ToJson();
@@ -454,10 +401,8 @@ namespace Client.Form
             _sendCts?.Cancel();
         }
 
-        private void SendToServer(TransferData transferData)
-        {
-            if (transferData.TransferType != TransferType.Text)
-            {
+        private void SendToServer(TransferData transferData) {
+            if (transferData.TransferType != TransferType.Text) {
                 // Serialize toàn bộ đối tượng TransferData
                 byte[] serializedData = FileChunkService.SerializeTransferData(transferData);
                 int chunkSize = 16384;
@@ -469,10 +414,8 @@ namespace Client.Form
                 _sendCts = new CancellationTokenSource();
 
                 // Gửi các chunk trong Task riêng để không block luồng chính
-                Task.Run(async () =>
-                {
-                    for (int i = 0; i < totalChunks; i++)
-                    {
+                Task.Run(async () => {
+                    for (int i = 0; i < totalChunks; i++) {
                         _sendCts?.Token.ThrowIfCancellationRequested();
 
                         int offset = i * chunkSize;
@@ -481,8 +424,7 @@ namespace Client.Form
                         Buffer.BlockCopy(serializedData, offset, chunkPayload, 0, currentChunkSize);
 
                         // Tạo ChunkDto cho chunk hiện tại
-                        _currentChunk = new ChunkDto
-                        {
+                        _currentChunk = new ChunkDto {
                             MessageId = messageId,
                             ChunkIndex = i,
                             TotalChunks = totalChunks,
@@ -490,8 +432,7 @@ namespace Client.Form
                         };
 
                         // Đóng gói ReceiverId và ChunkDto vào FileChunkMessageDto
-                        var fileChunkMessage = new FileChunkMessageDto
-                        {
+                        var fileChunkMessage = new FileChunkMessageDto {
                             ReceiverId = _targetDto?.Id,
                             Chunk = _currentChunk
                         };
@@ -505,18 +446,14 @@ namespace Client.Form
 
                         string messageJson = message.ToJson();
 
-                        if (NetworkManager.Instance.TcpService is TcpProtocol tcp)
-                        {
-                            tcp.Send(messageJson, (id, value) =>
-                            {
-                                if (value >= 99)
-                                {
+                        if (NetworkManager.Instance.TcpService is TcpProtocol tcp) {
+                            tcp.Send(messageJson, (id, value) => {
+                                if (value >= 99) {
                                     progressFileSending.Invoke(
                                         (MethodInvoker)(() => progressFileSending.Visible = false));
                                     btnCancelSendFile.Invoke((MethodInvoker)(() => btnCancelSendFile.Visible = false));
                                 }
-                                else
-                                {
+                                else {
                                     progressFileSending.Invoke((MethodInvoker)(() =>
                                         progressFileSending.Value = value));
                                 }
@@ -527,8 +464,7 @@ namespace Client.Form
                     }
                 }, _sendCts.Token);
             }
-            else
-            {
+            else {
                 var response = new MessageNetwork<MessageDto>(
                     type: CommandType.DispatchMessage,
                     code: StatusCode.Success,
@@ -539,8 +475,7 @@ namespace Client.Form
         }
 
 
-        private TransferData DecryptTransferData(TransferData transferData)
-        {
+        private TransferData DecryptTransferData(TransferData transferData) {
             if (transferData.TransferType == TransferType.Text) return transferData;
             var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
             var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
@@ -557,11 +492,11 @@ namespace Client.Form
 
         #endregion
 
-        private void OnClickRandomKey(object? sender, EventArgs? e)
-        {
+        private void OnClickRandomKey(object? sender, EventArgs? e) {
             var des = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
             des.GenerateKey();
             txtDesKey.Text = ByteUtils.GetStringFromBytes(des.EncryptKey);
         }
+
     }
 }

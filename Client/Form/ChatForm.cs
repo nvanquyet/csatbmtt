@@ -1,4 +1,5 @@
-﻿using Client.Models;
+﻿using System.Collections.Concurrent;
+using Client.Models;
 using Client.Network;
 using Client.Network.Tcp;
 using Client.Services;
@@ -376,6 +377,7 @@ namespace Client.Form
             btnSend.Enabled = false;
             btnSendFile.Enabled = false;
             btnRemoveFile.Visible = false;
+            btnRandomDesKey.Enabled = false;
             // Bắt đầu quá trình mã hóa file
             var sw = System.Diagnostics.Stopwatch.StartNew();
             try
@@ -403,6 +405,7 @@ namespace Client.Form
                 btnSend.Enabled = true;
                 btnSendFile.Enabled = true;
                 btnRemoveFile.Visible = true;
+                btnRandomDesKey.Enabled = true;
             }
         }
 
@@ -430,12 +433,13 @@ namespace Client.Form
                 // Serialize toàn bộ đối tượng TransferData
                 byte[] serializedData = FileChunkService.SerializeTransferData(transferData);
 
-                int chunkSize = 8192; // 8KB mỗi chunk
+                int chunkSize = 16384; // 8KB mỗi chunk
                 int totalChunks = (int)Math.Ceiling((double)serializedData.Length / chunkSize);
                 Guid messageId = Guid.NewGuid(); // ID duy nhất cho TransferData
 
                 progressFileSending.Visible = true;
                 btnCancelSendFile.Visible = true;
+                
                 
                 // Gửi các chunk trong Task riêng để không block luồng chính
                 Task.Run(async () =>

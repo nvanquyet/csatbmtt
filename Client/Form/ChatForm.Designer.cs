@@ -128,6 +128,7 @@ namespace Client.Form
             progressFileSending.Name = "progressFileSending";
             progressFileSending.Size = new Size(764, 25);
             progressFileSending.TabIndex = 10;
+            progressFileSending.Visible = false;
             // 
             // btnCancelSendFile
             // 
@@ -137,6 +138,7 @@ namespace Client.Form
             btnCancelSendFile.TabIndex = 11;
             btnCancelSendFile.Text = "❌";
             btnCancelSendFile.Click += BtnCancelSendFile_Click;
+            btnCancelSendFile.Visible = false;
             // 
             // btnRandomDesKey
             // 

@@ -88,6 +88,7 @@ namespace Client.Form
             btnRemoveFile.TabIndex = 3;
             btnRemoveFile.Text = "❌";
             btnRemoveFile.Click += BtnRemoveFile_Click;
+            btnRemoveFile.Visible = false;
             // 
             // btnBack
             // 

@@ -155,7 +155,7 @@ public class TcpHandler : INetworkHandler
                         }
                         else
                         {
-                            chatForm.AddMessage(transferData, false);
+                            _ = chatForm.AddMessage(transferData, false);
                         }
                     });
                 }

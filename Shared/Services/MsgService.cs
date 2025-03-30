@@ -16,18 +16,18 @@ public static class MsgService
     }
     private interface IMessageDispatcher<in T> where T : class
     {
-        void EnqueueMessage(T? client, string message, Action<string, int>? progressCallback = null);
+        void EnqueueMessage(T? client, string message, Action<byte[]>? progressCallback = null);
     }
     private abstract class MessageDispatcherBase<T> : IMessageDispatcher<T> where T : class
     {
         private static readonly ConcurrentDictionary<T, ClientQueue> ClientQueues = new();
 
-        public void EnqueueMessage(T? client, string message, Action<string, int>? progressCallback = null)
+        public void EnqueueMessage(T? client, string message, Action<byte[]>? progressCallback = null)
         {
             EnqueueMessage(client, ByteUtils.GetBytesFromString(message), progressCallback);
         }
 
-        private void EnqueueMessage(T? client, byte[] data, Action<string, int>? progressCallback = null)
+        private void EnqueueMessage(T? client, byte[] data,Action<byte[]>? progressCallback = null)
         {
             if (client is null or TcpClient { Connected: false })
             {
@@ -44,22 +44,18 @@ public static class MsgService
             }
         }
 
-        private async Task ProcessQueue(T client, ClientQueue queue, Action<string, int>? progressCallback = null)
+        private async Task ProcessQueue(T client, ClientQueue queue, Action<byte[]>? progressCallback = null)
         {
             queue.IsProcessing = true;
             try
             {
-                int totalMessages = queue.Queue.Count;
-                int sentMessages = 0;
-
                 while (queue.Queue.TryDequeue(out byte[]? data))
                 {
                     await queue.Semaphore.WaitAsync();
                     try
                     {
                         await SendMessage(client, data);
-                        sentMessages++;
-                        progressCallback?.Invoke("Message sent", (sentMessages * 100) / totalMessages);
+                        progressCallback?.Invoke(data);
                     }
                     finally
                     {
@@ -137,13 +133,13 @@ public static class MsgService
     private static readonly IMessageDispatcher<TcpClient> TcpDispatch = new TcpDispatcher();
     private static readonly IMessageDispatcher<UdpClient> UdpDispatch = new UdpDispatcher();
 
-    public static void SendTcpMessage(TcpClient? tcpClient, string msg, Action<string, int>? progressCallback = null)
+    public static void SendTcpMessage(TcpClient? tcpClient, string msg, Action<byte[]>? progressCallback = null)
         => TcpDispatch.EnqueueMessage(tcpClient, msg, progressCallback);
     
-    public static void SendUdpMessage(UdpClient? udpClient, string msg, Action<string, int>? progressCallback = null)
+    public static void SendUdpMessage(UdpClient? udpClient, string msg, Action<byte[]>? progressCallback = null)
         => UdpDispatch.EnqueueMessage(udpClient, msg, progressCallback);
 
-    public static void SendErrorMessage(TcpClient? client, string error, Action<string, int>? progressCallback = null)
+    public static void SendErrorMessage(TcpClient? client, string error, Action<byte[]>? progressCallback = null)
     {
         var errorMessage = new MessageNetwork<ErrorMessage>
         (

@@ -285,6 +285,7 @@ namespace Client.Form
             _selectedFilePath = "";
             lblSelectedFile.Visible = false;
             btnRemoveFile.Visible = false;
+            lblEncryptionStatus.Visible = true;
         }
 
         private void BtnBack_Click(object sender, EventArgs e)
@@ -380,6 +381,7 @@ namespace Client.Form
             btnSendFile.Enabled = false;
             btnRemoveFile.Visible = false;
             btnRandomDesKey.Enabled = false;
+            lblEncryptionStatus.Visible = true;
             // Bắt đầu quá trình mã hóa file
             var sw = System.Diagnostics.Stopwatch.StartNew();
             try
@@ -435,7 +437,7 @@ namespace Client.Form
             {
                 // Serialize toàn bộ đối tượng TransferData
                 byte[] serializedData = FileChunkService.SerializeTransferData(transferData);
-
+                Logger.LogInfo($"Serialized data: {serializedData.Length} bytes");
                 int chunkSize = 16384; // 8KB mỗi chunk
                 int totalChunks = (int)Math.Ceiling((double)serializedData.Length / chunkSize);
                 Guid messageId = Guid.NewGuid(); // ID duy nhất cho TransferData

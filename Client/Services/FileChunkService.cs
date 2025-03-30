@@ -57,6 +57,8 @@ public class FileChunkService : Singleton<FileChunkService>
                     byte[] fullData = new byte[totalSize];
                     int offset = 0;
 
+                    
+
                     // Ghép file theo thứ tự
                     foreach (var chunk in orderedChunks)
                     {
@@ -64,7 +66,8 @@ public class FileChunkService : Singleton<FileChunkService>
                         Buffer.BlockCopy(chunk.Payload, 0, fullData, offset, chunk.Payload.Length);
                         offset += chunk.Payload.Length;
                     }
-                    
+                    Logger.LogInfo($"Total chunks received: {chunkList.Count}, expected: {totalChunks}");
+                    Logger.LogInfo($"Total data size: {totalSize}, expected: {fileChunkMsg.Chunk.Payload.Length * totalChunks}");
                     onFileReceived?.Invoke(fileId, fullData);
                 }
             }

@@ -7,9 +7,9 @@ namespace Client.Services;
 
 public class FileChunkService : Singleton<FileChunkService>
 {
-    private ConcurrentDictionary<Guid, ConcurrentBag<ChunkDto>> _chunks = new ConcurrentDictionary<Guid, ConcurrentBag<ChunkDto>>();
-    private readonly List<Guid> _chunksStop = new();
-    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(5); // Giới hạn 5 file xử lý cùng lúc
+    private readonly ConcurrentDictionary<Guid, ConcurrentBag<ChunkDto>> _chunks = new();
+    private readonly List<Guid> _chunksStop = [];
+    private readonly SemaphoreSlim _semaphore = new(5); 
 
     public void ProcessChunk(FileChunkMessageDto fileChunkMsg, Action<Guid, byte[]>? onFileReceived = null)
     {
@@ -24,8 +24,10 @@ public class FileChunkService : Singleton<FileChunkService>
                 
                 if (_chunksStop.Contains(fileId)) 
                 {
-                    Logger.LogInfo($"File {fileId} đã bị hủy, dừng xử lý.");
+                    Logger.LogInfo($"File {fileId} canceled, stop processing.");
                     _chunksStop.Remove(fileId);
+                    //Remove data chunks
+                    _chunks.TryRemove(fileId, out _);
                     return;
                 }
 
@@ -61,14 +63,12 @@ public class FileChunkService : Singleton<FileChunkService>
         });
     }
 
-
-
     public void CancelProcessChunk(FileChunkMessageDto fileChunkMsg, Action? onFileCanceled = null)
     {
         if (fileChunkMsg.Chunk == null) return;
         var fileId = fileChunkMsg.Chunk.MessageId;
         _chunksStop.Add(fileId);
-        Logger.LogError($"Đã hủy nhận file: {fileId}");
+        Logger.LogError($"Cancel Process file: {fileId}");
         onFileCanceled?.Invoke();
     }
     
@@ -82,7 +82,7 @@ public class FileChunkService : Singleton<FileChunkService>
     {
         string json = System.Text.Encoding.UTF8.GetString(fullData);
         TransferData transferData = Newtonsoft.Json.JsonConvert.DeserializeObject<TransferData>(json)
-                                    ?? throw new Exception("Không thể parse TransferData từ dữ liệu nhận được.");
+                                    ?? throw new Exception("Can't parse TransferData from received data.");
         return transferData;
     }
 }

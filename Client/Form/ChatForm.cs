@@ -353,6 +353,7 @@ namespace Client.Form
 
         protected override void Dispose(bool disposing)
         {
+            _sendCts?.Cancel();
             var response = new MessageNetwork<HandshakeDto>(type: CommandType.HandshakeCancel, StatusCode.Success,
                 new HandshakeDto(SessionManager.GetUserDto(), _targetDto)).ToJson();
             NetworkManager.Instance.TcpService.Send(response);

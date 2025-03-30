@@ -373,7 +373,6 @@ namespace Client.Form
             // Lấy DES key từ txtDesKey
             string desKey = txtDesKey.Text.Trim();
 
-            btnEncryptFile.Enabled = false;
             btnSend.Enabled = false;
             btnSendFile.Enabled = false;
             btnRemoveFile.Visible = false;
@@ -401,7 +400,6 @@ namespace Client.Form
             finally
             {
                 sw.Stop();
-                btnEncryptFile.Enabled = true;
                 btnSend.Enabled = true;
                 btnSendFile.Enabled = true;
                 btnRemoveFile.Visible = true;

@@ -31,12 +31,12 @@ namespace Client.Form
 
         #region Add Message
 
-        public void AddMessage(TransferData? data, bool isMe) {
+        public async Task AddMessage(TransferData? data, bool isMe) {
             if (data == null) return;
 
             var rowPanel = CreateRowPanel(isMe);
 
-            if (!isMe) data = DecryptTransferData(data);
+            if (!isMe) data = await DecryptTransferData(data);
 
             if (data.TransferType == TransferType.Text) {
                 if (data.RawData != null) AddTextMessage(rowPanel, ByteUtils.GetStringFromBytes(data.RawData), isMe);
@@ -382,7 +382,6 @@ namespace Client.Form
             btnSendFile.Enabled = !isEncrypt;
             btnRemoveFile.Visible = !isEncrypt;
             btnRandomDesKey.Enabled = !isEncrypt;
-            lblEncryptionStatus.Visible = isEncrypt;
         }
 
         private void BtnCancelSendFile_Click(object sender, EventArgs e) {
@@ -475,7 +474,7 @@ namespace Client.Form
         }
 
 
-        private TransferData DecryptTransferData(TransferData transferData) {
+        private async Task<TransferData> DecryptTransferData(TransferData transferData) {
             if (transferData.TransferType == TransferType.Text) return transferData;
             var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
             var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
@@ -484,9 +483,16 @@ namespace Client.Form
             // Decrypt the encrypted DES key using RSA private key
             transferData.KeyDecrypt =
                 rsaEncrypt.Decrypt(transferData.KeyDecrypt, rsaEncrypt.DecryptKey);
-            // Decrypt the raw data using the decrypted DES key
-            if (transferData.KeyDecrypt != null)
-                transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
+            await Task.Run(() =>
+            {
+                lblEncryptionStatus.Visible = true;
+                lblEncryptionStatus.Text = @"Receiving data. Encrypting ....";
+                if (transferData.KeyDecrypt != null)
+                    transferData.RawData = desEncrypt.Decrypt(transferData.RawData, transferData.KeyDecrypt);
+                return Task.CompletedTask;
+            });
+            
+            lblEncryptionStatus.Visible = false;
             return transferData;
         }
 

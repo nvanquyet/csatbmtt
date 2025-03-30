@@ -53,7 +53,7 @@ public class TcpHandler : INetworkHandler
                 if (msg.Code == StatusCode.Success)
                 {
                     MessageBox.Show("Register Success Login to Continue", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    FormController.GetForm(FormType.Register)?.Close();
+                    FormController.Show(FormType.Login);
                 }
                 else
                 {

@@ -32,6 +32,6 @@ namespace Client.Form
             AuthService.Register(username, password);
         }
 
-        private void BtnCancel_Click(object sender, EventArgs e) =>  this.Close();
+        private void BtnCancel_Click(object sender, EventArgs e) => FormController.Show(FormType.Login);
     }
 }

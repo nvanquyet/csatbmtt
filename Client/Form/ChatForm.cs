@@ -3,6 +3,7 @@ using Client.Models;
 using Client.Network;
 using Client.Network.Tcp;
 using Client.Services;
+using Newtonsoft.Json;
 using Shared;
 using Shared.Models;
 using Shared.Security.Interface;
@@ -15,7 +16,7 @@ namespace Client.Form
     {
         private string _selectedFilePath = "";
         private UserDto? _targetDto;
-        private readonly Dictionary<string, byte[]?> _encryptedFileCache = new Dictionary<string, byte[]?>();
+        private readonly Dictionary<string, TransferData?> _encryptedFile = new();
         private CancellationTokenSource? _sendCts;
 
         public ChatForm()
@@ -221,22 +222,11 @@ namespace Client.Form
             {
                 var transferData = new TransferData(FileHelper.GetTransferType(_selectedFilePath),
                     File.ReadAllBytes(_selectedFilePath));
+                SendToServer(transferData: _encryptedFile[_selectedFilePath]!);
+                _selectedFilePath = "";
                 AddMessage(transferData, true);
                 lblSelectedFile.Visible = false;
                 btnRemoveFile.Visible = false;
-                var encryptData = _encryptedFileCache[_selectedFilePath];
-                // var desEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
-                var rsaEncrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Rsa);
-                if (_targetDto == null || transferData.RawData == null) return;
-
-                // // Encrypt raw data using DES
-                // // Encrypt the DES key (to be used for decryption) with target's RSA key
-                // Logger.LogInfo($"Length {desEncrypt.DecryptKey.Length}, {_targetDto.EncryptKey.Length}");
-                transferData.KeyDecrypt =
-                    rsaEncrypt.Encrypt(ByteUtils.GetBytesFromString(txtDesKey.Text), _targetDto.EncryptKey);
-                // // transferData.KeyDecrypt = desEncrypt.DecryptKey;
-                _selectedFilePath = "";
-                SendToServer(transferData: transferData);
             }
         }
 
@@ -281,7 +271,7 @@ namespace Client.Form
 
         private void BtnRemoveFile_Click(object? sender, EventArgs? e)
         {
-            _encryptedFileCache[_selectedFilePath] = null;
+            _encryptedFile[_selectedFilePath] = null;
             _selectedFilePath = "";
             lblSelectedFile.Visible = false;
             btnRemoveFile.Visible = false;
@@ -367,50 +357,83 @@ namespace Client.Form
 
         private async Task BtnEncryptFile_Click()
         {
-            if (string.IsNullOrEmpty(_selectedFilePath))
+            if (string.IsNullOrEmpty(_selectedFilePath) || !File.Exists(_selectedFilePath))
             {
-                MessageBox.Show(@"Please select a file first.");
+                MessageBox.Show(@"Please select a valid file first.");
                 BtnRemoveFile_Click(null, null);
                 return;
             }
 
-            // Lấy DES key từ txtDesKey
             string desKey = txtDesKey.Text.Trim();
+            if (string.IsNullOrEmpty(desKey))
+            {
+                MessageBox.Show(@"DES key cannot be empty.");
+                return;
+            }
 
-            btnSend.Enabled = false;
-            btnSendFile.Enabled = false;
-            btnRemoveFile.Visible = false;
-            btnRandomDesKey.Enabled = false;
-            lblEncryptionStatus.Visible = true;
-            // Bắt đầu quá trình mã hóa file
+            Encrypting(true);
             var sw = System.Diagnostics.Stopwatch.StartNew();
+
             try
             {
-                // Giả sử EncryptFile là hàm thực hiện mã hóa file dựa trên desKey
+                lblEncryptionStatus.Text = @"Encrypting...";
+
                 byte[]? encryptedData = await Task.Run(() =>
                 {
-                    lblEncryptionStatus.Text = @"Encrypting...";
-                    byte[]? fileData = File.ReadAllBytes(_selectedFilePath);
-                    var desCrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
-                    return desCrypt.Encrypt(fileData, ByteUtils.GetBytesFromString(desKey));
+                    try
+                    {
+                        byte[] fileData = File.ReadAllBytes(_selectedFilePath);
+                        var desCrypt = EncryptionService.Instance.GetAlgorithm(EncryptionType.Des);
+                        return desCrypt.Encrypt(fileData, ByteUtils.GetBytesFromString(desKey));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"File encryption error: {ex.Message}");
+                        return null;
+                    }
                 });
 
-                _encryptedFileCache[_selectedFilePath] = encryptedData;
+                if (encryptedData == null)
+                {
+                    MessageBox.Show(@"Encryption failed.");
+                    return;
+                }
+
+                if (_targetDto is { EncryptKey.Length: > 0 })
+                {
+                    var tsData = new TransferData(TransferType.File, encryptedData)
+                    {
+                        KeyDecrypt = EncryptionService.Instance
+                            .GetAlgorithm(EncryptionType.Rsa)
+                            .Encrypt(ByteUtils.GetBytesFromString(desKey), _targetDto.EncryptKey)
+                    };
+
+                    _encryptedFile[_selectedFilePath] = tsData;
+                }
+
                 lblEncryptionStatus.Text = $@"Encryption Successful – Time: {sw.ElapsedMilliseconds} ms";
                 lblEncryptionStatus.Visible = true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($@"Encryption failed: {ex.Message}");
+                Logger.LogError($"Encryption failed: {ex}");
             }
             finally
             {
                 sw.Stop();
-                btnSend.Enabled = true;
-                btnSendFile.Enabled = true;
-                btnRemoveFile.Visible = true;
-                btnRandomDesKey.Enabled = true;
+                Encrypting(false);
             }
+        }
+
+
+        private void Encrypting(bool isEncrypt)
+        {
+            btnSend.Enabled = !isEncrypt;
+            btnSendFile.Enabled = !isEncrypt;
+            btnRemoveFile.Visible = !isEncrypt;
+            btnRandomDesKey.Enabled = !isEncrypt;
+            lblEncryptionStatus.Visible = isEncrypt;
         }
 
         private void BtnCancelSendFile_Click(object sender, EventArgs e)
@@ -437,8 +460,7 @@ namespace Client.Form
             {
                 // Serialize toàn bộ đối tượng TransferData
                 byte[] serializedData = FileChunkService.SerializeTransferData(transferData);
-                Logger.LogInfo($"Serialized data: {serializedData.Length} bytes");
-                int chunkSize = 16384; // 8KB mỗi chunk
+                int chunkSize = 16384;
                 int totalChunks = (int)Math.Ceiling((double)serializedData.Length / chunkSize);
                 Guid messageId = Guid.NewGuid(); // ID duy nhất cho TransferData
 
@@ -500,8 +522,8 @@ namespace Client.Form
                                 }
                             });
                         }
-                        
-                        await Task.Delay(10, _sendCts.Token);
+
+                        if (_sendCts != null) await Task.Delay(10, _sendCts.Token);
                     }
                 }, _sendCts.Token);
             }

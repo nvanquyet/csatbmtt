@@ -144,7 +144,9 @@ public class TcpHandler : INetworkHandler
                     // Xử lý tin nhắn file bằng cách đưa các chunk vào FileChunkReceiver.
                     FileChunkService.Instance.ProcessChunk(fileChunkMsg, (fileId, fullData) =>
                     {
+                        Logger.LogInfo($"Receive file success {fileId} with length {fullData.Length}");
                         var transferData = FileChunkService.ParseTransferData(fullData);
+                        Logger.LogInfo($"Success parse {transferData}");
                         var chatForm = FormController.GetForm<ChatForm>(FormType.Chat);
                         if (chatForm == null) return;
                         if (chatForm.InvokeRequired)

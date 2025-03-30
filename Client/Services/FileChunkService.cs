@@ -34,40 +34,28 @@ public class FileChunkService : Singleton<FileChunkService>
                     return;
                 }
 
-                // Sử dụng ConcurrentDictionary<int, ChunkDto> để tránh lỗi thứ tự
                 var chunkList = _chunks.GetOrAdd(fileId, _ => new ConcurrentDictionary<int, ChunkDto>());
 
-                // Kiểm tra nếu chunk đã tồn tại thì bỏ qua (tránh trùng lặp)
                 if (!chunkList.ContainsKey(chunkIndex))
                 {
                     chunkList[chunkIndex] = fileChunkMsg.Chunk;
-                    Logger.LogInfo($"Received chunk {chunkIndex}/{totalChunks} for file {fileId}");
                 }
 
-                // Kiểm tra đã nhận đủ chunk chưa
                 if (chunkList.Count >= totalChunks)
                 {
                     if (!_chunks.TryRemove(fileId, out var finalChunks)) return;
 
-                    // Sắp xếp chunk theo index
                     var orderedChunks = finalChunks.OrderBy(c => c.Key).Select(c => c.Value).ToList();
 
-                    // Tính tổng kích thước
                     int totalSize = orderedChunks.Sum(c => c.Payload.Length);
                     byte[] fullData = new byte[totalSize];
                     int offset = 0;
-
                     
-
-                    // Ghép file theo thứ tự
                     foreach (var chunk in orderedChunks)
                     {
-                        Logger.LogInfo($"Chunk index: {chunk.ChunkIndex}, Size: {chunk.Payload.Length}");
                         Buffer.BlockCopy(chunk.Payload, 0, fullData, offset, chunk.Payload.Length);
                         offset += chunk.Payload.Length;
                     }
-                    Logger.LogInfo($"Total chunks received: {chunkList.Count}, expected: {totalChunks}");
-                    Logger.LogInfo($"Total data size: {totalSize}, expected: {fileChunkMsg.Chunk.Payload.Length * totalChunks}");
                     onFileReceived?.Invoke(fileId, fullData);
                 }
             }

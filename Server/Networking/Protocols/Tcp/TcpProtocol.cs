@@ -72,10 +72,10 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
         }
         catch (Exception ex)
         {
-            if (client != null)
+            if (client is { Client.RemoteEndPoint: not null })
             {
                 DataHandler?.OnClientDisconnect(client);
-                Logger.LogError($"Client {client?.Client.RemoteEndPoint} error: {ex.Message}");
+                Logger.LogError($"Client {client.Client.RemoteEndPoint} error: {ex.Message}");
             }
         }
     }

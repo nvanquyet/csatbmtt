@@ -21,8 +21,7 @@ namespace Client.Form
             base.Dispose(disposing);
         }
 
-        private void InitializeComponent()
-        {
+        private void InitializeComponent() {
             txtSearch = new TextBox();
             lstChatHistory = new ListView();
             btnLogout = new Button();
@@ -31,7 +30,7 @@ namespace Client.Form
             // 
             // txtSearch
             // 
-            txtSearch.Location = new Point(20, 40);
+            txtSearch.Location = new Point(20, 13);
             txtSearch.Name = "txtSearch";
             txtSearch.Size = new Size(250, 23);
             txtSearch.TabIndex = 1;
@@ -40,17 +39,20 @@ namespace Client.Form
             // lstChatHistory
             // 
             lstChatHistory.FullRowSelect = true;
-            lstChatHistory.Location = new Point(20, 92);
+            lstChatHistory.Location = new Point(20, 42);
             lstChatHistory.Name = "lstChatHistory";
-            lstChatHistory.Size = new Size(360, 188);
+            lstChatHistory.Size = new Size(360, 238);
             lstChatHistory.TabIndex = 3;
             lstChatHistory.UseCompatibleStateImageBehavior = false;
             lstChatHistory.View = View.Details;
+            this.lstChatHistory.Columns.Add("Username", 100);
+            this.lstChatHistory.Columns.Add("Last Handshake Time", 159);
+            this.lstChatHistory.Columns.Add("Status", 80);
             lstChatHistory.ItemActivate += OnHandshakeUserActivated;
             // 
             // btnLogout
             // 
-            btnLogout.Location = new Point(305, 39);
+            btnLogout.Location = new Point(305, 12);
             btnLogout.Name = "btnLogout";
             btnLogout.Size = new Size(75, 23);
             btnLogout.TabIndex = 0;
@@ -60,9 +62,9 @@ namespace Client.Form
             // lstUserSuggestions
             // 
             lstUserSuggestions.DrawMode = DrawMode.OwnerDrawFixed;
-            lstUserSuggestions.Location = new Point(20, 65);
+            lstUserSuggestions.Location = new Point(20, 42);
             lstUserSuggestions.Name = "lstUserSuggestions";
-            lstUserSuggestions.Size = new Size(340, 52);
+            lstUserSuggestions.Size = new Size(250, 52);
             lstUserSuggestions.TabIndex = 2;
             lstUserSuggestions.Visible = false;
             lstUserSuggestions.Click += LstUserSuggestions_Click;

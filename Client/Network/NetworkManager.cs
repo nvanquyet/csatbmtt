@@ -16,4 +16,11 @@ public class NetworkManager : Singleton<NetworkManager>
         Logger.LogInfo("Connecting to server...");
         TcpService.Start(0);
     }
+
+    public async Task StartTcp(Action? onReconnect = null)
+    {
+        if(!TcpService.IsRunning) await TcpService.Start(0);
+        onReconnect?.Invoke();
+    }
+        
 }

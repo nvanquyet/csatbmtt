@@ -14,7 +14,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
 
     public override Task Start(int port)
     {
-        IsRunning = true;
+        _isRunning = true;
         _listener = new TcpListener(IPAddress.Any, port);
         _listener.Start();
 

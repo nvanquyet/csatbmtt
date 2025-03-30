@@ -5,13 +5,15 @@ namespace Shared.Networking;
 public abstract class ANetworkProtocol(INetworkHandler dataHandler) : INetworkProtocol
 {
     protected readonly INetworkHandler DataHandler = dataHandler;
-    protected bool IsRunning;
+    protected bool _isRunning;
 
     public abstract Task Start(int port);
+
+    public virtual bool IsRunning => _isRunning;
     
     public virtual void Stop()
     {
-        IsRunning = false;
+        _isRunning = false;
     }
 
     public abstract void Send(string data, string endpoint = "");

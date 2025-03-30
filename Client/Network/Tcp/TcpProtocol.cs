@@ -12,6 +12,7 @@ namespace Client.Network.Tcp;
 
 public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHandler)
 {
+    public bool IsConnected => _tcpClient?.Client?.Connected ?? false; 
     private TcpClient? _tcpClient;
     private NetworkStream? _stream;
     private CancellationTokenSource? _cts;
@@ -21,7 +22,7 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     
     public override async Task Start(int port)
     {
-        IsRunning = true;
+        _isRunning = true;
         _tcpClient = new TcpClient();
 
         try
@@ -94,16 +95,33 @@ public class TcpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     public void Send(string data, Action<byte[]>? progressCallback = null) => MsgService.SendTcpMessage(_tcpClient, data, progressCallback);
     public override void Stop()
     {
+        _isRunning = false;
         CloseConnection();
     }
 
     private void CloseConnection()
     {
-        IsRunning = false;
-        _listenThread?.Join();
-        _cts?.Cancel();
-        _stream?.Close();
-        _tcpClient?.Close();
-        Logger.LogError("🛑 Kết nối TCP đã đóng.");
+        try
+        {
+            // Kiểm tra nếu có TcpListener thì dừng lại
+            _tcpClient?.Close();
+        
+            // Hủy token để dừng luồng an toàn
+            _cts?.Cancel();
+
+            // Đợi luồng kết thúc nhưng không để nó bị treo
+            _listenThread?.Join(2000); // Timeout là 2 giây để tránh treo mãi mãi
+        
+            // Đóng luồng stream và client nếu còn mở
+            _stream?.Close();
+            _tcpClient?.Close();
+        
+            Logger.LogError("🛑 Kết nối TCP đã đóng.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Lỗi khi đóng kết nối: {ex.Message}");
+        }
     }
+
 }

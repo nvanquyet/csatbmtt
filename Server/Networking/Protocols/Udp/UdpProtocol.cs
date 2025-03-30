@@ -12,7 +12,7 @@ public class UdpProtocol(INetworkHandler dataHandler) : ANetworkProtocol(dataHan
     private UdpClient? _udpClient;
     public override Task Start(int port)
     {
-        IsRunning = true;
+        _isRunning = true;
         _udpClient = new UdpClient(port);
         Logger.LogInfo($"UDP server started on port {port}");
 

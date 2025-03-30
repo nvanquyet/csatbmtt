@@ -175,6 +175,7 @@ namespace Client.Form
         {
             AuthService.Logout();
             FormController.Show(FormType.Login);
+            NetworkManager.Instance.TcpService.Stop();
         }
 
         public void ShowHandshakeConfirm(HandshakeDto dtoRequest)

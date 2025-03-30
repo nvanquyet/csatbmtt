@@ -1,4 +1,6 @@
-﻿using Client.Network;
+﻿using System.Net.Sockets;
+using Client.Network;
+using Client.Network.Tcp;
 using Client.Services;
 using Shared;
 
@@ -14,8 +16,13 @@ public partial class LoginForm : Form
 
     public static void TryLogin() => AuthService.TryAutoLogin(NetworkManager.Instance.TcpService);
 
-    private void BtnLogin_Click(object sender, EventArgs e)
+    private void BtnLogin_Click(object? sender, EventArgs? e)
     {
+        //Check to reconnect
+        if (!NetworkManager.Instance.TcpService.IsRunning)
+        {
+            _ = NetworkManager.Instance.StartTcp(() => BtnLogin_Click(null, null));
+        }
         var username = txtUsername.Text;
         var password = txtPassword.Text;
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
@@ -29,5 +36,6 @@ public partial class LoginForm : Form
     private void BtnRegister_Click(object sender, EventArgs e)
     {
         FormController.Show(FormType.Register);
+        Logger.LogInfo($"Tcp Connected ? {(NetworkManager.Instance.TcpService as TcpProtocol)?.IsConnected}");
     }
 }

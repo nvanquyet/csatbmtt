@@ -1,4 +1,5 @@
-﻿using Client.Services;
+﻿using Client.Network;
+using Client.Services;
 using Shared;
 
 namespace Client.Form
@@ -10,8 +11,12 @@ namespace Client.Form
             InitializeComponent();
         }
 
-        private void BtnRegister_Click(object sender, EventArgs e)
+        private void BtnRegister_Click(object? sender, EventArgs? e)
         {
+            if (!NetworkManager.Instance.TcpService.IsRunning)
+            {
+                _ = NetworkManager.Instance.StartTcp(() => BtnRegister_Click(null, null));
+            }
             var username = txtUsername.Text;
             var password = txtPassword.Text;
             var confirmPassword = txtConfirmPassword.Text;
